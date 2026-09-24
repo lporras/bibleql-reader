@@ -21,6 +21,13 @@
   color: var(--faint);
 }
 
+// Android/Material's minimum recommended tap target is 48dp, which is the
+// largest of the relevant floors (WCAG 2.2 AA "Target Size (Minimum)" is 24 CSS
+// px, AAA and Apple's HIG are 44). On Android 1 CSS px == 1 dp, so 48px it is.
+// This only ever applies under `pointer: coarse`, so desktop chrome keeps its
+// compact sizing.
+$touch-target: 48px;
+
 @mixin icon-button($size: 30px) {
   display: flex;
   align-items: center;
@@ -30,6 +37,14 @@
   border: 1px solid var(--divider);
   border-radius: 4px;
   @include hoverable-surface;
+
+  // A 30x28 target is fine for a mouse but too small for a fingertip, so grow
+  // the button itself wherever the primary pointer is coarse (touch). The icon
+  // inside is centred by the flexbox and needs no change.
+  @media (pointer: coarse) {
+    min-width: $touch-target;
+    min-height: $touch-target;
+  }
 }
 
 @mixin bare-button {

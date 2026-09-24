@@ -1,3 +1,5 @@
+@use "../../styles/mixins" as *;
+
 .wrap {
   max-width: 34em;
   margin: 0 auto;
@@ -108,6 +110,30 @@
 
 @media (hover: none) {
   .verseSpeak {
-    opacity: 0.45;
+    opacity: 0.6;
+  }
+}
+
+// The button sits inline in the middle of running text, so it can't simply grow
+// to $touch-target the way the header's icon buttons do — a 48px inline box
+// would stretch the line it lands on. Overlay a centred, transparent hit area
+// instead: being out of flow, it leaves the text's 22px slot untouched while a
+// fingertip gets a real target. Full 48px across (horizontal neighbours are
+// just glyphs) but held to 36px tall — a line box here is only ~29px, so a full
+// 48 would reach into the lines above and below and swallow taps meant for the
+// verse itself, which is its own tap target when selection is on.
+@media (pointer: coarse) {
+  .verseSpeak {
+    position: relative;
+
+    &::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: $touch-target;
+      height: 36px;
+      transform: translate(-50%, -50%);
+    }
   }
 }
