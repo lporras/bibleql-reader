@@ -63,6 +63,87 @@ committed or sent anywhere else.
 Get a BibleQL key at https://bibleql.org/api-keys/request/new (docs: https://docs.bibleql.org) and
 an Anthropic key at https://console.anthropic.com.
 
+## Running on an Android device
+
+The Android project is already generated and committed in `src-tauri/gen/android`, so there's no
+`tauri android init` step. You only need to do the one-time setup below.
+
+### One-time setup
+
+1. Install [Android Studio](https://developer.android.com/studio). From its SDK Manager
+   (*Settings → Languages & Frameworks → Android SDK*), install:
+   - **SDK Platforms:** Android 16 (API 36), the version `compileSdk` uses
+   - **SDK Tools:** Android SDK Build-Tools, Android SDK Platform-Tools, Android SDK
+     Command-line Tools, and **NDK (Side by side)**
+2. Install **JDK 21** and point `JAVA_HOME` at it. Don't use Android Studio's bundled JBR:
+   recent versions ship JDK 25, and Gradle 8.14's Kotlin compiler can't parse that version
+   string. When that happens, the build dies under `:buildSrc` with nothing but `> 25.0.3`, and
+   nothing in the error mentions Java. Run `/usr/libexec/java_home -V` to see which JDKs you have.
+3. Export the environment variables (in `~/.zshrc` or equivalent; these paths are macOS defaults):
+
+   ```bash
+   export JAVA_HOME="/path/to/jdk-21/Contents/Home"
+   export ANDROID_HOME="$HOME/Library/Android/sdk"
+   export NDK_HOME="$ANDROID_HOME/ndk/$(ls -1 "$ANDROID_HOME/ndk" | sort -V | tail -1)"
+   export PATH="$ANDROID_HOME/platform-tools:$PATH"   # for adb
+   ```
+
+4. Add the Rust targets for Android:
+
+   ```bash
+   rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
+   ```
+
+### Preparing the phone
+
+1. Turn on **Developer options**: *Settings → About phone*, then tap **Build number** seven times.
+2. In *Settings → System → Developer options*, turn on **USB debugging**.
+3. Connect the phone over USB and accept the "Allow USB debugging?" prompt on the phone.
+4. Check that the phone shows up with the state `device`. If it says `unauthorized`, re-accept the
+   prompt on the phone:
+
+   ```bash
+   adb devices
+   ```
+
+   (Wireless debugging also works on Android 11 and later: pair from *Developer options →
+   Wireless debugging* with `adb pair <ip>:<port>`, then run `adb connect <ip>:<port>`.)
+
+### Dev build, with HMR
+
+```bash
+yarn tauri android dev
+```
+
+If both a phone and an emulator are connected, the CLI asks which one to use. The app on the
+phone loads the frontend from the Vite dev server on your computer. For that to work, the CLI
+sets `TAURI_DEV_HOST` to your machine's LAN IP, and `vite.config.ts` binds to it. That means **the
+phone and the computer must be on the same Wi-Fi network**, and your firewall has to allow
+incoming connections on ports 1420/1421. If the CLI asks which network interface to use, pick
+the one on that shared network. If the app opens to a blank screen or a connection error, check
+the network first.
+
+To debug the webview, open `chrome://inspect` in desktop Chrome while the phone is connected.
+
+### Installable APK
+
+```bash
+yarn tauri android build --debug --apk
+adb install -r src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk
+```
+
+This builds a self-contained APK: the frontend is bundled in, so the phone doesn't need your dev
+server. Add `--target aarch64` to build for 64-bit ARM only, which covers nearly every current
+phone and builds much faster. The APK file name then includes `arm64` instead of `universal`.
+
+`yarn tauri android build --apk` (without `--debug`) produces a release APK. That APK is
+**unsigned**, and Android won't install it until you sign it with your own keystore (see Tauri's
+[Android code signing](https://tauri.app/distribute/sign/android/) guide). For testing on your own
+phone, use the debug build.
+
+As on desktop, the BibleQL key is compiled in from `.env` at build time, so set it before you
+build.
+
 ## Running tests
 
 ```bash
