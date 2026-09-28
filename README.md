@@ -176,5 +176,5 @@ with an Apple Developer ID and notarized in CI.
 
 ## License
 
-MIT. Bible texts keep their own licenses — each translation's `note` field carries it, and the
+[MIT](LICENSE). Bible texts keep their own licenses — each translation's `note` field carries it, and the
 app shows it in the status bar.
