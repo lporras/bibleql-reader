@@ -3,6 +3,7 @@ name = "bibleql-reader"
 version = "0.2.2"
 description = "Desktop Bible reader on the BibleQL GraphQL API"
 authors = ["Luis Porras <lporras16@gmail.com>"]
+license = "MIT"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
