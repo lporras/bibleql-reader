@@ -10,60 +10,74 @@ permissions:
 
 jobs:
   release:
-    name: Build ${{ matrix.os }}
+    name: Build ${{ matrix.platform }}
     runs-on: ${{ matrix.os }}
 
     strategy:
+      fail-fast: false
       matrix:
         include:
+          # Two macOS builds: Apple silicon and Intel. Unlike Electron,
+          # which shipped one binary per OS, a Tauri bundle is a native
+          # Rust build and is architecture-specific.
           - os: macos-latest
-            platform: mac
+            platform: macos-arm64
+            args: "--target aarch64-apple-darwin"
+          - os: macos-latest
+            platform: macos-x64
+            args: "--target x86_64-apple-darwin"
           - os: windows-latest
-            platform: win
-          - os: ubuntu-latest
+            platform: windows
+            args: ""
+          - os: ubuntu-22.04
             platform: linux
+            args: ""
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install Tauri system dependencies (Linux)
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev \
+            librsvg2-dev patchelf libssl-dev
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
+          cache: yarn
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.os == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
 
       - name: Install dependencies
-        run: npm ci
+        run: yarn install --frozen-lockfile
 
-      - name: Build and package
-        run: npm run dist:${{ matrix.platform }}
-
-      - name: Upload release artifacts
-        uses: actions/upload-artifact@v4
+      # tauri-action runs `tauri build`, which runs `beforeBuildCommand`
+      # (yarn build -> typecheck + unit tests + vite build), then bundles
+      # and uploads the installers to a draft GitHub release.
+      #
+      # Both keys must be present here, not just at bundle time: they're
+      # inlined into the frontend by vite.config.ts's `define`.
+      - name: Build and release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BIBLEQL_API_KEY: ${{ secrets.BIBLEQL_API_KEY }}
+          UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
         with:
-          name: bibleql-reader-${{ matrix.platform }}
-          path: release/*
-
-  publish:
-    name: Publish GitHub Release
-    needs: release
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: release
-          merge-multiple: true
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: release/*
-          generate_release_notes: true
-
-env:
-  GH_TOKEN: ${{ secrets.GH_TOKEN }}
-  BIBLEQL_API_KEY: ${{ secrets.BIBLEQL_API_KEY }}
-  UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
+          tagName: ${{ github.ref_name }}
+          releaseName: "BibleQL Reader ${{ github.ref_name }}"
+          releaseDraft: true
+          generateReleaseNotes: true
+          args: ${{ matrix.args }}

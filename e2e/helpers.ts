@@ -1,57 +1,108 @@
-import { _electron as electron, type ElectronApplication, type Page } from "@playwright/test";
-// Importing "electron" from plain Node (not run *as* Electron) resolves
-// to the platform-correct binary path string rather than the API —
-// the standard way to find the executable for `_electron.launch()`
-// without hardcoding a per-OS path.
-import electronPath from "electron";
-import path from "node:path";
-import os from "node:os";
-import fs from "node:fs/promises";
+import { expect, type Page } from "@playwright/test";
 
-const APP_DIR = path.resolve(import.meta.dirname, "..");
+/**
+ * A recorded `window.__TAURI_INTERNALS__.invoke` call. The Tauri shell
+ * injects that object into the webview; under this suite the app runs in
+ * a plain Chromium page, so the stub below stands in for it.
+ */
+export interface TauriCall {
+  cmd: string;
+  args: Record<string, unknown>;
+}
 
-export interface App {
-  app: ElectronApplication;
-  page: Page;
-  /** Call in an `afterEach` alongside `app.close()` to remove the temp profile dir. */
-  cleanup(): Promise<void>;
+declare global {
+  interface Window {
+    __TAURI_CALLS__: TauriCall[];
+  }
 }
 
 /**
- * Launches the built app (see `out/`, produced by `electron-vite build` —
- * the `test:e2e` npm script builds first) and returns its main window.
+ * Installs a stub Tauri runtime before any app code runs.
  *
- * Each call gets a fresh `--user-data-dir` — without this, every launch
- * on a given machine shares the same real profile (localStorage, theme,
- * "Compare" toggle, translation choices…), so a test's outcome would
- * depend on whatever was last left there by manual testing or a prior
- * run, rather than starting from the same clean-install state a real
- * first-time user sees.
+ * Under Electron these specs launched the real packaged binary, so the
+ * shell was genuinely there. A browser has no shell, and every Tauri API
+ * the app uses bottoms out in `window.__TAURI_INTERNALS__.invoke` (the
+ * opener, dialog and fs plugins) or in
+ * `window.__TAURI_OS_PLUGIN_INTERNALS__` (the os plugin's sync
+ * `platform()`). Without these the app throws on boot.
+ *
+ * Recording the calls is the point, not just silencing them: it turns
+ * "did this open in the system browser rather than navigating the app"
+ * into a direct assertion on the command and URL handed to the shell —
+ * the same thing the old suite got by stubbing `shell.openExternal` in
+ * Electron's main process.
  */
-export async function launchApp(): Promise<App> {
-  const userDataDir = await fs.mkdtemp(path.join(os.tmpdir(), "bibleql-e2e-"));
-  const app = await electron.launch({
-    executablePath: electronPath as unknown as string,
-    args: [APP_DIR, `--user-data-dir=${userDataDir}`],
-    // Some shells (this repo's dev sandbox, notably) set
-    // ELECTRON_RUN_AS_NODE, which makes the Electron binary behave as
-    // plain Node instead of launching the app — strip it defensively.
-    env: { ...process.env, ELECTRON_RUN_AS_NODE: "" }
+async function installTauriStub(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    window.__TAURI_CALLS__ = [];
+
+    // The os plugin reads these synchronously as plain properties.
+    // "linux" keeps the non-macOS layout (a normal OS title bar), which
+    // is what a browser page should look like.
+    (window as unknown as { __TAURI_OS_PLUGIN_INTERNALS__: unknown }).__TAURI_OS_PLUGIN_INTERNALS__ = {
+      platform: "linux",
+      eol: "\n",
+      version: "0.0.0",
+      family: "unix",
+      arch: "x86_64",
+      exe_extension: ""
+    };
+
+    (window as unknown as { __TAURI_INTERNALS__: unknown }).__TAURI_INTERNALS__ = {
+      invoke: async (cmd: string, args: Record<string, unknown> = {}) => {
+        window.__TAURI_CALLS__.push({ cmd, args });
+        // `plugin:dialog|save` returning null reads as "user cancelled",
+        // which keeps the export flow from trying to write a file.
+        if (cmd === "plugin:dialog|save") return null;
+        return null;
+      },
+      transformCallback: (cb: unknown) => cb,
+      unregisterCallback: () => {},
+      convertFileSrc: (p: string) => p
+    };
   });
-  const page = await app.firstWindow();
-  await page.waitForLoadState("domcontentloaded");
-  return {
-    app,
-    page,
-    cleanup: () => fs.rm(userDataDir, { recursive: true, force: true })
-  };
 }
 
-/** Navigates the (already-launched) app to a hash route and waits for it to settle. */
+export interface App {
+  page: Page;
+}
+
+/**
+ * Opens the app at its default route in a fresh page.
+ *
+ * The Electron version of this created a throwaway `--user-data-dir` per
+ * launch, because every launch on a machine otherwise shared one real
+ * profile and a test's outcome depended on whatever theme/compare/
+ * translation state was last left there. Playwright already gives each
+ * test its own browser context — and therefore its own empty
+ * `localStorage` — so that isolation now comes for free, and there is no
+ * profile directory to clean up afterwards.
+ */
+export async function launchApp(page: Page): Promise<App> {
+  await installTauriStub(page);
+  await page.goto("/");
+  await page.waitForLoadState("domcontentloaded");
+  return { page };
+}
+
+/** Navigates the (already-loaded) app to a hash route and waits for it to settle. */
 export async function goTo(page: Page, hashRoute: string): Promise<void> {
   await page.evaluate((route) => {
     window.location.hash = route;
   }, hashRoute);
+}
+
+/** Every Tauri command the page has invoked so far, in order. */
+export function tauriCalls(page: Page): Promise<TauriCall[]> {
+  return page.evaluate(() => window.__TAURI_CALLS__);
+}
+
+/** Waits until a command has been invoked, then returns every call to it. */
+export async function waitForTauriCalls(page: Page, cmd: string): Promise<TauriCall[]> {
+  await expect
+    .poll(async () => (await tauriCalls(page)).filter((call) => call.cmd === cmd).length)
+    .toBeGreaterThan(0);
+  return (await tauriCalls(page)).filter((call) => call.cmd === cmd);
 }
 
 /** Matches either locale's label for a button — this app ships en/es strings. */

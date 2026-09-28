@@ -1,0 +1,56 @@
+// The original design used a fake `style-hover="..."` attribute (a design-tool
+// affordance, not real CSS) for this exact "background: var(--sel)" treatment
+// on nearly every interactive element. Real CSS gets a real :hover instead.
+@mixin hoverable-surface {
+  &:hover {
+    background: var(--sel);
+  }
+}
+
+@mixin focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+@mixin uppercase-label {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+// Android/Material's minimum recommended tap target is 48dp, which is the
+// largest of the relevant floors (WCAG 2.2 AA "Target Size (Minimum)" is 24 CSS
+// px, AAA and Apple's HIG are 44). On Android 1 CSS px == 1 dp, so 48px it is.
+// This only ever applies under `pointer: coarse`, so desktop chrome keeps its
+// compact sizing.
+$touch-target: 48px;
+
+@mixin icon-button($size: 30px) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: $size;
+  height: 28px;
+  border: 1px solid var(--divider);
+  border-radius: 4px;
+  @include hoverable-surface;
+
+  // A 30x28 target is fine for a mouse but too small for a fingertip, so grow
+  // the button itself wherever the primary pointer is coarse (touch). The icon
+  // inside is centred by the flexbox and needs no change.
+  @media (pointer: coarse) {
+    min-width: $touch-target;
+    min-height: $touch-target;
+  }
+}
+
+@mixin bare-button {
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}

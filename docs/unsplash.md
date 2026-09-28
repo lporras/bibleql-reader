@@ -12,8 +12,8 @@ Unsplash's public API supports two auth flows. This app uses **public authentica
 own docs, this is "generally cacheable by our system" and is the intended flow for exactly this
 kind of client app (many mobile/desktop apps embed just the Access Key).
 
-`UNSPLASH_ACCESS_KEY` is compile-time inlined into the renderer bundle via `define:` in
-`electron.vite.config.ts`, loaded from `.env`/`.env.local` — the identical pattern already used
+`UNSPLASH_ACCESS_KEY` is compile-time inlined into the frontend bundle via `define:` in
+`vite.config.ts`, loaded from `.env`/`.env.local` — the identical pattern already used
 for `BIBLEQL_API_KEY` (see `lib/graphql.ts`). No IPC, no proxy, no Secret Key anywhere in the app.
 
 We use the official [`unsplash-js`](https://github.com/unsplash/unsplash-js) SDK
@@ -92,7 +92,7 @@ re-verify all of them before re-submitting, by opening the photo page by hand.
 
 ## Curated library and the hotlinking rule
 
-The six photos under `src/renderer/public/bible-images/` are bundled with the app rather than
+The six photos under `public/bible-images/` are bundled with the app rather than
 hotlinked. That's deliberate and permitted: they were downloaded from unsplash.com under the
 **Unsplash License**, not obtained through the API, and the hotlinking rule governs "all API
 uses". They're what makes the Image Creator usable with no API key and offline, which is why the
@@ -140,19 +140,21 @@ the canvas regardless of what the second request asks for.
 
 ## Opening attribution links
 
-An attribution link that doesn't work isn't attribution. Electron's default handling of
-`target="_blank"` is to open a bare child `BrowserWindow` — inheriting this app's preload, with no
-address bar or back button — which is a poor substitute for the user's own browser and a
-hardening gap besides. `src/main/externalLinks.ts` (`attachExternalLinkHandling`, called from
-`src/main/index.ts`) installs a `setWindowOpenHandler` that always returns `{ action: "deny" }`
-and hands `https:` URLs to `shell.openExternal`, plus a `will-navigate` listener for links
-without `target="_blank"` that lets same-origin navigation through (the renderer is a HashRouter
-over `file://` in production, `ELECTRON_RENDERER_URL` in dev).
+An attribution link that doesn't work isn't attribution. A webview left to itself navigates the
+app away to unsplash.com — no address bar, no back button, no way home — which is a poor
+substitute for the user's own browser. `src/lib/externalLinks.ts` (`attachExternalLinkHandling`,
+called once from `src/main.tsx`) installs a single delegated click listener: same-origin links
+(the HashRouter's own `#/...` routes) pass through untouched, anything leaving the origin is
+cancelled, and `https:` URLs are handed to `openUrl()` from Tauri's opener plugin. Everything else
+(`file:`, `about:`, custom schemes) is dropped silently.
 
-This lives in main rather than behind `platform/index.ts` or an IPC channel because there's no
-renderer API surface involved: the renderer markup is already correct plain-web behaviour that a
-browser or a future non-Electron shell handles natively. Only the Electron shell misbehaves, so
-only the Electron shell is patched — `features/image-creator/**` stays platform-neutral.
+This lives in `lib/` rather than behind `platform/index.ts` because there's no per-shell API
+surface involved — it's one document-level listener, not a capability the Image Creator calls.
+`features/image-creator/**` stays platform-neutral either way.
+
+(Under Electron this was the main process's job — `setWindowOpenHandler` returning
+`{ action: "deny" }` plus a `will-navigate` guard, handing URLs to `shell.openExternal`. Tauri has
+no main process to put that in, hence the move into the page.)
 
 Note `rel="noreferrer"` on those anchors does *not* strip the UTM parameters; they live in the
 URL, not the `Referer` header.
@@ -167,13 +169,13 @@ Per this project's standing rule, specs never call the real API:
   — no network, no SDK instance. `mapUnsplashPhoto` is deliberately split out of
   `UnsplashProvider.ts` (which calls `createApi` at module scope) so it has no dependency on
   `__UNSPLASH_ACCESS_KEY__` being defined, which Vitest's config doesn't do (mirrors
-  `electron.vite.config.ts`'s `define`, set to empty strings, in `vitest.config.ts`, as a
+  `vite.config.ts`'s `define`, set to empty strings, in `vitest.config.ts`, as a
   defensive fallback for anything imported transitively).
   Also `providers/unsplashDownload.test.ts` (the download-URL origin guard),
-  `data/curatedImages.test.ts` (verified handles, UTM-tagged URLs, relative asset paths) and
-  `src/renderer/src/lib/format.test.ts` (`splitTemplate`, which `PhotoCredit` renders through).
-  None of them touch the filesystem: `tsconfig.web.json` has no node types on purpose, since the
-  renderer runs with `nodeIntegration: false`.
+  `data/curatedImages.test.ts` (verified handles, UTM-tagged URLs, root-absolute asset paths) and
+  `src/lib/format.test.ts` (`splitTemplate`, which `PhotoCredit` renders through).
+  None of them touch the filesystem: `tsconfig.json` has no node types on purpose, since the
+  frontend runs in a webview.
 - **E2E** (`e2e/unsplash-search.spec.ts`) intercepts `api.unsplash.com` via Playwright's
   `page.route()` and fulfills it with the same fixture data, so the suite stays deterministic and
   never touches the shared 50/hour demo quota. The fixtures carry an `ixid` on each

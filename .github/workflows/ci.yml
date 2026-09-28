@@ -18,25 +18,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
+          cache: yarn
 
       - name: Install dependencies
-        run: npm ci
+        run: yarn install --frozen-lockfile
 
       - name: Typecheck
-        run: npm run typecheck
+        run: yarn typecheck
 
       - name: Unit tests (Vitest)
-        run: npm test
-
-      # Electron always opens a real native window — there's no headless
-      # mode — so E2E needs a display even in CI. Xvfb (a virtual
-      # framebuffer) provides one without a physical/GPU display.
-      - name: Install Xvfb + Electron's runtime libraries
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y xvfb libnss3 libgbm1 libasound2t64 libgtk-3-0 \
-            libxss1 libxkbcommon0 libatk-bridge2.0-0 libcups2 libdrm2
+        run: yarn test
 
       # Doesn't print the values (GitHub also auto-masks known secret
       # values in logs regardless) — just whether each one is empty, so a
@@ -50,15 +41,17 @@ jobs:
           BIBLEQL_API_KEY: ${{ secrets.BIBLEQL_API_KEY }}
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
 
-      # Needs a real BIBLEQL_API_KEY: verse selection hands off real
-      # passage data the editor re-fetches, which isn't covered by the
-      # app's offline/no-key sample fallback (see e2e/image-creator.spec.ts).
-      # UNSPLASH_ACCESS_KEY just needs to be non-empty here — the
-      # Unsplash spec mocks the network entirely (see docs/unsplash.md),
-      # but the app only renders the search UI at all when a key is
-      # configured, so an empty key would skip that tab's content.
-      - name: E2E tests (Playwright + Electron)
-        run: xvfb-run -a npm run test:e2e
+      - name: Install Playwright's Chromium
+        run: yarn playwright install --with-deps chromium
+
+      # Browser E2E against a production build that playwright.config.ts
+      # builds and serves itself. No Xvfb: unlike Electron, which always
+      # opened a real native window, headless Chromium needs no display.
+      # Both keys are inlined by vite.config.ts at that build — the app
+      # only renders the Unsplash search UI at all when a key is
+      # configured, even though the spec mocks the network itself.
+      - name: E2E tests (Playwright)
+        run: yarn test:e2e
         env:
           BIBLEQL_API_KEY: ${{ secrets.BIBLEQL_API_KEY }}
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
@@ -70,3 +63,30 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+
+  rust:
+    name: Check the Tauri shell
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Tauri's Linux build needs the system webview and its dependencies
+      # even just to type-check the crate.
+      - name: Install Tauri system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev \
+            librsvg2-dev patchelf libssl-dev
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: cargo check
+        run: cargo check --manifest-path src-tauri/Cargo.toml

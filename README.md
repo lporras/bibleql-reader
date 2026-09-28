@@ -15,29 +15,36 @@ Version 2 (server-side): bookmarks and reading plans.
 
 ## Stack
 
-Electron + React + TypeScript, built with [electron-vite](https://electron-vite.org). Server state
-(translations, passages, concordance, search) is managed with
+[Tauri 2](https://tauri.app) + React + TypeScript, built with [Vite](https://vite.dev). The UI runs
+in the platform's own webview and the shell is a small Rust binary, so there's no bundled browser
+engine. Server state (translations, passages, concordance, search) is managed with
 [TanStack Query](https://tanstack.com/query), navigation with
-[React Router](https://reactrouter.com) (hash-based, since the renderer loads from `file://` in
-production), and styling with Sass — a single token partial
-(`src/renderer/src/styles/_tokens.scss`) drives both the light and dark palettes as CSS custom
+[React Router](https://reactrouter.com) (hash-based), and styling with Sass — a single token
+partial (`src/styles/_tokens.scss`) drives both the light and dark palettes as CSS custom
 properties, and every component has its own colocated `.module.scss`.
 
 ```
-src/
-  main/       Electron main process (window setup, the AI IPC handler)
-  preload/    contextBridge — exposes window.desktop and window.ai to the renderer
-  renderer/   the React app (components/, queries/, hooks/, state/, lib/, data/, styles/)
+src/         the React app (components/, features/, queries/, hooks/, state/, lib/, data/, styles/)
+  platform/  the one seam onto the desktop shell — see docs/platform-abstraction.md
+src-tauri/   the Rust shell: window config, plugin registration, capability permissions
 ```
 
 ## Running as a desktop app
 
+Needs [Node](https://nodejs.org), [Yarn](https://yarnpkg.com) and a
+[Rust toolchain](https://www.rust-lang.org/tools/install) (plus Tauri's
+[system prerequisites](https://tauri.app/start/prerequisites/) — Xcode command line tools on macOS,
+WebView2 on Windows, `libwebkit2gtk` on Linux).
+
 ```bash
-npm install
+yarn install
 cp .env.example .env   # set BIBLEQL_API_KEY
-npm run dev            # dev server + Electron, with HMR
-npm run build          # type-checks, then builds main/preload/renderer to out/
+yarn tauri dev         # Rust shell + Vite dev server, with HMR
+yarn tauri build       # type-checks, runs unit tests, then bundles installers
 ```
+
+`yarn dev` on its own serves just the frontend in a browser at http://localhost:1420 — useful for
+UI work, though the native Save-As dialog and the AI assistant need the real shell.
 
 Requests go to `https://bibleql.org/graphql` with an `Authorization: Bearer` header. The BibleQL
 key comes from `BIBLEQL_API_KEY` in `.env` (loaded via `dotenv`) and is compiled into the app at
@@ -45,28 +52,114 @@ build time — it's never entered by end users and never committed. Release buil
 same way, from a `BIBLEQL_API_KEY` GitHub Actions secret set on the workflow. Without a key, the
 reader shows a bundled public-domain sample chapter (Psalm 23).
 
-The AI assistant calls Claude via the [Vercel AI SDK](https://ai-sdk.dev) from the main process, so
-its API key never touches the renderer. That key is still entered per-user from the key dialog (key
-icon in the title bar) and stored locally — never committed or sent anywhere else.
+The AI assistant calls Claude via the [Vercel AI SDK](https://ai-sdk.dev) (`src/lib/ai.ts`), with
+the request itself issued by the Rust side through Tauri's HTTP plugin — `api.anthropic.com`
+refuses cross-origin requests. (The plugin still attaches its own `Origin`, so the call also
+opts in via `anthropic-dangerous-direct-browser-access`; the key is the user's own and the
+request is made by the Rust process, not by a page anyone else can script.) Unlike the two keys above, the Anthropic key is never compiled in:
+it's entered per-user from the key dialog (key icon in the title bar) and stored locally — never
+committed or sent anywhere else.
 
 Get a BibleQL key at https://bibleql.org/api-keys/request/new (docs: https://docs.bibleql.org) and
 an Anthropic key at https://console.anthropic.com.
 
+## Running on an Android device
+
+The Android project is already generated and committed in `src-tauri/gen/android`, so there's no
+`tauri android init` step. You only need to do the one-time setup below.
+
+### One-time setup
+
+1. Install [Android Studio](https://developer.android.com/studio). From its SDK Manager
+   (*Settings → Languages & Frameworks → Android SDK*), install:
+   - **SDK Platforms:** Android 16 (API 36), the version `compileSdk` uses
+   - **SDK Tools:** Android SDK Build-Tools, Android SDK Platform-Tools, Android SDK
+     Command-line Tools, and **NDK (Side by side)**
+2. Install **JDK 21** and point `JAVA_HOME` at it. Don't use Android Studio's bundled JBR:
+   recent versions ship JDK 25, and Gradle 8.14's Kotlin compiler can't parse that version
+   string. When that happens, the build dies under `:buildSrc` with nothing but `> 25.0.3`, and
+   nothing in the error mentions Java. Run `/usr/libexec/java_home -V` to see which JDKs you have.
+3. Export the environment variables (in `~/.zshrc` or equivalent; these paths are macOS defaults):
+
+   ```bash
+   export JAVA_HOME="/path/to/jdk-21/Contents/Home"
+   export ANDROID_HOME="$HOME/Library/Android/sdk"
+   export NDK_HOME="$ANDROID_HOME/ndk/$(ls -1 "$ANDROID_HOME/ndk" | sort -V | tail -1)"
+   export PATH="$ANDROID_HOME/platform-tools:$PATH"   # for adb
+   ```
+
+4. Add the Rust targets for Android:
+
+   ```bash
+   rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
+   ```
+
+### Preparing the phone
+
+1. Turn on **Developer options**: *Settings → About phone*, then tap **Build number** seven times.
+2. In *Settings → System → Developer options*, turn on **USB debugging**.
+3. Connect the phone over USB and accept the "Allow USB debugging?" prompt on the phone.
+4. Check that the phone shows up with the state `device`. If it says `unauthorized`, re-accept the
+   prompt on the phone:
+
+   ```bash
+   adb devices
+   ```
+
+   (Wireless debugging also works on Android 11 and later: pair from *Developer options →
+   Wireless debugging* with `adb pair <ip>:<port>`, then run `adb connect <ip>:<port>`.)
+
+### Dev build, with HMR
+
+```bash
+yarn tauri android dev
+```
+
+If both a phone and an emulator are connected, the CLI asks which one to use. The app on the
+phone loads the frontend from the Vite dev server on your computer. For that to work, the CLI
+sets `TAURI_DEV_HOST` to your machine's LAN IP, and `vite.config.ts` binds to it. That means **the
+phone and the computer must be on the same Wi-Fi network**, and your firewall has to allow
+incoming connections on ports 1420/1421. If the CLI asks which network interface to use, pick
+the one on that shared network. If the app opens to a blank screen or a connection error, check
+the network first.
+
+To debug the webview, open `chrome://inspect` in desktop Chrome while the phone is connected.
+
+### Installable APK
+
+```bash
+yarn tauri android build --debug --apk
+adb install -r src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk
+```
+
+This builds a self-contained APK: the frontend is bundled in, so the phone doesn't need your dev
+server. Add `--target aarch64` to build for 64-bit ARM only, which covers nearly every current
+phone and builds much faster. The APK file name then includes `arm64` instead of `universal`.
+
+`yarn tauri android build --apk` (without `--debug`) produces a release APK. That APK is
+**unsigned**, and Android won't install it until you sign it with your own keystore (see Tauri's
+[Android code signing](https://tauri.app/distribute/sign/android/) guide). For testing on your own
+phone, use the debug build.
+
+As on desktop, the BibleQL key is compiled in from `.env` at build time, so set it before you
+build.
+
 ## Running tests
 
 ```bash
-npm test          # Vitest — pure-logic unit tests (no network, no Electron)
-npm run test:e2e  # Playwright — builds the app, then drives the real Electron window
+yarn test       # Vitest — pure-logic unit tests (no network, no shell)
+yarn test:e2e   # Playwright — builds the app, then drives it in a browser
 ```
 
-`npm test` covers things like project serialization, layout math, and reference formatting —
-fast, and safe to run without any keys configured. `npm run test:e2e` (`e2e/*.spec.ts`) launches
-the actual packaged app and drives it like a user would: selecting verses, handing off to the
-Verse Image Creator, picking a background, editing text, exporting. It needs a real
-`BIBLEQL_API_KEY` set at build time (same as `npm run dev`/`dist:*` — see above), since the
-editor's passage fetch isn't covered by the no-key sample fallback. Electron always opens a real
-window — there's no headless mode — so running it in CI (see `.github/workflows/ci.yml`, which
-runs both suites on every pull request) needs a virtual display (Xvfb on Linux runners).
+`yarn test` covers things like project serialization, layout math, and reference formatting —
+fast, and safe to run without any keys configured. `yarn test:e2e` (`e2e/*.spec.ts`) drives the app
+like a user would: selecting verses, handing off to the Verse Image Creator, picking a background,
+editing text, exporting. It runs the same bundle in headless Chromium rather than in the Tauri
+window, because Tauri's own WebDriver harness (`tauri-driver`) has no macOS support at all; the
+handful of genuine shell calls are stubbed and recorded (see `e2e/helpers.ts`). It builds the app
+and serves it with `vite preview`, so it wants a real `BIBLEQL_API_KEY` in the environment, since
+the editor's passage fetch isn't covered by the no-key sample fallback. CI (`.github/workflows/ci.yml`) runs both suites plus
+a `cargo check` of the Rust shell on every pull request.
 
 ## macOS: "is damaged and can't be opened"
 

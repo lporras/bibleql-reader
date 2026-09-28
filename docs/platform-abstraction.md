@@ -1,15 +1,16 @@
 # Platform abstraction
 
-The app is Electron today. The Image Creator feature (see `plan bible image.md`) is being
-built so it can also run under a future non-Electron shell (e.g. Tauri) without a rewrite. This
-document describes the seam and what's on each side of it.
+The app is Tauri today. It was Electron until the migration, and the Image Creator was built
+against this seam specifically so the shell could be swapped without a rewrite — which is what
+happened: only `saveImage` needed a new implementation. This document describes the seam and
+what's on each side of it.
 
 ## The interface
 
-`src/renderer/src/platform/types.ts` declares `PlatformCapabilities` — everything the Image
-Creator's domain code is allowed to assume about the host environment. Domain/model code
-(`src/renderer/src/features/image-creator/**`) must call into this interface, never
-`window.desktop`, `ipcRenderer`, or a Node/Electron API directly.
+`src/platform/types.ts` declares `PlatformCapabilities` — everything the Image Creator's domain
+code is allowed to assume about the host environment. Domain/model code
+(`src/features/image-creator/**`) must call into this interface, never a Tauri plugin API
+directly.
 
 ```ts
 export interface PlatformCapabilities {
@@ -19,40 +20,63 @@ export interface PlatformCapabilities {
 }
 ```
 
-`getPlatform()` in `src/renderer/src/platform/index.ts` composes the implementations below; it's
-the only place that decides which backs the interface.
+`getPlatform()` in `src/platform/index.ts` composes the implementations below; it's the only
+place that decides which backs the interface.
 
 ## Today's implementations
 
-Two capabilities are plain Chromium/web-platform behavior (`src/renderer/src/platform/web.ts`)
-and need **no Electron-specific code at all**, so they work unchanged in a plain browser tab or
-a future Tauri webview:
+Two capabilities are plain web-platform behavior (`src/platform/web.ts`) and need **no
+shell-specific code at all**, so they work unchanged in a plain browser tab (which is exactly
+what the E2E suite exploits) as well as in the Tauri webview:
 
-- `pickImageFile` — a hidden `<input type="file" accept="image/*">`. Chromium already opens the
-  real native OS file dialog (Finder/Explorer/GTK picker) for this.
+- `pickImageFile` — a hidden `<input type="file" accept="image/*">`. The webview already opens
+  the real native OS file dialog (Finder/Explorer/GTK picker) for this.
 - `copyImageToClipboard` — the standard Async Clipboard API
   (`navigator.clipboard.write([new ClipboardItem(...)])`).
 
-One capability genuinely needs Electron (`src/renderer/src/platform/electron.ts`), because a
-sandboxed renderer has no filesystem access of its own:
+One capability genuinely needs the shell (`src/platform/tauri.ts`), because a webview has no
+filesystem access of its own:
 
-- `saveImage` — a native "Save As" dialog + disk write. Backed by `window.imageCreator.saveImage`
-  (`src/preload/index.ts`) → the `imageCreator:saveImage` IPC handler
-  (`src/main/ipc/imageCreator.ts`), which calls `dialog.showSaveDialog` then writes the bytes with
-  `node:fs/promises`. The shared arg/result types live in
-  `src/renderer/src/types/imageCreator.ts` and are included in `tsconfig.node.json` alongside
-  `types/ai.ts`, following the same pattern the `ai:ask` IPC already established.
+- `saveImage` — a native "Save As" dialog + disk write. `save()` from
+  `@tauri-apps/plugin-dialog` returns the chosen path (or `null` on cancel), then `writeFile()`
+  from `@tauri-apps/plugin-fs` writes the bytes. Both plugins are registered in
+  `src-tauri/src/lib.rs`, and both are gated by `src-tauri/capabilities/default.json` — note
+  `fs:allow-write-file` carries a **path scope**: a write outside it fails at runtime even
+  though the dialog happily returned the path. The scope lists the user directories a save
+  dialog can realistically land in.
 
-`getPlatform()` returns `{ ...webPlatform, ...electronPlatform }` — when a Tauri adapter is
-added, it would only need to override `saveImage` (and anything else that turns out to need a
-real OS call), not the whole interface.
+`getPlatform()` returns `{ ...webPlatform, ...tauriPlatform }`.
+
+## Outside the interface
+
+Two shell touchpoints are deliberately *not* `PlatformCapabilities` members, because no Image
+Creator code calls them:
+
+- `src/platform/host.ts` — `IS_MAC`, from the os plugin's `platform()`. It gates cosmetic
+  window chrome (the traffic-light spacer in `components/TitleBar/TitleBar.tsx` and
+  `features/image-creator/components/CreatorTopBar.tsx`). `platform()` reads
+  `window.__TAURI_OS_PLUGIN_INTERNALS__` synchronously and throws outside a Tauri shell, so
+  `host.ts` catches that and falls back to "not macOS" — this module is evaluated at import
+  time, and a throw here would take the whole app down in the browser-based E2E run.
+- `src/lib/externalLinks.ts` — one delegated click listener that hands outbound `https:` links
+  to `openUrl()` instead of letting the webview navigate away. See docs/unsplash.md; it lives
+  in `lib/` because it's a document-level listener, not a capability anything calls.
+
+The AI assistant (`src/lib/ai.ts`) is a third: it uses Tauri's HTTP plugin as the `fetch`
+implementation handed to `createAnthropic`, because `api.anthropic.com` refuses cross-origin
+requests and the plugin issues the call from Rust, past the webview's CORS preflight. Note that
+this is necessary but *not* sufficient — the plugin forces its own `Origin` header on every
+request, so Anthropic still sees a browser-shaped call and `ai.ts` must also send
+`anthropic-dangerous-direct-browser-access: true`. BibleQL and Unsplash both send `access-control-allow-origin: *`, so they use plain
+`fetch` and must keep doing so — routing them through the plugin would buy nothing and would
+break the E2E suite, which mocks them at the network layer.
 
 ## Deliberately not here yet
 
-Revealing a file in Finder/Explorer after saving it, and the three social "Share" buttons (spec
-§16) are not implemented — direct posting to Facebook/X/Instagram needs a registered developer
-app + OAuth credentials for each platform, which this project doesn't have. If that's revisited,
-the realistic ceiling without those credentials is a browser share-intent URL (opened via
-`shell.openExternal`, itself another small Electron-backed capability) with the verse reference
-pre-filled as text — the user still has to attach the already-saved image manually, since none of
-those URLs accept image bytes.
+Revealing a file in Finder/Explorer after saving it (the opener plugin's `revealItemInDir` would
+cover this), and the three social "Share" buttons (spec §16) are not implemented — direct
+posting to Facebook/X/Instagram needs a registered developer app + OAuth credentials for each
+platform, which this project doesn't have. If that's revisited, the realistic ceiling without
+those credentials is a browser share-intent URL (opened via `openUrl`) with the verse reference
+pre-filled as text — the user still has to attach the already-saved image manually, since none
+of those URLs accept image bytes.

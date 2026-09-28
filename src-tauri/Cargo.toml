@@ -1,0 +1,40 @@
+[package]
+name = "bibleql-reader"
+version = "0.2.2"
+description = "Desktop Bible reader on the BibleQL GraphQL API"
+authors = ["Luis Porras <lporras16@gmail.com>"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+# The `_lib` suffix may seem redundant but it is necessary
+# to make the lib name unique and wouldn't conflict with the bin name.
+# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
+name = "bibleql_reader_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+# Pinned to ~2.6 to match @tauri-apps/plugin-http on npm, whose latest
+# stable is 2.6.1. Tauri refuses to start when the crate and the JS
+# package differ in major/minor. Bump both together.
+tauri-plugin-http = "~2.6"
+tauri-plugin-os = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+
+# Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+panic = "abort"
+strip = true

@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import path from "node:path";
 import fs from "node:fs";
-import { launchApp, goTo, type App } from "./helpers";
+import { launchApp, goTo } from "./helpers";
 
 // Mocked entirely — this app's specs must never hit a real external API
 // (BibleQL, Unsplash) — see docs/unsplash.md and CLAUDE.md's testing
@@ -12,14 +12,12 @@ import { launchApp, goTo, type App } from "./helpers";
 const FIXTURE = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, "fixtures/unsplash-search.json"), "utf8"));
 
 test.describe("Unsplash search", () => {
-  let ctx: App;
   let downloadTriggered = false;
   let downloadUrl = "";
   let downloadAuth: string | undefined;
 
-  test.beforeEach(async () => {
-    ctx = await launchApp();
-    const { page } = ctx;
+  test.beforeEach(async ({ page }) => {
+    await launchApp(page);
     downloadTriggered = false;
     downloadUrl = "";
     downloadAuth = undefined;
@@ -61,13 +59,7 @@ test.describe("Unsplash search", () => {
     }
   });
 
-  test.afterEach(async () => {
-    await ctx.app.close();
-    await ctx.cleanup();
-  });
-
-  test("searching shows results from the (mocked) API", async () => {
-    const { page } = ctx;
+  test("searching shows results from the (mocked) API", async ({ page }) => {
     await page.getByRole("searchbox").fill("mountains");
 
     // Debounced (see hooks/useDebouncedValue.ts) — the grid should
@@ -76,8 +68,7 @@ test.describe("Unsplash search", () => {
     await expect(thumbs).toHaveCount(2, { timeout: 5000 });
   });
 
-  test("selecting a result applies it as the background, with attribution, and pings the download endpoint", async () => {
-    const { page } = ctx;
+  test("selecting a result applies it as the background, with attribution, and pings the download endpoint", async ({ page }) => {
     await page.getByRole("searchbox").fill("mountains");
 
     const firstThumb = page.locator("img[src*='images.unsplash.com']").first();
@@ -100,8 +91,7 @@ test.describe("Unsplash search", () => {
     expect(downloadAuth).toMatch(/^Client-ID /);
   });
 
-  test("every search result shows a linked photographer credit", async () => {
-    const { page } = ctx;
+  test("every search result shows a linked photographer credit", async ({ page }) => {
     await page.getByRole("searchbox").fill("mountains");
     await page.locator("img[src*='images.unsplash.com']").first().waitFor();
 
@@ -112,15 +102,14 @@ test.describe("Unsplash search", () => {
     await expect(credit).toHaveAttribute("href", /utm_medium=referral/);
   });
 
-  test("does not trigger the download ping just from displaying search results", async () => {
-    const { page } = ctx;
+  test("does not trigger the download ping just from displaying search results", async ({ page }) => {
     await page.getByRole("searchbox").fill("mountains");
     await page.locator("img[src*='images.unsplash.com']").first().waitFor();
 
     expect(downloadTriggered).toBe(false);
   });
 
-  test("starting a new search fully replaces the results grid, not just its images", async () => {
+  test("starting a new search fully replaces the results grid, not just its images", async ({ page }) => {
     // Baseline sanity check: the grid container itself is torn down
     // between two distinct searches, not reused. (This holds even
     // without UnsplashSearch.tsx's `key={debouncedQuery}` — the
@@ -128,7 +117,6 @@ test.describe("Unsplash search", () => {
     // grid while a new query has no data yet. The more meaningful
     // regression test is the one below, which needs real in-flight
     // timing to say anything.)
-    const { page } = ctx;
     const searchBox = page.getByRole("searchbox");
 
     await searchBox.fill("mountains");
@@ -144,14 +132,13 @@ test.describe("Unsplash search", () => {
     expect(firstGridStillAttached).toBe(false);
   });
 
-  test("a slow in-flight 'Load More' page doesn't bleed into a search started right after", async () => {
+  test("a slow in-flight 'Load More' page doesn't bleed into a search started right after", async ({ page }) => {
     // Matches the reported repro exactly: search, select a result,
     // scroll to the bottom (right where "Load More" sits — easy to hit
     // while scrolling), then search again before that page finishes
     // loading. Unlike the fixture-wide mock above, this route
     // distinguishes page 1 vs. page 2 vs. a different term, and delays
     // page 2 so there's a real window for a race to land in.
-    const { page } = ctx;
     await page.unroute("https://api.unsplash.com/search/photos**");
 
     const page1 = { total: 4, total_pages: 2, results: FIXTURE.results };

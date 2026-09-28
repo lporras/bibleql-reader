@@ -1,0 +1,80 @@
+@use "../../styles/mixins" as *;
+@use "../../styles/tokens" as t;
+
+.bar {
+  flex: 0 0 auto;
+  height: t.$titlebar-height;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--divider);
+  background: var(--surface);
+  user-select: none;
+}
+
+// Reserves space to the left of the wordmark for macOS's native inset
+// traffic lights, which Electron draws on top of the page.
+.trafficLightsSpacer {
+  flex: 0 0 auto;
+  width: 58px;
+}
+
+.wordmark {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  white-space: nowrap;
+}
+
+.title {
+  font-family: t.$font-heading;
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.kicker {
+  @include uppercase-label;
+  font-variant-numeric: tabular-nums;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+
+.toolButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px;
+  border: 1px solid var(--divider);
+  border-radius: 4px;
+  font-size: 12px;
+  @include hoverable-surface;
+}
+
+.divider {
+  width: 1px;
+  height: 20px;
+  background: var(--divider);
+  margin: 0 5px;
+}
+
+.localeButton {
+  padding: 5px 8px;
+  border: 1px solid var(--divider);
+  border-radius: 4px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  @include hoverable-surface;
+}
+
+.iconButton {
+  @include icon-button;
+}

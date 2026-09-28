@@ -1,18 +1,15 @@
 import { test, expect } from "@playwright/test";
-import { launchApp, goTo, type App } from "./helpers";
+import { launchApp, goTo, waitForTauriCalls } from "./helpers";
 
-// Requires the app to have been built with a real BIBLEQL_API_KEY (see
-// `npm run test:e2e` / CI) — verse selection hands off real passage data
+// Requires the dev server to have started with a real BIBLEQL_API_KEY
+// (see `yarn test:e2e` / CI) — verse selection hands off real passage data
 // fetched by the editor, which the app's own no-key sample fallback
 // doesn't cover (that fallback only feeds the Reader, not the editor's
 // re-fetch). Locally this works via .env.local; in CI the workflow
 // passes the same repo secret release builds already use.
 test.describe("Image Creator", () => {
-  let ctx: App;
-
-  test.beforeEach(async () => {
-    ctx = await launchApp();
-    const { page } = ctx;
+  test.beforeEach(async ({ page }) => {
+    await launchApp(page);
 
     // Wait for the default route to actually mount before touching the
     // hash ourselves — changing it too early can race RootRedirect's own
@@ -32,13 +29,7 @@ test.describe("Image Creator", () => {
     await page.waitForSelector('[role="textbox"]');
   });
 
-  test.afterEach(async () => {
-    await ctx.app.close();
-    await ctx.cleanup();
-  });
-
-  test("hands off the selected verses as scripture + reference elements", async () => {
-    const { page } = ctx;
+  test("hands off the selected verses as scripture + reference elements", async ({ page }) => {
     const textBoxes = page.locator('[role="textbox"]');
     await expect(textBoxes).toHaveCount(2);
 
@@ -49,12 +40,11 @@ test.describe("Image Creator", () => {
     await expect(scripture).toContainText("God so loved the world");
   });
 
-  test("every curated thumbnail carries a working photographer link", async () => {
+  test("every curated thumbnail carries a working photographer link", async ({ page }) => {
     // Unsplash's guidelines require the photographer credited and linked
     // to their *profile*. An earlier version derived the handle from the
     // download filename slug, and all six links 404'd — this asserts the
     // verified handle instead (see data/curatedImages.ts).
-    const { page } = ctx;
     await page.locator("img[src*='bible-images/thumb/']").first().waitFor();
 
     const credit = page.getByRole("link", { name: "Aaron Burden" }).first();
@@ -64,8 +54,7 @@ test.describe("Image Creator", () => {
     await expect(credit).toHaveAttribute("href", /utm_medium=referral/);
   });
 
-  test("selecting a curated background applies it with attribution", async () => {
-    const { page } = ctx;
+  test("selecting a curated background applies it with attribution", async ({ page }) => {
     // "Curated" is the default Background tab — no tab click needed.
     const thumb = page.locator("img[src*='bible-images/thumb/']").first();
     await thumb.waitFor();
@@ -80,45 +69,34 @@ test.describe("Image Creator", () => {
     await expect(selected).toContainText("Aaron Burden");
   });
 
-  test("attribution links open in the system browser, not an in-app window", async () => {
-    // Electron's default for target="_blank" is a bare child
-    // BrowserWindow; src/main/externalLinks.ts denies that and hands the
+  test("attribution links open in the system browser, not an in-app window", async ({ page }) => {
+    // A webview would otherwise navigate the app itself away to
+    // unsplash.com, leaving the user in a chromeless view with no way
+    // back. src/lib/externalLinks.ts intercepts the click and hands the
     // URL to the OS instead (see docs/unsplash.md).
-    const { page, app } = ctx;
-
-    // Stub shell.openExternal in the main process before clicking.
-    // Letting it run for real launches an actual browser — which on a
-    // headless CI box means xdg-open hangs, blocking app.close() in
-    // afterEach until the worker times out. Stubbing also turns this
-    // into a direct assertion on the URL handed to the OS, rather than
-    // just inferring it from the absence of a window.
-    await app.evaluate(({ shell }) => {
-      const opened: string[] = [];
-      (globalThis as unknown as { __openedExternally: string[] }).__openedExternally = opened;
-      shell.openExternal = async (url: string) => {
-        opened.push(url);
-      };
-    });
-
+    //
+    // Under Electron this was asserted by stubbing `shell.openExternal`
+    // in the main process. The Tauri equivalent is the recorded
+    // `plugin:opener|open_url` command (see e2e/helpers.ts) — still a
+    // direct assertion on the URL handed to the shell, rather than an
+    // inference from the absence of a window.
     await page.locator("img[src*='bible-images/thumb/']").first().waitFor();
+
+    const urlBefore = page.url();
     await page.getByRole("link", { name: "Aaron Burden" }).first().click();
 
-    await expect
-      .poll(() => app.evaluate(() => (globalThis as unknown as { __openedExternally: string[] }).__openedExternally))
-      .toHaveLength(1);
+    const calls = await waitForTauriCalls(page, "plugin:opener|open_url");
+    expect(calls).toHaveLength(1);
 
-    const [opened] = await app.evaluate(
-      () => (globalThis as unknown as { __openedExternally: string[] }).__openedExternally
-    );
+    const opened = calls[0].args.url as string;
     expect(opened).toMatch(/^https:\/\/unsplash\.com\/@aaronburden\?/);
     expect(opened).toContain("utm_source=bibleql-reader");
 
-    // The renderer must not have been given a child window either.
-    expect(app.windows()).toHaveLength(1);
+    // The app itself must not have navigated anywhere.
+    expect(page.url()).toBe(urlBefore);
   });
 
-  test("double-clicking the scripture text enters edit mode and commits a shortened version", async () => {
-    const { page } = ctx;
+  test("double-clicking the scripture text enters edit mode and commits a shortened version", async ({ page }) => {
     const scripture = page.locator('[role="textbox"]').filter({ hasNotText: /^\D*\d+:\d/ });
 
     await scripture.dblclick();
@@ -134,8 +112,7 @@ test.describe("Image Creator", () => {
     await expect(scripture).toHaveText("Shortened version.");
   });
 
-  test("copying the image places real PNG bytes on the clipboard", async () => {
-    const { page } = ctx;
+  test("copying the image places real PNG bytes on the clipboard", async ({ page }) => {
     await page.getByRole("button", { name: /Copy Image|Copiar imagen/i }).click();
     await expect(page.getByText(/Copied|Copiado/i)).toBeVisible({ timeout: 10_000 });
 
