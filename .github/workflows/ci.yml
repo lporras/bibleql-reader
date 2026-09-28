@@ -29,32 +29,17 @@ jobs:
       - name: Unit tests (Vitest)
         run: yarn test
 
-      # Doesn't print the values (GitHub also auto-masks known secret
-      # values in logs regardless) — just whether each one is empty, so a
-      # missing/misnamed/wrong-scope secret shows up here instead of as a
-      # confusing downstream test timeout.
-      - name: Verify required secrets are present
-        run: |
-          [ -n "$BIBLEQL_API_KEY" ] && echo "BIBLEQL_API_KEY: set" || echo "::warning::BIBLEQL_API_KEY is empty — passage-dependent E2E tests will fail"
-          [ -n "$UNSPLASH_ACCESS_KEY" ] && echo "UNSPLASH_ACCESS_KEY: set" || echo "::warning::UNSPLASH_ACCESS_KEY is empty — the Search tab won't render, and unsplash-search.spec.ts will time out waiting for it"
-        env:
-          BIBLEQL_API_KEY: ${{ secrets.BIBLEQL_API_KEY }}
-          UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
-
       - name: Install Playwright's Chromium
         run: yarn playwright install --with-deps chromium
 
       # Browser E2E against a production build that playwright.config.ts
       # builds and serves itself. No Xvfb: unlike Electron, which always
       # opened a real native window, headless Chromium needs no display.
-      # Both keys are inlined by vite.config.ts at that build — the app
-      # only renders the Unsplash search UI at all when a key is
-      # configured, even though the spec mocks the network itself.
+      # No secrets: BibleQL and Unsplash are both mocked, and the build gets
+      # placeholder keys (see playwright.config.ts), so fork PRs run the full
+      # suite too.
       - name: E2E tests (Playwright)
         run: yarn test:e2e
-        env:
-          BIBLEQL_API_KEY: ${{ secrets.BIBLEQL_API_KEY }}
-          UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
 
       - name: Upload Playwright report
         if: failure()

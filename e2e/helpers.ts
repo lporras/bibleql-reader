@@ -1,3 +1,5 @@
+import path from "node:path";
+import fs from "node:fs";
 import { expect, type Page } from "@playwright/test";
 
 /**
@@ -63,12 +65,59 @@ async function installTauriStub(page: Page): Promise<void> {
   });
 }
 
+interface BibleQLFixture {
+  translations: unknown[];
+  passages: Record<string, unknown>;
+}
+
+const BIBLEQL: BibleQLFixture = JSON.parse(
+  fs.readFileSync(path.join(import.meta.dirname, "fixtures/bibleql.json"), "utf8")
+);
+
+/**
+ * Answers every BibleQL request from `fixtures/bibleql.json` instead of the
+ * live API. Specs never hit a real service (see CLAUDE.md), and that also
+ * means the suite doesn't need a real BIBLEQL_API_KEY. A fork's PR gets no
+ * repo secrets on CI, which used to leave the app on its no-key sample
+ * chapter, so every spec timed out waiting for John 3.
+ *
+ * Passages are keyed "<translation>|<reference>", matching the variables
+ * usePassage sends. Anything the fixture lacks comes back as a GraphQL
+ * error. It surfaces in the UI and in the failing spec, rather than quietly
+ * falling through to the network.
+ */
+async function mockBibleQL(page: Page): Promise<void> {
+  await page.route("https://bibleql.org/graphql", (route) => {
+    const { query, variables = {} } = route.request().postDataJSON() as {
+      query: string;
+      variables?: Record<string, string>;
+    };
+
+    if (query.includes("passage(")) {
+      const passage = BIBLEQL.passages[`${variables.t}|${variables.r}`];
+      if (passage) return route.fulfill({ json: { data: { passage } } });
+    } else if (query.includes("translations")) {
+      return route.fulfill({ json: { data: { translations: BIBLEQL.translations } } });
+    } else if (query.includes("translation(")) {
+      const translation = (BIBLEQL.translations as { identifier: string }[]).find((t) => t.identifier === variables.i);
+      return route.fulfill({ json: { data: { translation: translation ?? null } } });
+    }
+
+    return route.fulfill({
+      json: { errors: [{ message: `e2e: no BibleQL fixture for ${JSON.stringify({ query, variables })}` }] }
+    });
+  });
+}
+
 export interface App {
   page: Page;
 }
 
 /**
- * Opens the app at its default route in a fresh page.
+ * Opens the app in a fresh page — at its default route, or straight at
+ * `hashRoute` (e.g. "#/read/JHN/3/ai"). Going straight there skips
+ * RootRedirect entirely, so there's no pending navigation to race and no
+ * throwaway Psalm 23 fetch before the chapter the spec actually wants.
  *
  * The Electron version of this created a throwaway `--user-data-dir` per
  * launch, because every launch on a machine otherwise shared one real
@@ -78,18 +127,12 @@ export interface App {
  * `localStorage` — so that isolation now comes for free, and there is no
  * profile directory to clean up afterwards.
  */
-export async function launchApp(page: Page): Promise<App> {
+export async function launchApp(page: Page, hashRoute = ""): Promise<App> {
   await installTauriStub(page);
-  await page.goto("/");
+  await mockBibleQL(page);
+  await page.goto(`/${hashRoute}`);
   await page.waitForLoadState("domcontentloaded");
   return { page };
-}
-
-/** Navigates the (already-loaded) app to a hash route and waits for it to settle. */
-export async function goTo(page: Page, hashRoute: string): Promise<void> {
-  await page.evaluate((route) => {
-    window.location.hash = route;
-  }, hashRoute);
 }
 
 /** Every Tauri command the page has invoked so far, in order. */

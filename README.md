@@ -157,8 +157,7 @@ like a user would: selecting verses, handing off to the Verse Image Creator, pic
 editing text, exporting. It runs the same bundle in headless Chromium rather than in the Tauri
 window, because Tauri's own WebDriver harness (`tauri-driver`) has no macOS support at all; the
 handful of genuine shell calls are stubbed and recorded (see `e2e/helpers.ts`). It builds the app
-and serves it with `vite preview`, so it wants a real `BIBLEQL_API_KEY` in the environment, since
-the editor's passage fetch isn't covered by the no-key sample fallback. CI (`.github/workflows/ci.yml`) runs both suites plus
+and serves it with `vite preview`. BibleQL and Unsplash are mocked, so it needs no API keys. CI (`.github/workflows/ci.yml`) runs both suites plus
 a `cargo check` of the Rust shell on every pull request.
 
 ## macOS: "is damaged and can't be opened"

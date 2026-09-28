@@ -8,9 +8,11 @@ import { defineConfig, devices } from "@playwright/test";
 // behaviour that the same bundle exhibits in a browser; the handful of
 // real shell calls are stubbed and recorded (see e2e/helpers.ts).
 //
-// Needs BIBLEQL_API_KEY at dev-server start: it's inlined at build time
-// by vite.config.ts, and the editor's passage re-fetch isn't covered by
-// the app's no-key sample fallback.
+// BibleQL and Unsplash are both mocked at the network layer (e2e/helpers.ts,
+// unsplash-search.spec.ts), so no real key is needed. The app still checks
+// that a key was inlined at build time before it fetches anything, so the
+// build below gets placeholder keys. That's what lets a fork's PR, which
+// CI gives no repo secrets, run the full suite.
 export default defineConfig({
   testDir: "e2e",
   fullyParallel: false,
@@ -30,6 +32,10 @@ export default defineConfig({
   // closer to what actually ships. `vite build` takes ~2s.
   webServer: {
     command: "vite build && vite preview --port 1420 --strictPort",
+    env: {
+      BIBLEQL_API_KEY: process.env.BIBLEQL_API_KEY || "e2e-placeholder",
+      UNSPLASH_ACCESS_KEY: process.env.UNSPLASH_ACCESS_KEY || "e2e-placeholder"
+    },
     url: "http://localhost:1420",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000

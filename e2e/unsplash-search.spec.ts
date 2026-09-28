@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import path from "node:path";
 import fs from "node:fs";
-import { launchApp, goTo } from "./helpers";
+import { launchApp } from "./helpers";
 
 // Mocked entirely — this app's specs must never hit a real external API
 // (BibleQL, Unsplash) — see docs/unsplash.md and CLAUDE.md's testing
@@ -17,7 +17,6 @@ test.describe("Unsplash search", () => {
   let downloadAuth: string | undefined;
 
   test.beforeEach(async ({ page }) => {
-    await launchApp(page);
     downloadTriggered = false;
     downloadUrl = "";
     downloadAuth = undefined;
@@ -30,8 +29,7 @@ test.describe("Unsplash search", () => {
       return route.fulfill({ json: { url: "https://images.unsplash.com/mock-download" } });
     });
 
-    await page.waitForSelector("[data-verse]");
-    await goTo(page, "#/read/JHN/3/ai");
+    await launchApp(page, "#/read/JHN/3/ai");
     await page.waitForSelector('p[data-verse="16"]');
     await page.locator('p[data-verse="16"]').first().click({ position: { x: 20, y: 10 } });
     await page.getByRole("button", { name: /Create Image|Crear imagen/i }).click();
@@ -44,8 +42,8 @@ test.describe("Unsplash search", () => {
     // timeout in the first real assertion: the Search tab only renders
     // the search box when UNSPLASH_ACCESS_KEY was non-empty at build
     // time (see BackgroundPanel.tsx) — otherwise it shows the "offline"
-    // fallback text instead. A missing/misnamed/wrong-scope CI secret
-    // shows up here as this exact failure.
+    // fallback text instead. playwright.config.ts supplies a placeholder
+    // key, so this only trips if that build env went missing.
     const hasSearchBox = await page
       .getByRole("searchbox")
       .waitFor({ timeout: 5000 })
@@ -53,8 +51,8 @@ test.describe("Unsplash search", () => {
       .catch(() => false);
     if (!hasSearchBox) {
       throw new Error(
-        "The Search tab isn't showing a search box — UNSPLASH_ACCESS_KEY was probably empty at build time " +
-          "(check the 'Verify required secrets are present' CI step, or your local .env.local)."
+        "The Search tab isn't showing a search box — UNSPLASH_ACCESS_KEY was empty at build time " +
+          "(playwright.config.ts's webServer.env should supply a placeholder)."
       );
     }
   });

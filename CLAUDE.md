@@ -25,8 +25,9 @@ yarn test:e2e           # Playwright drives the app in headless Chromium
 cargo check --manifest-path src-tauri/Cargo.toml    # the Rust side
 ```
 
-`yarn test:e2e` wants a real `BIBLEQL_API_KEY` in the environment (`.env.local` locally, a repo
-secret in CI) — it builds the app, so the key is inlined at that build. No ESLint/Prettier. Match surrounding style by hand.
+`yarn test:e2e` needs no API keys: BibleQL and Unsplash are both mocked, and
+`playwright.config.ts` builds with placeholder keys when none are set (so fork PRs, which get no
+repo secrets, run the full suite). No ESLint/Prettier. Match surrounding style by hand.
 
 ## Layout
 
@@ -98,10 +99,12 @@ Two layers, deliberately different in kind:
   records every `invoke` call, which is what lets a spec assert "this opened in the system
   browser" (`plugin:opener|open_url`) rather than inferring it. Playwright's per-test browser
   context gives each test its own empty `localStorage`, so no profile-dir juggling is needed.
-  This suite hits the real BibleQL API; Unsplash is always mocked via `page.route()`
-  (50/hour shared quota — see docs/unsplash.md), though `UNSPLASH_ACCESS_KEY` still needs to be
-  *some* non-empty value, since the app only renders the search tab's content when a key is
-  configured.
+  Nothing in this suite hits a live API. `launchApp` answers every BibleQL request from
+  `e2e/fixtures/bibleql.json` (add a passage there when a spec needs a new chapter; an unknown
+  one comes back as a GraphQL error), and Unsplash is mocked per spec via `page.route()`
+  (50/hour shared quota — see docs/unsplash.md). Both keys still have to be *some* non-empty
+  value at build time, since the app only fetches passages / renders the search tab when one
+  is configured — `playwright.config.ts` supplies placeholders.
 
 ## Gotchas
 
