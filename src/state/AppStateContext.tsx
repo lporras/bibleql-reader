@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useReducer, type ReactNo
 import type { Theme } from "../types/app";
 import type { Locale } from "../data/strings";
 import { readAiKey, readPrefs, writeAiKey, writePrefs } from "./persist";
+import { syncSystemBars } from "../platform/host";
 
 const DEFAULT_TRANS_A = "eng-web";
 const DEFAULT_TRANS_B = "spa-rv1909";
@@ -102,6 +103,7 @@ export function AppStateProvider({ children }: { children: ReactNode }): React.J
 
   useEffect(() => {
     document.documentElement.dataset.theme = state.theme;
+    syncSystemBars(state.theme === "dark");
   }, [state.theme]);
 
   const actions = useMemo<AppStateActions>(

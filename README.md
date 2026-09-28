@@ -106,8 +106,31 @@ The Android project is already generated and committed in `src-tauri/gen/android
    adb devices
    ```
 
-   (Wireless debugging also works on Android 11 and later: pair from *Developer options →
-   Wireless debugging* with `adb pair <ip>:<port>`, then run `adb connect <ip>:<port>`.)
+### Connecting over Wi-Fi instead of USB
+
+On Android 11 and later you can skip the cable. The phone and the computer must be on the same
+Wi-Fi network (guest networks and networks with client isolation block it).
+
+1. On the phone, in *Developer options*, turn on **Wireless debugging**, open it, and tap
+   **Pair device with pairing code**. It shows an IP address and port plus a six-digit code.
+2. Pair using that address. `adb` asks for the code:
+
+   ```bash
+   adb pair 192.168.1.50:37123
+   ```
+
+3. Connect. Use the **IP address & port** shown on the main *Wireless debugging* screen. The
+   port there is **not** the pairing port from step 1:
+
+   ```bash
+   adb connect 192.168.1.50:41234
+   adb devices     # should list 192.168.1.50:41234   device
+   ```
+
+You only pair once per computer. After that, `adb connect` is enough, but the connect port
+changes each time wireless debugging is turned back on, so check it on the phone. If the pairing
+code is rejected, it probably expired, so reopen the pairing dialog to get a new one. If the device
+shows up as `offline`, run `adb kill-server` and connect again.
 
 ### Dev build, with HMR
 
@@ -120,8 +143,9 @@ phone loads the frontend from the Vite dev server on your computer. For that to 
 sets `TAURI_DEV_HOST` to your machine's LAN IP, and `vite.config.ts` binds to it. That means **the
 phone and the computer must be on the same Wi-Fi network**, and your firewall has to allow
 incoming connections on ports 1420/1421. If the CLI asks which network interface to use, pick
-the one on that shared network. If the app opens to a blank screen or a connection error, check
-the network first.
+the one on that shared network, or pass it explicitly with
+`yarn tauri android dev --host <your-computer's-LAN-IP>` (useful when a VPN interface gets picked).
+If the app opens to a blank screen or a connection error, check the network first.
 
 To debug the webview, open `chrome://inspect` in desktop Chrome while the phone is connected.
 
