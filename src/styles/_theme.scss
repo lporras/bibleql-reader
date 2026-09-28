@@ -1,3 +1,6 @@
+@use "sass:color";
+@use "sass:map";
+@use "sass:math";
 @use "tokens" as t;
 
 @mixin emit-theme($palette) {
@@ -6,12 +9,29 @@
   }
 }
 
+// The pen hues themselves don't change with the theme (see $highlights) —
+// only the wash/edge strengths in each palette do. Each pen's translucent wash
+// and edge are resolved here at build time rather than with `color-mix()` at
+// runtime: older WebKit (the Tauri webview on macOS 12) drops a `color-mix()`
+// whose percentage comes from a custom property, which left highlights blank.
+@mixin emit-highlights($palette) {
+  $wash: math.div(map.get($palette, highlight-wash), 100%);
+  $edge: math.div(map.get($palette, highlight-edge), 100%);
+  @each $name, $value in t.$highlights {
+    --hl-#{$name}: #{$value};
+    --hl-#{$name}-wash: #{color.change($value, $alpha: $wash)};
+    --hl-#{$name}-edge: #{color.change($value, $alpha: $edge)};
+  }
+}
+
 :root {
   @include emit-theme(t.$palette-light);
+  @include emit-highlights(t.$palette-light);
 }
 
 // The toggle wins over the OS setting — matches the original app, which had
 // no separate "system" mode, only an explicit light/dark toggle.
 [data-theme="dark"] {
   @include emit-theme(t.$palette-dark);
+  @include emit-highlights(t.$palette-dark);
 }

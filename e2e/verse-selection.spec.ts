@@ -1,11 +1,9 @@
 import { test, expect } from "@playwright/test";
-import { launchApp, goTo } from "./helpers";
+import { launchApp } from "./helpers";
 
 test.describe("Reader verse selection", () => {
   test.beforeEach(async ({ page }) => {
-    await launchApp(page);
-    await page.waitForSelector("[data-verse]");
-    await goTo(page, "#/read/JHN/3/ai");
+    await launchApp(page, "#/read/JHN/3/ai");
     await page.waitForSelector('p[data-verse="16"]');
   });
 

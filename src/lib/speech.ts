@@ -39,9 +39,17 @@ function getVoice(locale: Locale): SpeechSynthesisVoice | null {
 // Pre-load voices so they're cached before first use.
 if (typeof window !== "undefined" && "speechSynthesis" in window) {
   window.speechSynthesis.getVoices();
-  window.speechSynthesis.addEventListener("voiceschanged", () => {
+  const resetVoice = (): void => {
     replacementVoice = undefined;
-  });
+  };
+  // Older WebKit (e.g. WKWebView on macOS 12) doesn't expose SpeechSynthesis
+  // as an EventTarget, so `addEventListener` is missing and throwing here at
+  // module scope would blank the whole app. Fall back to the handler property.
+  if (typeof window.speechSynthesis.addEventListener === "function") {
+    window.speechSynthesis.addEventListener("voiceschanged", resetVoice);
+  } else {
+    window.speechSynthesis.onvoiceschanged = resetVoice;
+  }
 }
 
 export function isSpeechSupported(): boolean {

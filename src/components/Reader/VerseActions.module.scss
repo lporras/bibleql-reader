@@ -1,0 +1,171 @@
+@use "../../styles/mixins" as *;
+@use "../../styles/tokens" as t;
+
+// Floats over the column, anchored by VerseList to the selected verse. It sits
+// inside the scrolling text (not fixed to the viewport) so it travels with the
+// verse it belongs to instead of drifting away as the reader scrolls.
+.root {
+  position: absolute;
+  left: 50%;
+  z-index: 20;
+  margin: -10px 0;
+}
+
+.bar {
+  display: flex;
+  align-items: stretch;
+  background: var(--raise);
+  border: 1px solid var(--hair);
+  border-radius: 10px;
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.action {
+  @include bare-button;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  position: relative;
+  min-width: 80px;
+  padding: 9px 13px 7px;
+  font-family: t.$font-body;
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+
+  // The icon row: label sits under it, chevron beside it (Highlight only).
+  > span {
+    display: block;
+  }
+
+  &:hover:not(:disabled) {
+    background: var(--sel);
+    color: var(--ink);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  &[data-on="yes"] {
+    background: var(--sel);
+    color: var(--accent-deep);
+  }
+}
+
+// The Highlight segment opens a submenu, so it carries a chevron at its right
+// edge without disturbing the centered icon-over-label stack.
+.withChevron {
+  padding-right: 22px;
+}
+
+.chevron {
+  position: absolute;
+  right: 7px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--faint);
+  line-height: 0;
+}
+
+.divider {
+  width: 1px;
+  background: var(--hair);
+  flex: 0 0 auto;
+}
+
+// Opens away from the verses it acts on: the bar sits above the selection in
+// the common case, so its popovers open upward rather than down over the text
+// the reader is about to highlight.
+.popover {
+  position: absolute;
+  background: var(--raise);
+  border: 1px solid var(--hair);
+  border-radius: 10px;
+  box-shadow: var(--shadow-lg);
+  padding: 12px;
+}
+
+// Anchored under the segment that opened it rather than centered on the bar,
+// so the popover visually hangs off its own button.
+.root[data-above="yes"] .popover {
+  bottom: calc(100% + 8px);
+}
+
+.root[data-above="no"] .popover {
+  top: calc(100% + 8px);
+}
+
+.colorPopover {
+  right: 8px;
+  width: 232px;
+}
+
+.morePopover {
+  right: 0;
+  min-width: 172px;
+  padding: 6px;
+}
+
+.popoverTitle {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+
+.swatch {
+  @include bare-button;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--mark-pen);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+
+  &:hover {
+    transform: scale(1.08);
+  }
+
+  &[data-on="yes"] {
+    box-shadow:
+      0 0 0 2px var(--raise),
+      0 0 0 4px var(--mark-pen);
+  }
+}
+
+.popoverSeparator {
+  height: 1px;
+  background: var(--hair);
+  margin: 12px 0 6px;
+}
+
+.popoverItem {
+  @include bare-button;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 8px 8px;
+  border-radius: t.$radius-md;
+  font-size: 13px;
+  color: var(--ink);
+  text-align: left;
+
+  &:hover:not(:disabled) {
+    background: var(--sel);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+}

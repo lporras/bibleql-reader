@@ -1,5 +1,6 @@
 import type { Theme } from "../types/app";
 import type { Locale } from "../data/strings";
+import type { AnnotationMap } from "../types/annotations";
 
 export interface PersistedPrefs {
   theme: Theme;
@@ -14,6 +15,7 @@ export interface PersistedPrefs {
 
 const PREFS_KEY = "biblereader.prefs";
 const AI_KEY_KEY = "biblereader.aikey";
+const ANNOTATIONS_KEY = "biblereader.annotations";
 
 export function readPrefs(): Partial<PersistedPrefs> {
   try {
@@ -63,4 +65,25 @@ export function readLastLocation(): LastLocation | null {
 
 export function writeLastLocation(location: LastLocation): void {
   writePrefs(location);
+}
+
+// Favorites / highlights / notes. Kept in its own storage key rather than
+// inside PREFS_KEY: it grows without bound as the reader marks verses, while
+// prefs stay a small fixed record that is rewritten on every toggle.
+export function readAnnotations(): AnnotationMap {
+  try {
+    const raw = JSON.parse(localStorage.getItem(ANNOTATIONS_KEY) || "{}");
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+    return raw as AnnotationMap;
+  } catch {
+    return {};
+  }
+}
+
+export function writeAnnotations(map: AnnotationMap): void {
+  try {
+    localStorage.setItem(ANNOTATIONS_KEY, JSON.stringify(map));
+  } catch {
+    // storage unavailable or full
+  }
 }

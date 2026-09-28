@@ -1,21 +1,11 @@
 import { test, expect } from "@playwright/test";
-import { launchApp, goTo, waitForTauriCalls } from "./helpers";
+import { launchApp, waitForTauriCalls } from "./helpers";
 
-// Requires the dev server to have started with a real BIBLEQL_API_KEY
-// (see `yarn test:e2e` / CI) — verse selection hands off real passage data
-// fetched by the editor, which the app's own no-key sample fallback
-// doesn't cover (that fallback only feeds the Reader, not the editor's
-// re-fetch). Locally this works via .env.local; in CI the workflow
-// passes the same repo secret release builds already use.
+// BibleQL is mocked by launchApp (fixtures/bibleql.json), so the passage the
+// editor re-fetches on handoff is the same fixture the Reader rendered.
 test.describe("Image Creator", () => {
   test.beforeEach(async ({ page }) => {
-    await launchApp(page);
-
-    // Wait for the default route to actually mount before touching the
-    // hash ourselves — changing it too early can race RootRedirect's own
-    // pending navigation.
-    await page.waitForSelector("[data-verse]");
-    await goTo(page, "#/read/JHN/3/ai");
+    await launchApp(page, "#/read/JHN/3/ai");
     await page.waitForSelector('p[data-verse="16"]');
 
     // Click verse 16, shift-click verse 17 to extend the range — no
