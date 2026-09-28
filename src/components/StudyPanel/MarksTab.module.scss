@@ -1,0 +1,113 @@
+@use "../../styles/mixins" as *;
+@use "../../styles/tokens" as t;
+
+.body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.filters {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--hair);
+}
+
+.filter {
+  padding: 4px 10px;
+  border: 1px solid var(--divider);
+  border-radius: 999px;
+  font-size: 12px;
+  color: var(--muted);
+  @include hoverable-surface;
+}
+
+.results {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 14px 16px 24px;
+}
+
+.notice {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.mark {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--hair);
+}
+
+.markHead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.markRef {
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  color: var(--accent-deep);
+  font-variant-numeric: tabular-nums;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--mark-pen);
+  flex: 0 0 auto;
+}
+
+.flag {
+  display: inline-flex;
+  color: var(--accent);
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+// Only offered on hover — deleting a mark is destructive and shouldn't sit
+// under the cursor while the reader is just scanning the list.
+.remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: t.$radius-md;
+  color: var(--faint);
+  opacity: 0;
+
+  &:focus-visible {
+    opacity: 1;
+  }
+
+  &:hover {
+    background: var(--sel);
+    color: var(--ink);
+  }
+}
+
+.mark:hover .remove {
+  opacity: 1;
+}
+
+.markNote {
+  font-size: 13.5px;
+  line-height: 1.6;
+  margin-top: 5px;
+  color: var(--muted);
+  text-wrap: pretty;
+  white-space: pre-wrap;
+}

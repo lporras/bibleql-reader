@@ -91,6 +91,28 @@ export interface StringsShape {
   searchEmpty: string;
   searchError: string;
   unsplashOffline: string;
+  marks: string;
+  addNote: string;
+  editNote: string;
+  favorite: string;
+  unfavorite: string;
+  highlight: string;
+  highlightColor: string;
+  removeHighlight: string;
+  moreActions: string;
+  copyVerse: string;
+  clearMarks: string;
+  note: string;
+  notePlaceholder: string;
+  deleteNote: string;
+  close: string;
+  marksIdle: string;
+  allMarks: string;
+  favorites: string;
+  highlights: string;
+  notes: string;
+  noMarks: string;
+  selectedVerses: string;
 }
 
 export const STR: Record<Locale, StringsShape> = {
@@ -184,7 +206,29 @@ export const STR: Record<Locale, StringsShape> = {
     searchUnsplash: "Search Unsplash — mountains, sunrise, ocean…",
     searchEmpty: "No photos found.",
     searchError: "Unable to load images from Unsplash. Check your internet connection and try again.",
-    unsplashOffline: "Unsplash is unavailable offline. You can use a local image instead."
+    unsplashOffline: "Unsplash is unavailable offline. You can use a local image instead.",
+    marks: "Marks",
+    addNote: "Add note",
+    editNote: "Edit note",
+    favorite: "Favorite",
+    unfavorite: "Remove favorite",
+    highlight: "Highlight",
+    highlightColor: "Highlight color",
+    removeHighlight: "Remove highlight",
+    moreActions: "More",
+    copyVerse: "Copy text",
+    clearMarks: "Clear marks",
+    note: "Note",
+    notePlaceholder: "What this passage says to you…",
+    deleteNote: "Delete note",
+    close: "Close",
+    marksIdle: "Select a verse in the reader to favorite, highlight or annotate it.",
+    allMarks: "All",
+    favorites: "Favorites",
+    highlights: "Highlights",
+    notes: "Notes",
+    noMarks: "Nothing marked yet.",
+    selectedVerses: "selected"
   },
   es: {
     refPlaceholder: "Ir a la referencia — Juan 3:16",
@@ -276,6 +320,28 @@ export const STR: Record<Locale, StringsShape> = {
     searchUnsplash: "Buscar en Unsplash — montañas, amanecer, océano…",
     searchEmpty: "No se encontraron fotos.",
     searchError: "No se pudieron cargar imágenes de Unsplash. Revisa tu conexión e intenta de nuevo.",
-    unsplashOffline: "Unsplash no está disponible sin conexión. Puedes usar una imagen local."
+    unsplashOffline: "Unsplash no está disponible sin conexión. Puedes usar una imagen local.",
+    marks: "Marcas",
+    addNote: "Añadir nota",
+    editNote: "Editar nota",
+    favorite: "Favorito",
+    unfavorite: "Quitar de favoritos",
+    highlight: "Resaltar",
+    highlightColor: "Color del resaltado",
+    removeHighlight: "Quitar resaltado",
+    moreActions: "Más",
+    copyVerse: "Copiar texto",
+    clearMarks: "Quitar marcas",
+    note: "Nota",
+    notePlaceholder: "Lo que este pasaje te dice…",
+    deleteNote: "Eliminar nota",
+    close: "Cerrar",
+    marksIdle: "Selecciona un versículo en el lector para marcarlo, resaltarlo o anotarlo.",
+    allMarks: "Todas",
+    favorites: "Favoritos",
+    highlights: "Resaltados",
+    notes: "Notas",
+    noMarks: "Todavía no hay nada marcado.",
+    selectedVerses: "seleccionados"
   }
 };

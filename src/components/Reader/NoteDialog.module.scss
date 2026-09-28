@@ -1,0 +1,101 @@
+@use "../../styles/tokens" as t;
+@use "../../styles/mixins" as *;
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 19, 18, 0.42);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 40;
+}
+
+.dialog {
+  width: 100%;
+  max-width: 480px;
+  background: var(--raise);
+  border: 1px solid var(--divider);
+  border-radius: t.$radius-md;
+  box-shadow: var(--shadow-lg);
+  padding: 22px 24px;
+}
+
+.reference {
+  font-family: t.$font-heading;
+  font-size: 26px;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+// The verse itself, so the reader can see what they're annotating without
+// leaving the dialog. Long verses clamp rather than push the textarea down.
+.excerpt {
+  margin: 0 0 16px;
+  padding-left: 12px;
+  border-left: 2px solid var(--accent);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--muted);
+  max-height: 5.2em;
+  overflow-y: auto;
+}
+
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--divider);
+  border-radius: t.$radius-md;
+  background: var(--bg);
+  font-family: t.$font-body;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+
+  &:focus {
+    border-color: var(--accent);
+  }
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.deleteButton {
+  padding: 6px 12px;
+  border: 1px solid transparent;
+  border-radius: t.$radius-md;
+  font-size: 13px;
+  color: var(--faint);
+
+  &:hover {
+    color: var(--ink);
+    border-color: var(--divider);
+  }
+}
+
+.cancelButton {
+  padding: 6px 14px;
+  border: 1px solid var(--divider);
+  border-radius: t.$radius-md;
+  font-size: 13px;
+  @include hoverable-surface;
+}
+
+.saveButton {
+  padding: 6px 16px;
+  border: 1px solid var(--accent);
+  border-radius: t.$radius-md;
+  color: var(--accent-deep);
+  font-size: 13px;
+  @include hoverable-surface;
+}

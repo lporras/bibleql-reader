@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, type JSX } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type JSX } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAppState } from "../../state/AppStateContext";
+import { chapterMarks, useAnnotations } from "../../state/AnnotationsContext";
 import { usePassage } from "../../queries/usePassage";
 import { HAS_BIBLEQL_KEY } from "../../lib/graphql";
 import { useFocusVerse } from "../../hooks/useFocusVerse";
@@ -9,10 +10,13 @@ import { useVerseSelection } from "../../hooks/useVerseSelection";
 import { bookLabel, stepChapter } from "../../lib/refs";
 import { encodeVerses } from "../../lib/verseRanges";
 import { fillTemplate } from "../../lib/format";
+import { copyText } from "../../lib/clipboard";
 import { STR } from "../../data/strings";
 import { SAMPLE } from "../../data/sample";
-import { ImageIcon, NextIcon, PrevIcon, SpeakIcon, StopIcon } from "../icons";
+import { NextIcon, PrevIcon, SpeakIcon, StopIcon } from "../icons";
 import { ReaderColumn, type ColumnView } from "./ReaderColumn";
+import { NoteDialog } from "./NoteDialog";
+import type { VerseMarking } from "./VerseList";
 import styles from "./ReaderPane.module.scss";
 
 interface ReaderPaneProps {
@@ -117,11 +121,46 @@ export function ReaderPane({ compareEff }: ReaderPaneProps): JSX.Element {
   // Multi-verse selection for "Create Image" — scoped to column A, since a
   // handed-off passage only ever has one translation (spec's BibleSource).
   const verseSelection = useVerseSelection(bookId, chapter);
-
-  function createImage(): void {
-    const v = encodeVerses(verseSelection.selected);
+  const clearSelection = verseSelection.clear;
+  const selectedVerses = verseSelection.selected;
+  const createImage = useCallback(() => {
+    const v = encodeVerses(selectedVerses);
     navigate(`/create?t=${encodeURIComponent(state.transA)}&b=${encodeURIComponent(bookId)}&c=${chapter}&v=${encodeURIComponent(v)}`);
-  }
+  }, [selectedVerses, navigate, state.transA, bookId, chapter]);
+
+  // Favorites / highlights / notes act on that same selection, through the
+  // floating toolbar VerseList parks next to it. Marks are keyed by
+  // book-chapter-verse only, so both compare columns paint the same set — a
+  // verse highlighted in one translation stays highlighted in the other.
+  const { annotations } = useAnnotations();
+  const marks = useMemo(() => chapterMarks(annotations, bookId, chapter), [annotations, bookId, chapter]);
+  const [noteTarget, setNoteTarget] = useState<{ verse: number; text: string } | null>(null);
+
+  const textOf = useCallback((verse: number) => colA.verses.find((v) => v.n === verse)?.text ?? "", [colA]);
+
+  const copyVerses = useCallback(
+    (numbers: number[]) => {
+      const body = numbers.map((n) => `${n} ${textOf(n)}`.trim()).join(" ");
+      const span = numbers.length > 1 ? `${numbers[0]}-${numbers[numbers.length - 1]}` : `${numbers[0]}`;
+      copyText(`${bookLabel(bookId, state.locale)} ${chapter}:${span} — ${body}`);
+      clearSelection();
+    },
+    [textOf, bookId, chapter, state.locale, clearSelection]
+  );
+
+  const marking: VerseMarking = useMemo(
+    () => ({
+      bookId,
+      chapter,
+      marks,
+      onEditNote: (verse) => setNoteTarget({ verse, text: textOf(verse) }),
+      onCopy: copyVerses,
+      onCreateImage: createImage,
+      onDone: clearSelection
+    }),
+    [bookId, chapter, marks, textOf, copyVerses, createImage, clearSelection]
+  );
+
 
   const headingRef = `${bookLabel(bookId, state.locale)} ${chapter}`;
   const headingNote = compareEff
@@ -140,10 +179,6 @@ export function ReaderPane({ compareEff }: ReaderPaneProps): JSX.Element {
             <span className={styles.selectionCount}>{fillTemplate(t.selectedCount, { n: String(verseSelection.count) })}</span>
             <button type="button" className={styles.selectionClear} onClick={verseSelection.clear}>
               {t.clearSelection}
-            </button>
-            <button type="button" className={styles.createImageButton} onClick={createImage}>
-              <ImageIcon size={13} />
-              {t.createImage}
             </button>
           </div>
         )}
@@ -172,6 +207,7 @@ export function ReaderPane({ compareEff }: ReaderPaneProps): JSX.Element {
         <div className={styles.columns}>
           <ReaderColumn
             column={colA}
+            marking={marking}
             onSpeakVerse={speakVerse}
             speakLabel={t.listenVerse}
             speakingVerse={activeVerse}
@@ -179,9 +215,29 @@ export function ReaderPane({ compareEff }: ReaderPaneProps): JSX.Element {
             onToggleSelect={verseSelection.toggle}
             selectLabel={t.createImage}
           />
-          {compareEff && <ReaderColumn column={colB} bordered onSpeakVerse={speakVerse} speakLabel={t.listenVerse} speakingVerse={activeVerse} />}
+          {compareEff && (
+            <ReaderColumn
+              column={colB}
+              marking={marking}
+              bordered
+              onSpeakVerse={speakVerse}
+              speakLabel={t.listenVerse}
+              speakingVerse={activeVerse}
+            />
+          )}
         </div>
       </div>
+
+      {noteTarget && (
+        <NoteDialog
+          verseRef={{ bookId, chapter, verse: noteTarget.verse }}
+          verseText={noteTarget.text}
+          onClose={() => {
+            setNoteTarget(null);
+            clearSelection();
+          }}
+        />
+      )}
     </div>
   );
 }

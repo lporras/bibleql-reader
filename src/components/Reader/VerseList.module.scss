@@ -3,6 +3,9 @@
 .wrap {
   max-width: 34em;
   margin: 0 auto;
+  // Positioning context for the floating verse toolbar, which is measured
+  // against these paragraphs' offsetTop.
+  position: relative;
 }
 
 .verse {
@@ -51,7 +54,10 @@
 // Verse currently being read aloud: same shape as the search highlight
 // (global `p[data-hl="on"]`) but in the deeper accent so the two never
 // clash, with a soft transition as the voice moves down the chapter.
-.speaking {
+// Doubled class so it also wins over a highlight pen (global `[data-mark]`)
+// however the stylesheets end up ordered — read-aloud is transient, the pen
+// comes back the moment the voice moves on.
+.verse.speaking {
   background: var(--sel);
   border-left-color: var(--accent-deep);
 }
@@ -66,6 +72,32 @@
   font-variant-numeric: tabular-nums;
   margin-right: 5px;
   vertical-align: 0.55em;
+}
+
+// Persistent marks on the verse itself. Both sit inline at the end of the
+// text so they never reflow the paragraph the way a gutter icon would.
+.favoriteBadge {
+  display: inline-flex;
+  margin-left: 5px;
+  color: var(--accent);
+  vertical-align: 0.15em;
+}
+
+.noteBadge {
+  @include bare-button;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-left: 3px;
+  border-radius: 4px;
+  color: var(--accent-deep);
+  vertical-align: 0.05em;
+
+  &:hover {
+    background: var(--sel);
+  }
 }
 
 // Discreet per-verse listen button (same Web Speech API as the chapter

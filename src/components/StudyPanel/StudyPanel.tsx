@@ -5,14 +5,15 @@ import { STR } from "../../data/strings";
 import { AIAssistant } from "./AIAssistant";
 import { Concordance } from "./Concordance";
 import { SearchTab } from "./SearchTab";
+import { MarksTab } from "./MarksTab";
 import styles from "./StudyPanel.module.scss";
 
-const PANELS = ["ai", "conc", "search"] as const;
+const PANELS = ["ai", "conc", "search", "marks"] as const;
 type PanelId = (typeof PANELS)[number];
 
-// All three tabs stay mounted (hidden via the `hidden` attribute, not
-// unmounted) so switching tabs never loses a chat transcript, a concordance
-// lookup, or a search result — each tab owns its own state.
+// Every tab stays mounted (hidden via the `hidden` attribute, not unmounted)
+// so switching tabs never loses a chat transcript, a concordance lookup, a
+// search result, or a filter — each tab owns its own state.
 export function StudyPanel(): JSX.Element {
   const { state } = useAppState();
   const t = STR[state.locale];
@@ -51,11 +52,20 @@ export function StudyPanel(): JSX.Element {
         >
           {t.search}
         </button>
+        <button
+          type="button"
+          className={styles.tab}
+          data-tab={activePanel === "marks" ? "on" : "off"}
+          onClick={() => switchTo("marks")}
+        >
+          {t.marks}
+        </button>
       </div>
 
       <AIAssistant active={activePanel === "ai"} />
       <Concordance active={activePanel === "conc"} />
       <SearchTab active={activePanel === "search"} />
+      <MarksTab active={activePanel === "marks"} />
     </div>
   );
 }

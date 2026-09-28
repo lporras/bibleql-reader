@@ -1,6 +1,6 @@
 import type { JSX } from "react";
 import { Spinner } from "../Spinner";
-import { VerseList } from "./VerseList";
+import { VerseList, type VerseMarking } from "./VerseList";
 import styles from "./ReaderColumn.module.scss";
 
 export interface ColumnVerse {
@@ -19,6 +19,7 @@ export interface ColumnView {
 
 interface ReaderColumnProps {
   column: ColumnView;
+  marking?: VerseMarking;
   bordered?: boolean;
   onSpeakVerse?: (n: number, text: string) => void;
   speakLabel?: string;
@@ -30,6 +31,7 @@ interface ReaderColumnProps {
 
 export function ReaderColumn({
   column,
+  marking,
   bordered = false,
   onSpeakVerse,
   speakLabel,
@@ -49,6 +51,7 @@ export function ReaderColumn({
       {column.notice && <div className={styles.notice}>{column.notice}</div>}
       <VerseList
         verses={column.verses}
+        marking={marking}
         onSpeakVerse={onSpeakVerse}
         speakLabel={speakLabel}
         speakingVerse={speakingVerse}

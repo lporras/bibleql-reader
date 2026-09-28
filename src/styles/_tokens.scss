@@ -15,7 +15,9 @@ $palette-light: (
   divider: rgba(32, 31, 29, 0.16),
   hair: rgba(32, 31, 29, 0.09),
   shadow: 0 3px 10px rgba(45, 43, 43, 0.16),
-  shadow-lg: 0 12px 32px rgba(45, 43, 43, 0.22)
+  shadow-lg: 0 12px 32px rgba(45, 43, 43, 0.22),
+  highlight-wash: 42%,
+  highlight-edge: 78%
 );
 
 $palette-dark: (
@@ -31,7 +33,26 @@ $palette-dark: (
   divider: rgba(236, 232, 227, 0.18),
   hair: rgba(236, 232, 227, 0.09),
   shadow: 0 3px 10px rgba(0, 0, 0, 0.45),
-  shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.55)
+  shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.55),
+  highlight-wash: 26%,
+  highlight-edge: 62%
+);
+
+// Highlight pens. One hue set for both themes — what changes per theme is how
+// much of it washes over the page (`highlight-wash`), so a highlight reads as
+// the same pen in light and dark without ever fighting the body text.
+// Keys are quoted: several of these names (green, blue, purple, pink, orange,
+// teal, gray) are CSS color keywords, and Sass would otherwise resolve them to
+// color values and interpolate garbage into the custom property names.
+$highlights: (
+  "yellow": #f0c04e,
+  "green": #7fce96,
+  "blue": #7db9ea,
+  "purple": #b193e8,
+  "pink": #ef8ec1,
+  "orange": #f2a866,
+  "teal": #5fcec2,
+  "gray": #b3aeaa
 );
 
 $font-heading: "Cormorant Garamond", Georgia, serif;

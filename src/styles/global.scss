@@ -82,6 +82,16 @@ a {
   display: none !important;
 }
 
+// Highlighted verses. The pen color washes over the page background at the
+// per-theme strength so body text stays readable, with a solid edge of the
+// same pen down the left so the mark is still legible at a glance.
+@each $name, $value in t.$highlights {
+  [data-mark="#{$name}"] {
+    background: var(--hl-#{$name}-wash);
+    border-left-color: var(--hl-#{$name}-edge) !important;
+  }
+}
+
 p[data-hl="on"] {
   border-left: 2px solid var(--accent);
   background: var(--sel);

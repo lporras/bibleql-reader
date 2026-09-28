@@ -13,14 +13,24 @@
   flex: 0 0 auto;
   display: flex;
   gap: 0;
-  padding: 0 12px;
+  padding: 0 6px;
   border-bottom: 1px solid var(--divider);
+  // Four tabs in two languages don't always fit the panel's minimum width;
+  // let them scroll rather than wrap the row or clip a label.
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 .tab {
-  padding: 12px 12px 10px;
+  flex: 0 0 auto;
+  padding: 12px 8px 10px;
   font-size: 11px;
-  letter-spacing: 0.13em;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
   text-transform: uppercase;
   color: var(--faint);
   border-bottom: 2px solid transparent;

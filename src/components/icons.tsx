@@ -109,3 +109,72 @@ export function ImageIcon({ size = 15, ...rest }: IconProps): JSX.Element {
     </svg>
   );
 }
+
+export function StarIcon({ size = 15, filled = false, ...rest }: IconProps & { filled?: boolean }): JSX.Element {
+  return (
+    <svg
+      {...base(size, {
+        stroke: "currentColor",
+        strokeWidth: 1.5,
+        strokeLinejoin: "round",
+        fill: filled ? "currentColor" : "none",
+        ...rest
+      })}
+    >
+      <path d="m12 3.6 2.6 5.3 5.9.85-4.25 4.15 1 5.85L12 17l-5.25 2.75 1-5.85L3.5 9.75l5.9-.85z" />
+    </svg>
+  );
+}
+
+export function NoteIcon({ size = 15, ...rest }: IconProps): JSX.Element {
+  return (
+    <svg {...base(size, { stroke: "currentColor", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round", ...rest })}>
+      <path d="M5 4h9l5 5v11H5z" />
+      <path d="M14 4v5h5" />
+    </svg>
+  );
+}
+
+export function HighlightIcon({ size = 15, ...rest }: IconProps): JSX.Element {
+  return (
+    <svg {...base(size, { stroke: "currentColor", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round", ...rest })}>
+      <path d="m15.5 4.5 4 4-8 8H7.5v-4z" />
+      <path d="M4 21h16" />
+    </svg>
+  );
+}
+
+export function MoreIcon({ size = 15, ...rest }: IconProps): JSX.Element {
+  return (
+    <svg {...base(size, { fill: "currentColor", ...rest })}>
+      <circle cx="5.5" cy="12" r="1.6" />
+      <circle cx="12" cy="12" r="1.6" />
+      <circle cx="18.5" cy="12" r="1.6" />
+    </svg>
+  );
+}
+
+export function TrashIcon({ size = 15, ...rest }: IconProps): JSX.Element {
+  return (
+    <svg {...base(size, { stroke: "currentColor", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round", ...rest })}>
+      <path d="M4.5 6.5h15M9.5 6.5V4.5h5v2M6.5 6.5 7.5 20h9l1-13.5M10.5 10v6M13.5 10v6" />
+    </svg>
+  );
+}
+
+export function CopyIcon({ size = 15, ...rest }: IconProps): JSX.Element {
+  return (
+    <svg {...base(size, { stroke: "currentColor", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round", ...rest })}>
+      <rect x="9" y="9" width="11" height="11" rx="2" />
+      <path d="M15 5.5A1.5 1.5 0 0 0 13.5 4H6a2 2 0 0 0-2 2v7.5A1.5 1.5 0 0 0 5.5 15" />
+    </svg>
+  );
+}
+
+export function CloseIcon({ size = 15, ...rest }: IconProps): JSX.Element {
+  return (
+    <svg {...base(size, { stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round", ...rest })}>
+      <path d="m6 6 12 12M18 6 6 18" />
+    </svg>
+  );
+}
