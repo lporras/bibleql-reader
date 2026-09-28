@@ -174,6 +174,10 @@ xattr -cr "/Applications/BibleQL Reader.app"
 run it on — every user hitting a release build hits the same dialog until the mac build is signed
 with an Apple Developer ID and notarized in CI.
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## License
 
 [MIT](LICENSE). Bible texts keep their own licenses — each translation's `note` field carries it, and the
