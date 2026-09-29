@@ -2,8 +2,31 @@ import type { Locale } from "../data/strings";
 
 // Read-aloud via the Web Speech API (no keys or network needed — it uses
 // the OS voices). The voice follows the app UI locale.
+//
+// Android WebView exposes `speechSynthesis` but never speaks, so there the
+// Android shell's `window.AndroidTts` bridge (MainActivity.kt) is used
+// instead — see the `androidTts` branches below.
 
 const LANG: Record<Locale, string> = { en: "en-US", es: "es-ES" };
+
+const androidTts = typeof window !== "undefined" ? window.AndroidTts : undefined;
+
+// Each Android queue gets a run id. The shell tags its progress events with
+// it, so events from a queue that was since stopped or replaced are dropped.
+let androidRun = 0;
+let androidCallbacks: SpeakCallbacks | undefined;
+
+if (androidTts) {
+  window.__androidTtsEvent = (type, run, index) => {
+    if (run !== androidRun) return;
+    if (type === "start") androidCallbacks?.onItemStart?.(index);
+    else {
+      const callbacks = androidCallbacks;
+      androidCallbacks = undefined;
+      callbacks?.onEnd?.();
+    }
+  };
+}
 
 let replacementVoice: SpeechSynthesisVoice | null | undefined;
 
@@ -37,7 +60,7 @@ function getVoice(locale: Locale): SpeechSynthesisVoice | null {
 }
 
 // Pre-load voices so they're cached before first use.
-if (typeof window !== "undefined" && "speechSynthesis" in window) {
+if (!androidTts && typeof window !== "undefined" && "speechSynthesis" in window) {
   window.speechSynthesis.getVoices();
   const resetVoice = (): void => {
     replacementVoice = undefined;
@@ -53,10 +76,14 @@ if (typeof window !== "undefined" && "speechSynthesis" in window) {
 }
 
 export function isSpeechSupported(): boolean {
-  return typeof window !== "undefined" && "speechSynthesis" in window;
+  return !!androidTts || (typeof window !== "undefined" && "speechSynthesis" in window);
 }
 
 export function speakText(text: string, locale: Locale, onend?: () => void): void {
+  if (androidTts) {
+    speakQueue([text], locale, { onEnd: onend });
+    return;
+  }
   if (!isSpeechSupported()) return;
   window.speechSynthesis.cancel();
   const utter = new SpeechSynthesisUtterance(text);
@@ -72,6 +99,12 @@ export function speakText(text: string, locale: Locale, onend?: () => void): voi
 }
 
 export function stopSpeaking(): void {
+  if (androidTts) {
+    androidRun += 1;
+    androidCallbacks = undefined;
+    androidTts.stop();
+    return;
+  }
   if (!isSpeechSupported()) return;
   window.speechSynthesis.cancel();
 }
@@ -86,6 +119,18 @@ export interface SpeakCallbacks {
 // which item is being read, so the UI can highlight it — more reliable than
 // `onboundary` char offsets, which browsers report inconsistently.
 export function speakQueue(texts: string[], locale: Locale, callbacks?: SpeakCallbacks): void {
+  if (androidTts) {
+    androidRun += 1;
+    androidCallbacks = undefined;
+    if (texts.length === 0) {
+      androidTts.stop();
+      callbacks?.onEnd?.();
+      return;
+    }
+    androidCallbacks = callbacks;
+    androidTts.speak(JSON.stringify(texts), LANG[locale], androidRun);
+    return;
+  }
   if (!isSpeechSupported()) return;
   window.speechSynthesis.cancel();
   if (texts.length === 0) {

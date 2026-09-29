@@ -28,6 +28,13 @@ declare global {
     // Injected by the Android shell (MainActivity.kt, SystemBars). Absent on
     // desktop and in the browser E2E run.
     AndroidSystemBars?: { setColors(color: string, dark: boolean): void };
+    // Injected by the Android shell (MainActivity.kt, Tts): the platform
+    // TextToSpeech, because Android WebView's speechSynthesis is a silent
+    // stub. `textsJson` is a JSON string array, one utterance per item.
+    // Progress comes back through `__androidTtsEvent`, which src/lib/speech.ts
+    // installs. Absent on desktop and in the browser E2E run.
+    AndroidTts?: { speak(textsJson: string, lang: string, run: number): void; stop(): void };
+    __androidTtsEvent?: (type: "start" | "end", run: number, index: number) => void;
   }
 }
 

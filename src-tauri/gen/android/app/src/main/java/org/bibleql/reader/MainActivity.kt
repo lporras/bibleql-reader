@@ -3,6 +3,10 @@ package org.bibleql.reader
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import android.util.Log
 import android.view.View
 import android.webkit.JavascriptInterface
@@ -12,13 +16,37 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import app.tauri.plugin.PluginManager
+import java.util.Locale
+import org.json.JSONArray
+import org.json.JSONException
 
 class MainActivity : TauriActivity() {
+  private val main = Handler(Looper.getMainLooper())
+  private var webView: WebView? = null
+
+  // Read-aloud state. Only touched on the main thread (everything below posts
+  // to `main` first), so no locking is needed.
+  private var tts: TextToSpeech? = null
+  private var ttsReady = false
+  private var ttsFailed = false
+  private var pendingSpeech: (() -> Unit)? = null
+  // The queue being spoken: which run it belongs to and how many items it
+  // has, so onDone can tell when the last one finished.
+  private var ttsRun = 0
+  private var ttsCount = 0
+
   override fun onCreate(savedInstanceState: Bundle?) {
     enableEdgeToEdge()
     releaseStalePluginManagerActivity()
     super.onCreate(savedInstanceState)
     padContentForSystemBars()
+    initTextToSpeech()
+  }
+
+  override fun onDestroy() {
+    tts?.shutdown()
+    tts = null
+    super.onDestroy()
   }
 
   // Edge-to-edge is mandatory from targetSdk 35 on (and enableEdgeToEdge()
@@ -49,7 +77,121 @@ class MainActivity : TauriActivity() {
   }
 
   override fun onWebViewCreate(webView: WebView) {
+    this.webView = webView
     webView.addJavascriptInterface(SystemBars(), "AndroidSystemBars")
+    webView.addJavascriptInterface(Tts(), "AndroidTts")
+  }
+
+  // Android System WebView exposes window.speechSynthesis but doesn't
+  // implement it: getVoices() is empty and speak() is silently a no-op. So
+  // read-aloud (src/lib/speech.ts) goes through the platform TextToSpeech
+  // instead, exposed to the page as window.AndroidTts. The page queues one
+  // utterance per verse and gets progress back through
+  // window.__androidTtsEvent("start", run, index) / ("end", run), which is what
+  // lets it highlight the verse being read. `run` is the page's id for a queue,
+  // so events from one it has since cancelled can be told apart and dropped.
+  private inner class Tts {
+    @JavascriptInterface
+    fun speak(textsJson: String, lang: String, run: Int) {
+      val texts = try {
+        JSONArray(textsJson).let { array -> List(array.length()) { array.getString(it) } }
+      } catch (err: JSONException) {
+        Log.w("MainActivity", "Ignoring unparseable read-aloud request", err)
+        emitTts("end", run)
+        return
+      }
+      // @JavascriptInterface methods run on a WebView binder thread.
+      main.post {
+        ttsRun = run
+        ttsCount = texts.size
+        when {
+          ttsFailed -> emitTts("end", run)
+          // TextToSpeech binds to the engine asynchronously; speak once it's up.
+          !ttsReady -> pendingSpeech = { enqueueSpeech(texts, lang, run) }
+          else -> enqueueSpeech(texts, lang, run)
+        }
+      }
+    }
+
+    @JavascriptInterface
+    fun stop() {
+      main.post {
+        pendingSpeech = null
+        tts?.stop()
+      }
+    }
+  }
+
+  private fun initTextToSpeech() {
+    val engine = TextToSpeech(this) { status ->
+      main.post {
+        if (status == TextToSpeech.SUCCESS) {
+          ttsReady = true
+          pendingSpeech?.invoke()
+        } else {
+          // No engine installed, or it's disabled. Anything already waiting
+          // is reported as finished so the page's Stop button resets.
+          Log.w("MainActivity", "TextToSpeech init failed: $status")
+          ttsFailed = true
+          if (pendingSpeech != null) emitTts("end", ttsRun)
+        }
+        pendingSpeech = null
+      }
+    }
+    engine.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+      override fun onStart(utteranceId: String?) {
+        main.post { onUtterance(utteranceId, "start") }
+      }
+
+      override fun onDone(utteranceId: String?) {
+        main.post { onUtterance(utteranceId, "done") }
+      }
+
+      @Deprecated("Superseded by onError(String, Int), whose default calls this")
+      override fun onError(utteranceId: String?) {
+        main.post { onUtterance(utteranceId, "error") }
+      }
+    })
+    tts = engine
+  }
+
+  private fun enqueueSpeech(texts: List<String>, lang: String, run: Int) {
+    val engine = tts ?: return emitTts("end", run)
+    val result = engine.setLanguage(Locale.forLanguageTag(lang))
+    if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+      Log.w("MainActivity", "No TextToSpeech voice for $lang ($result)")
+      emitTts("end", run)
+      return
+    }
+    // Matches the web path's `utter.rate = 0.9`.
+    engine.setSpeechRate(0.9f)
+    texts.forEachIndexed { i, text ->
+      val mode = if (i == 0) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD
+      engine.speak(text, mode, null, "$run:$i")
+    }
+  }
+
+  // Utterance ids are "<run>:<index>" (see enqueueSpeech).
+  private fun onUtterance(utteranceId: String?, what: String) {
+    val parts = utteranceId?.split(":") ?: return
+    val run = parts.getOrNull(0)?.toIntOrNull() ?: return
+    val index = parts.getOrNull(1)?.toIntOrNull() ?: return
+    if (run != ttsRun) return
+    when (what) {
+      "start" -> emitTts("start", run, index)
+      "done" -> if (index == ttsCount - 1) emitTts("end", run)
+      "error" -> {
+        tts?.stop()
+        emitTts("end", run)
+      }
+    }
+  }
+
+  private fun emitTts(type: String, run: Int, index: Int = -1) {
+    // evaluateJavascript must be called on the main thread.
+    main.post {
+      webView?.evaluateJavascript("window.__androidTtsEvent?.(\"$type\",$run,$index)", null)
+    }
   }
 
   // The strips padContentForSystemBars() leaves behind the status and nav bars
