@@ -112,4 +112,40 @@ test.describe("Image Creator", () => {
     });
     expect(clipboardHasPng).toBe(true);
   });
+
+  test.describe("on a touchscreen", () => {
+    test.use({ hasTouch: true });
+
+    // Regression test: without `touch-action: none` on the text box, a
+    // finger drag starts a browser pan, which fires `pointercancel` after a
+    // few pixels and the box stops following the finger (seen on Android).
+    // Real touch input via CDP, not synthetic pointer events, so the
+    // browser's own gesture handling is in play.
+    test("dragging a text box with a finger moves it all the way", async ({ page }) => {
+      const scripture = page.locator('[role="textbox"]').filter({ hasText: "God so loved the world" });
+      const before = await scripture.boundingBox();
+      expect(before).not.toBeNull();
+      const startX = before!.x + before!.width / 2;
+      const startY = before!.y + before!.height / 2;
+      const distance = 120;
+
+      const cdp = await page.context().newCDPSession(page);
+      await cdp.send("Input.dispatchTouchEvent", {
+        type: "touchStart",
+        touchPoints: [{ x: startX, y: startY }]
+      });
+      for (let step = 1; step <= 12; step += 1) {
+        await cdp.send("Input.dispatchTouchEvent", {
+          type: "touchMove",
+          touchPoints: [{ x: startX, y: startY + (distance * step) / 12 }]
+        });
+      }
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+
+      const after = await scripture.boundingBox();
+      // Within a few px of the full distance (the position is clamped to
+      // the canvas, so allow some slack rather than demanding exactness).
+      expect(after!.y - before!.y).toBeGreaterThan(distance - 10);
+    });
+  });
 });

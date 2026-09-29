@@ -7,6 +7,12 @@
   border: 1px solid transparent;
   border-radius: 4px;
   user-select: none;
+  // On a touchscreen, a finger moving across the box would otherwise start
+  // a browser pan: after a few pixels it fires `pointercancel` and stops
+  // sending `pointermove`, so the drag stalls almost immediately (Android;
+  // a mouse never pans, which is why desktop was fine). TextBox.tsx turns
+  // this back to `auto` while editing, so touch text selection still works.
+  touch-action: none;
 
   &:hover {
     border-color: rgba(255, 255, 255, 0.35);
@@ -33,4 +39,14 @@
   background: var(--accent);
   border: 2px solid var(--raise);
   cursor: ew-resize;
+
+  // 12px is fine for a mouse but too small for a finger — widen the hit
+  // area without changing how the handle looks.
+  @media (pointer: coarse) {
+    &::before {
+      content: "";
+      position: absolute;
+      inset: -12px;
+    }
+  }
 }

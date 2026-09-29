@@ -144,6 +144,12 @@ Two layers, deliberately different in kind:
   non-browser to the remote service: Anthropic still demands
   `anthropic-dangerous-direct-browser-access: true`, which `lib/ai.ts` sends. Expect the same
   from any other API that gates on Origin.
+- **Android WebView's `speechSynthesis` is a silent stub** (no voices, `speak()` does nothing).
+  Read-aloud on Android goes through `window.AndroidTts`, a `@JavascriptInterface` over the
+  platform `TextToSpeech` in `MainActivity.kt`; `lib/speech.ts` picks it when present and falls
+  back to Web Speech on desktop. Progress comes back via `window.__androidTtsEvent`, tagged with
+  a run id so events from a stopped queue are dropped. The engine is only visible to the app
+  because of the `TTS_SERVICE` `<queries>` entry in `AndroidManifest.xml` (targetSdk 30+).
 - `p[data-hl="on"]` (the verse-highlight rule) is defined **globally** in
   `styles/global.scss`, not scoped to a module — new `<p>` elements elsewhere inherit it.
 - Reader/app preferences persist via `localStorage` only (`state/persist.ts`); the Image

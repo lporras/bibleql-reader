@@ -22,3 +22,30 @@ function detectIsMac(): boolean {
 }
 
 export const IS_MAC = detectIsMac();
+
+declare global {
+  interface Window {
+    // Injected by the Android shell (MainActivity.kt, SystemBars). Absent on
+    // desktop and in the browser E2E run.
+    AndroidSystemBars?: { setColors(color: string, dark: boolean): void };
+    // Injected by the Android shell (MainActivity.kt, Tts): the platform
+    // TextToSpeech, because Android WebView's speechSynthesis is a silent
+    // stub. `textsJson` is a JSON string array, one utterance per item.
+    // Progress comes back through `__androidTtsEvent`, which src/lib/speech.ts
+    // installs. Absent on desktop and in the browser E2E run.
+    AndroidTts?: { speak(textsJson: string, lang: string, run: number): void; stop(): void };
+    __androidTtsEvent?: (type: "start" | "end", run: number, index: number) => void;
+  }
+}
+
+// Android draws the app edge-to-edge, and the strips behind the status and
+// navigation bars would otherwise follow the *system* theme rather than the
+// app's own light/dark toggle. Paints them in the page's current `--surface`
+// (read back after `data-theme` has been applied, so the palette stays defined
+// in one place) and flips the bars' icons to contrast. A no-op everywhere else.
+export function syncSystemBars(dark: boolean): void {
+  const bars = window.AndroidSystemBars;
+  if (!bars) return;
+  const surface = getComputedStyle(document.documentElement).getPropertyValue("--surface").trim();
+  if (surface) bars.setColors(surface, dark);
+}
