@@ -114,9 +114,14 @@ export function TextBox({
     onMove(clamp01(elX + dx), clamp01(elY + dy));
   }
 
+  // Also handles `pointercancel` (e.g. the OS takes the touch over), which
+  // releases capture on its own — hence the hasPointerCapture guard, since
+  // releasing a pointer that's already gone throws.
   function handlePointerUp(event: PointerEvent<HTMLDivElement>): void {
     dragState.current = null;
-    event.currentTarget.releasePointerCapture(event.pointerId);
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
   }
 
   function handleResizePointerDown(event: PointerEvent<HTMLDivElement>): void {
@@ -136,7 +141,9 @@ export function TextBox({
 
   function handleResizePointerUp(event: PointerEvent<HTMLDivElement>): void {
     resizeState.current = null;
-    event.currentTarget.releasePointerCapture(event.pointerId);
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>): void {
@@ -195,7 +202,10 @@ export function TextBox({
         opacity: element.opacity,
         textAlign: element.textAlign,
         lineHeight: element.lineHeight,
-        cursor: editing ? "text" : undefined
+        cursor: editing ? "text" : undefined,
+        // The stylesheet sets `touch-action: none` so a finger drags the box
+        // instead of panning; editing needs native touch selection back.
+        touchAction: editing ? "auto" : undefined
       }}
       tabIndex={0}
       role="textbox"
@@ -207,6 +217,7 @@ export function TextBox({
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
       onDoubleClick={handleDoubleClick}
       onFocus={onSelect}
       onBlur={handleBlur}
@@ -219,6 +230,7 @@ export function TextBox({
           onPointerDown={handleResizePointerDown}
           onPointerMove={handleResizePointerMove}
           onPointerUp={handleResizePointerUp}
+          onPointerCancel={handleResizePointerUp}
         />
       )}
     </div>
