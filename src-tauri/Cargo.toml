@@ -30,6 +30,12 @@ tauri-plugin-http = "~2.6"
 tauri-plugin-os = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+# Offline translation packages (src/offline.rs): `bundled` compiles SQLite in
+# with FTS5, so search works the same on every OS and on Android's NDK.
+rusqlite = { version = "0.40", features = ["bundled"] }
+sha2 = "0.10"
+flate2 = "1"
+unicode-normalization = "0.1"
 
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration

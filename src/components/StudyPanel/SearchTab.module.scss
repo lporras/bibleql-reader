@@ -70,3 +70,9 @@
   color: var(--muted);
   text-wrap: pretty;
 }
+
+// Same treatment as the concordance's matched word.
+.hitWord {
+  color: var(--ink);
+  font-weight: 600;
+}

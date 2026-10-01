@@ -113,6 +113,19 @@ export interface StringsShape {
   notes: string;
   noMarks: string;
   selectedVerses: string;
+  offlineDownload: string;
+  offlineDownloading: string;
+  offlineInstalling: string;
+  offlineCancel: string;
+  offlineAvailable: string;
+  offlineUpdate: string;
+  offlineUpdateAction: string;
+  offlineRemove: string;
+  offlineRemoving: string;
+  offlineChecksum: string;
+  offlineRetry: string;
+  offlineBadge: string;
+  offlineVerses: string;
 }
 
 export const STR: Record<Locale, StringsShape> = {
@@ -228,7 +241,20 @@ export const STR: Record<Locale, StringsShape> = {
     highlights: "Highlights",
     notes: "Notes",
     noMarks: "Nothing marked yet.",
-    selectedVerses: "selected"
+    selectedVerses: "selected",
+    offlineDownload: "Download for offline · %s",
+    offlineDownloading: "Downloading… %p",
+    offlineInstalling: "Installing…",
+    offlineCancel: "Cancel download",
+    offlineAvailable: "Available offline",
+    offlineUpdate: "Update available",
+    offlineUpdateAction: "Update · %s",
+    offlineRemove: "Remove download",
+    offlineRemoving: "Removing…",
+    offlineChecksum: "The download was damaged (checksum mismatch). Try again.",
+    offlineRetry: "Retry",
+    offlineBadge: "offline",
+    offlineVerses: "%n verses on this device"
   },
   es: {
     refPlaceholder: "Ir a la referencia — Juan 3:16",
@@ -342,6 +368,19 @@ export const STR: Record<Locale, StringsShape> = {
     highlights: "Resaltados",
     notes: "Notas",
     noMarks: "Todavía no hay nada marcado.",
-    selectedVerses: "seleccionados"
+    selectedVerses: "seleccionados",
+    offlineDownload: "Descargar para usar sin conexión · %s",
+    offlineDownloading: "Descargando… %p",
+    offlineInstalling: "Instalando…",
+    offlineCancel: "Cancelar descarga",
+    offlineAvailable: "Disponible sin conexión",
+    offlineUpdate: "Actualización disponible",
+    offlineUpdateAction: "Actualizar · %s",
+    offlineRemove: "Eliminar descarga",
+    offlineRemoving: "Eliminando…",
+    offlineChecksum: "La descarga llegó dañada (la suma de verificación no coincide). Inténtalo de nuevo.",
+    offlineRetry: "Reintentar",
+    offlineBadge: "sin conexión",
+    offlineVerses: "%n versículos en este dispositivo"
   }
 };

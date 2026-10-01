@@ -1,7 +1,9 @@
 import { useMemo } from "react";
 import { useTranslations } from "./useTranslations";
+import { useOfflineInstalled } from "./useOfflineInstalled";
 import { FALLBACK_TRANSLATIONS } from "../data/fallbackTranslations";
-import type { TranslationSummary } from "../types/bible";
+import { readCachedTranslations } from "../state/persist";
+import { mergeInstalled, pickTranslationSource } from "../lib/offline";
 
 export interface LabeledTranslation {
   identifier: string;
@@ -14,9 +16,16 @@ export interface TranslationOptions {
 }
 
 // Names alone, disambiguated only where two editions share one display name.
+// Offline, the list comes from the last one fetched, and downloaded
+// translations are always included.
 export function useTranslationOptions(): TranslationOptions {
   const { data } = useTranslations();
-  const source: TranslationSummary[] = data && data.length ? data : FALLBACK_TRANSLATIONS;
+  const { installed } = useOfflineInstalled();
+  const cached = useMemo(() => readCachedTranslations(), []);
+  const source = useMemo(
+    () => mergeInstalled(pickTranslationSource(data, cached, FALLBACK_TRANSLATIONS), installed),
+    [data, cached, installed]
+  );
 
   return useMemo(() => {
     const nameCount: Record<string, number> = {};

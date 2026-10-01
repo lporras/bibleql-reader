@@ -5,14 +5,23 @@
       "name": "World English Bible",
       "language": "eng",
       "note": "Public Domain",
-      "concordanceIndexedAt": null
+      "concordanceIndexedAt": null,
+      "offlineDownloadable": true,
+      "offlinePackage": {
+        "url": "https://downloads.example.org/translations/eng-web/v1/e2e.sqlite.gz",
+        "sha256": "e2e0000000000000000000000000000000000000000000000000000000000000",
+        "sizeBytes": 3404184,
+        "updatedAt": "2026-10-01T02:29:13Z"
+      }
     },
     {
       "identifier": "spa-rv1909",
       "name": "Reina Valera 1909",
       "language": "spa",
       "note": "Public Domain",
-      "concordanceIndexedAt": "2026-09-07T13:31:15Z"
+      "concordanceIndexedAt": "2026-09-07T13:31:15Z",
+      "offlineDownloadable": false,
+      "offlinePackage": null
     }
   ],
   "passages": {

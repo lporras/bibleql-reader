@@ -3,6 +3,7 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAppState } from "../../state/AppStateContext";
 import { chapterMarks, useAnnotations } from "../../state/AnnotationsContext";
 import { usePassage } from "../../queries/usePassage";
+import { useOfflineInstalled } from "../../queries/useOfflineInstalled";
 import { HAS_BIBLEQL_KEY } from "../../lib/graphql";
 import { useFocusVerse } from "../../hooks/useFocusVerse";
 import { useSpeech } from "../../hooks/useSpeech";
@@ -32,7 +33,10 @@ export function ReaderPane({ compareEff }: ReaderPaneProps): JSX.Element {
   const [searchParams] = useSearchParams();
   const fromVerse = searchParams.get("from") ? Number(searchParams.get("from")) : null;
   const toVerse = searchParams.get("to") ? Number(searchParams.get("to")) : fromVerse;
-  const noKey = !HAS_BIBLEQL_KEY;
+  // A downloaded translation reads locally, so it needs no API key.
+  const offline = useOfflineInstalled();
+  const noKey = !HAS_BIBLEQL_KEY && !offline.byId.has(state.transA);
+  const noKeyB = !HAS_BIBLEQL_KEY && !offline.byId.has(state.transB);
 
   const passageA = usePassage("a", state.transA, bookId, chapter);
   const passageB = usePassage("b", state.transB, bookId, chapter, state.compare);
@@ -67,7 +71,7 @@ export function ReaderPane({ compareEff }: ReaderPaneProps): JSX.Element {
   const colB: ColumnView = useMemo(() => {
     // Faithful quirk: with no API key, the original only ever built a
     // sample/notice fallback for column A — column B just stays blank.
-    if (noKey) return { label: state.transB, showLabel: true, loading: false, notice: "", verses: [] };
+    if (noKeyB) return { label: state.transB, showLabel: true, loading: false, notice: "", verses: [] };
     const verses = (passageB.data?.verses ?? []).map((v) => ({
       n: v.verse,
       text: v.text,
@@ -83,7 +87,7 @@ export function ReaderPane({ compareEff }: ReaderPaneProps): JSX.Element {
       notice: passageB.error?.message ?? "",
       verses
     };
-  }, [noKey, passageB.data, passageB.isLoading, passageB.error, fromVerse, toVerse, state.transB]);
+  }, [noKeyB, passageB.data, passageB.isLoading, passageB.error, fromVerse, toVerse, state.transB]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   useFocusVerse(scrollRef, fromVerse, passageA.dataUpdatedAt);

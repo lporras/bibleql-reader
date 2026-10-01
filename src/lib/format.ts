@@ -55,3 +55,34 @@ export function splitTemplate(template: string, keys: readonly string[]): Templa
   if (buffer) parts.push({ type: "text", text: buffer });
   return parts;
 }
+
+export interface TextPart {
+  text: string;
+  hit: boolean;
+}
+
+const WORD_RE = /[\p{L}\p{N}]+/gu;
+
+// Lowercase + strip diacritics, the folding BibleQL's search applies (and
+// the offline packages' FTS5 `remove_diacritics`), so "espiritu" finds
+// "Espíritu".
+function foldWord(word: string): string {
+  return word.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+}
+
+// Search hits come back as plain text: split one into parts, marking every
+// whole word that matches a word of the query (case- and accent-insensitive).
+export function highlightWords(text: string, query: string): TextPart[] {
+  const terms = new Set(Array.from(query.matchAll(WORD_RE), (m) => foldWord(m[0])));
+  if (!terms.size) return [{ text, hit: false }];
+  const parts: TextPart[] = [];
+  let last = 0;
+  for (const m of text.matchAll(WORD_RE)) {
+    if (!terms.has(foldWord(m[0]))) continue;
+    if (m.index > last) parts.push({ text: text.slice(last, m.index), hit: false });
+    parts.push({ text: m[0], hit: true });
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) parts.push({ text: text.slice(last), hit: false });
+  return parts;
+}

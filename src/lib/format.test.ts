@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { splitTemplate } from "./format";
+import { highlightWords, splitTemplate } from "./format";
 import { STR } from "../data/strings";
 
 describe("splitTemplate", () => {
@@ -43,5 +43,31 @@ describe("splitTemplate", () => {
 
   it("prefers the longest matching key so one key can't shadow another", () => {
     expect(splitTemplate("%source", ["s", "source"])).toEqual([{ type: "slot", key: "source" }]);
+  });
+});
+
+describe("highlightWords", () => {
+  const hits = (text: string, query: string) =>
+    highlightWords(text, query)
+      .filter((p) => p.hit)
+      .map((p) => p.text);
+
+  it("marks every whole-word match of every query word", () => {
+    expect(hits("Entonces la serpiente dijo á la mujer", "la serpiente")).toEqual(["la", "serpiente", "la"]);
+  });
+
+  it("ignores case and accents, both ways", () => {
+    expect(hits("y el Espíritu de Dios", "espiritu")).toEqual(["Espíritu"]);
+    expect(hits("por amor de David", "AMÓR")).toEqual(["amor"]);
+  });
+
+  it("never matches inside a longer word", () => {
+    expect(hits("el amorreo y el amor", "amor")).toEqual(["amor"]);
+  });
+
+  it("keeps the text intact around the marks", () => {
+    const parts = highlightWords("por amor de David, y por amor", "amor");
+    expect(parts.map((p) => p.text).join("")).toBe("por amor de David, y por amor");
+    expect(highlightWords("text", "  ?! ")).toEqual([{ text: "text", hit: false }]);
   });
 });

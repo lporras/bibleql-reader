@@ -1,12 +1,19 @@
 import type { JSX } from "react";
 import { useAppState } from "../../state/AppStateContext";
 import { IS_MAC } from "../../platform/host";
+import { OfflineButton } from "../Sidebar/OfflineButton";
 import { STR } from "../../data/strings";
 import { CompareIcon, KeyIcon, MoonIcon, StudyIcon, SunIcon } from "../icons";
 import { RefSearchForm } from "./RefSearchForm";
 import styles from "./TitleBar.module.scss";
 
-export function TitleBar(): JSX.Element {
+interface TitleBarProps {
+  /** Narrow windows (and phones) fold the sidebar away, and its offline
+   * control with it — the title bar offers the current translation's. */
+  showOffline?: boolean;
+}
+
+export function TitleBar({ showOffline = false }: TitleBarProps): JSX.Element {
   const { state, actions } = useAppState();
   const t = STR[state.locale];
   const isDark = state.theme === "dark";
@@ -48,6 +55,7 @@ export function TitleBar(): JSX.Element {
           <span>{t.panel}</span>
         </button>
         <span className={styles.divider} />
+        {showOffline && <OfflineButton translationId={state.transA} variant="icon" />}
         <button type="button" className={styles.localeButton} title="Language" onClick={actions.toggleLocale}>
           {state.locale === "es" ? "ES" : "EN"}
         </button>
