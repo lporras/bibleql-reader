@@ -27,7 +27,7 @@ export function ReaderPage(): JSX.Element {
 
   return (
     <div className={styles.shell}>
-      <TitleBar />
+      <TitleBar showOffline={!showSidebar} />
       <div className={styles.body}>
         {showSidebar && <Sidebar />}
         <ReaderPane compareEff={compareEff} />

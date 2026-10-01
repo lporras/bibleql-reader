@@ -1,8 +1,10 @@
 import { useState, type FormEvent, type JSX } from "react";
 import { useAppState } from "../../state/AppStateContext";
 import { useSearch } from "../../queries/useSearch";
+import { useOfflineInstalled } from "../../queries/useOfflineInstalled";
 import { useOpenRef } from "../../hooks/useOpenRef";
 import { HAS_BIBLEQL_KEY } from "../../lib/graphql";
+import { highlightWords } from "../../lib/format";
 import { STR } from "../../data/strings";
 import styles from "./SearchTab.module.scss";
 
@@ -27,7 +29,8 @@ export function SearchTab({ active }: SearchTabProps): JSX.Element {
     setQuery(q);
   }
 
-  const hasKey = HAS_BIBLEQL_KEY;
+  const offline = useOfflineInstalled();
+  const hasKey = HAS_BIBLEQL_KEY || offline.byId.has(state.transA);
   let notice = "";
   if (!hasKey) notice = t.noKey;
   else if (!query) notice = t.searchIdle;
@@ -59,7 +62,17 @@ export function SearchTab({ active }: SearchTabProps): JSX.Element {
               <button type="button" className={styles.hitRef} onClick={() => openRef(ref)}>
                 {ref}
               </button>
-              <div className={styles.hitText}>{h.text}</div>
+              <div className={styles.hitText}>
+                {highlightWords(h.text, query).map((part, j) =>
+                  part.hit ? (
+                    <span key={j} className={styles.hitWord}>
+                      {part.text}
+                    </span>
+                  ) : (
+                    part.text
+                  )
+                )}
+              </div>
             </div>
           );
         })}

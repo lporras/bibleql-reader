@@ -23,6 +23,7 @@ yarn typecheck          # tsc --noEmit across tsconfig.json, tsconfig.node.json,
 yarn test               # vitest run — pure-logic unit tests, no network, no shell
 yarn test:e2e           # Playwright drives the app in headless Chromium
 cargo check --manifest-path src-tauri/Cargo.toml    # the Rust side
+cargo test --manifest-path src-tauri/Cargo.toml     # Rust unit tests (offline.rs)
 ```
 
 `yarn test:e2e` needs no API keys: BibleQL and Unsplash are both mocked, and
@@ -40,16 +41,18 @@ src/
     image-creator/         the Verse Image Creator — model/, components/, providers/, rendering/,
                             lib/, data/, state/, hooks/, assets/ (see its own files for detail)
   platform/                PlatformCapabilities — the shell seam (see docs/platform-abstraction.md)
-                            + host.ts (IS_MAC)
+                            + host.ts (IS_MAC) + offline.ts (offline translations, docs/offline-mode.md)
   routes/                  route-level composition shells (thin — pull their own state/data)
   queries/                 TanStack Query hooks, one per BibleQL query, key factory in keys.ts
-  state/                   AppStateContext (Context + useReducer) + persist.ts (localStorage)
+  state/                   AppStateContext (Context + useReducer) + persist.ts (localStorage),
+                            AnnotationsContext, OfflineDownloadsContext
   lib/                     graphql client, ai.ts, externalLinks.ts, refs.ts, speech.ts, format.ts
   data/                    static data: books.ts, strings.ts (i18n), sample.ts, fallbackTranslations.ts
   types/                   shared TS types (bible.ts, app.ts, ai.ts, imageCreator.ts)
   styles/                  _tokens.scss (palette), _theme.scss, _mixins.scss, _fonts.scss, global.scss
 src-tauri/
-  src/lib.rs               plugin registration (opener, dialog, fs, http, os) — no custom commands
+  src/lib.rs               plugin registration (opener, dialog, fs, http, os) + offline_* commands
+  src/offline.rs           offline translation packages: download, verify, query (rusqlite + FTS5)
   tauri.conf.json          window geometry, macOS title bar style, bundle config
   capabilities/default.json  which plugin commands the window may call, and with what scopes
 e2e/                       Playwright specs driving the app in a browser (see Testing below)
@@ -73,15 +76,25 @@ Every component has a colocated `.module.scss`.
 - **All user-facing strings live in `data/strings.ts`** (`STR[locale]`, `Locale = "en" | "es"`).
   Adding a key to `StringsShape` without both `en` and `es` entries fails `yarn typecheck`.
 - Imports are relative. There is no path alias.
-- **Shell access goes through one of three places, never a plugin import at a call site**:
+- **Shell access goes through one of four places, never a plugin import at a call site**:
   `platform/index.ts` (`getPlatform()`) for Image Creator capabilities, `platform/host.ts` for
-  `IS_MAC`, `lib/externalLinks.ts` for outbound links. `features/image-creator/**` in
+  `IS_MAC`, `lib/externalLinks.ts` for outbound links, `platform/offline.ts` for the
+  `offline_*` commands. `features/image-creator/**` in
   particular must stay platform-neutral — see docs/platform-abstraction.md. Most capabilities
   (file picker, clipboard) are plain web-platform APIs and need no shell call at all; only
   `saveImage` is Tauri-backed.
 - **Every new Tauri plugin command needs a permission** in `src-tauri/capabilities/default.json`,
   and path/URL-scoped ones need their scope too. A missing permission fails at runtime, not at
-  build time, with a "not allowed" error from `invoke`.
+  build time, with a "not allowed" error from `invoke`. App commands defined in `src-tauri/src`
+  (the `offline_*` ones) need no entry: Tauri allows an app's own commands by default.
+- **Downloaded translations: chapters are always local; search and concordance are
+  remote-first** (`remoteFirst()` — BibleQL when reachable, the local index offline or on
+  failure; local concordance cursors carry a `local:` prefix so "Load more" stays on one
+  source). The hooks route through `useOfflineSource`; pick the source
+  with `isLocalNow()` inside `queryFn` (not a render-time flag — installing invalidates the
+  queries before the hook re-renders), and pass its `networkMode` — TanStack pauses default
+  ("online") queries while the OS is offline, which silently froze local reads on the previous
+  chapter. See docs/offline-mode.md.
 
 ## Testing
 
@@ -136,7 +149,9 @@ Two layers, deliberately different in kind:
 - **Only `api.anthropic.com` goes through Tauri's HTTP plugin**, because it refuses
   cross-origin requests. BibleQL and Unsplash both send `access-control-allow-origin: *` and
   must keep using plain `fetch` — routing them through the plugin would break the E2E suite,
-  which mocks them at the network layer.
+  which mocks them at the network layer. (Offline packages are downloaded by `offline.rs` in
+  Rust, using the plugin's re-exported `reqwest` directly — the package host sends no CORS
+  headers at all.)
 - **The HTTP plugin always sends an `Origin` header** — it strips the caller's as a forbidden
   header, then sets its own (`http://localhost:1420` in dev, `tauri://localhost` bundled); see
   its `commands.rs`, "ensure we have an Origin header set". Only the plugin's `unsafe-headers`

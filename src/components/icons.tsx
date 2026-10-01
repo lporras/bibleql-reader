@@ -178,3 +178,20 @@ export function CloseIcon({ size = 15, ...rest }: IconProps): JSX.Element {
     </svg>
   );
 }
+
+export function DownloadIcon({ size = 15, ...rest }: IconProps): JSX.Element {
+  return (
+    <svg {...base(size, { stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round", ...rest })}>
+      <path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19h14" />
+    </svg>
+  );
+}
+
+export function OfflineReadyIcon({ size = 15, ...rest }: IconProps): JSX.Element {
+  return (
+    <svg {...base(size, { stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round", ...rest })}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="m8.3 12.2 2.5 2.5 4.9-5" />
+    </svg>
+  );
+}

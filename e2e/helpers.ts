@@ -33,9 +33,12 @@ declare global {
  * into a direct assertion on the command and URL handed to the shell —
  * the same thing the old suite got by stubbing `shell.openExternal` in
  * Electron's main process.
+ *
+ * `responses` answers commands by name (e.g. the offline_* commands of
+ * src-tauri/src/offline.rs); anything not listed resolves to null.
  */
-async function installTauriStub(page: Page): Promise<void> {
-  await page.addInitScript(() => {
+async function installTauriStub(page: Page, responses: TauriResponses = {}): Promise<void> {
+  await page.addInitScript((responses: TauriResponses) => {
     window.__TAURI_CALLS__ = [];
 
     // The os plugin reads these synchronously as plain properties.
@@ -56,14 +59,17 @@ async function installTauriStub(page: Page): Promise<void> {
         // `plugin:dialog|save` returning null reads as "user cancelled",
         // which keeps the export flow from trying to write a file.
         if (cmd === "plugin:dialog|save") return null;
-        return null;
+        return cmd in responses ? responses[cmd] : null;
       },
       transformCallback: (cb: unknown) => cb,
       unregisterCallback: () => {},
       convertFileSrc: (p: string) => p
     };
-  });
+  }, responses);
 }
+
+/** Canned results for Tauri commands, keyed by command name. */
+export type TauriResponses = Record<string, unknown>;
 
 interface BibleQLFixture {
   translations: unknown[];
@@ -127,8 +133,8 @@ export interface App {
  * `localStorage` — so that isolation now comes for free, and there is no
  * profile directory to clean up afterwards.
  */
-export async function launchApp(page: Page, hashRoute = ""): Promise<App> {
-  await installTauriStub(page);
+export async function launchApp(page: Page, hashRoute = "", tauri: TauriResponses = {}): Promise<App> {
+  await installTauriStub(page, tauri);
   await mockBibleQL(page);
   await page.goto(`/${hashRoute}`);
   await page.waitForLoadState("domcontentloaded");

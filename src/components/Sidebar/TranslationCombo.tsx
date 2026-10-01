@@ -1,6 +1,7 @@
 import { useMemo, useState, type JSX, type KeyboardEvent } from "react";
 import { useAppState } from "../../state/AppStateContext";
 import { useTranslationOptions } from "../../queries/useTranslationOptions";
+import { useOfflineInstalled } from "../../queries/useOfflineInstalled";
 import { STR } from "../../data/strings";
 import { normalize } from "../../lib/refs";
 import styles from "./TranslationCombo.module.scss";
@@ -15,6 +16,7 @@ export function TranslationCombo({ which }: TranslationComboProps): JSX.Element 
   const { state, actions } = useAppState();
   const t = STR[state.locale];
   const { options, labelOf } = useTranslationOptions();
+  const offline = useOfflineInstalled();
   const current = which === "b" ? state.transB : state.transA;
 
   const [open, setOpen] = useState(false);
@@ -73,7 +75,8 @@ export function TranslationCombo({ which }: TranslationComboProps): JSX.Element 
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => select(o.identifier)}
             >
-              {o.label}
+              <span className={styles.itemLabel}>{o.label}</span>
+              {offline.byId.has(o.identifier) && <span className={styles.badge}>{t.offlineBadge}</span>}
             </button>
           ))}
         </div>

@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { useAppState } from "../../state/AppStateContext";
 import { STR } from "../../data/strings";
 import { TranslationCombo } from "./TranslationCombo";
+import { OfflineButton } from "./OfflineButton";
 import { BookFilter } from "./BookFilter";
 import { BookAccordion } from "./BookAccordion";
 import styles from "./Sidebar.module.scss";
@@ -19,9 +20,11 @@ export function Sidebar(): JSX.Element {
       <div className={styles.translationBlock}>
         <div className={styles.sectionTitle}>{t.translation}</div>
         <TranslationCombo which="a" />
+        <OfflineButton translationId={state.transA} />
         {state.compare && (
           <div className={styles.secondCombo}>
             <TranslationCombo which="b" />
+            <OfflineButton translationId={state.transB} />
           </div>
         )}
       </div>

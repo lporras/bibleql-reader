@@ -1,5 +1,6 @@
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { gqlRequest, HAS_BIBLEQL_KEY } from "../lib/graphql";
+import { writeCachedTranslations } from "../state/persist";
 import { queryKeys } from "./keys";
 import type { TranslationSummary } from "../types/bible";
 
@@ -11,7 +12,9 @@ const QUERY = "query { translations { identifier name language note concordanceI
 
 async function fetchTranslations(): Promise<TranslationSummary[]> {
   const data = await gqlRequest<TranslationsResponse>(QUERY);
-  return (data.translations || []).slice().sort((a, b) => a.identifier.localeCompare(b.identifier));
+  const list = (data.translations || []).slice().sort((a, b) => a.identifier.localeCompare(b.identifier));
+  if (list.length) writeCachedTranslations(list);
+  return list;
 }
 
 export function useTranslations(): UseQueryResult<TranslationSummary[]> {

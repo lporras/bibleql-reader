@@ -1,6 +1,7 @@
 import type { Theme } from "../types/app";
 import type { Locale } from "../data/strings";
 import type { AnnotationMap } from "../types/annotations";
+import type { TranslationSummary } from "../types/bible";
 
 export interface PersistedPrefs {
   theme: Theme;
@@ -16,6 +17,7 @@ export interface PersistedPrefs {
 const PREFS_KEY = "biblereader.prefs";
 const AI_KEY_KEY = "biblereader.aikey";
 const ANNOTATIONS_KEY = "biblereader.annotations";
+const TRANSLATIONS_KEY = "biblereader.translations";
 
 export function readPrefs(): Partial<PersistedPrefs> {
   try {
@@ -83,6 +85,25 @@ export function readAnnotations(): AnnotationMap {
 export function writeAnnotations(map: AnnotationMap): void {
   try {
     localStorage.setItem(ANNOTATIONS_KEY, JSON.stringify(map));
+  } catch {
+    // storage unavailable or full
+  }
+}
+
+// The last translations list BibleQL returned, so the picker shows the real
+// names when offline rather than the six-entry bundled fallback.
+export function readCachedTranslations(): TranslationSummary[] {
+  try {
+    const raw = JSON.parse(localStorage.getItem(TRANSLATIONS_KEY) || "[]");
+    return Array.isArray(raw) ? (raw as TranslationSummary[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function writeCachedTranslations(list: TranslationSummary[]): void {
+  try {
+    localStorage.setItem(TRANSLATIONS_KEY, JSON.stringify(list));
   } catch {
     // storage unavailable or full
   }

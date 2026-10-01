@@ -4,5 +4,7 @@ export const queryKeys = {
     ["passage", translationId, bookId, chapter] as const,
   concordanceSupport: (translationId: string) => ["concordance-support", translationId] as const,
   concordance: (translationId: string, word: string) => ["concordance", translationId, word] as const,
-  search: (translationId: string, query: string) => ["search", translationId, query] as const
+  search: (translationId: string, query: string) => ["search", translationId, query] as const,
+  offlineInstalled: () => ["offline", "installed"] as const,
+  offlineAvailability: () => ["offline", "availability"] as const
 };

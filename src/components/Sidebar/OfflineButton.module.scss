@@ -1,0 +1,166 @@
+@use "../../styles/mixins" as *;
+
+.wrap {
+  position: relative;
+
+  &[data-variant="row"] {
+    margin-top: 6px;
+  }
+}
+
+.trigger {
+  @include bare-button;
+  @include hoverable-surface;
+  @include focus-ring;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 3px 5px;
+  border-radius: 3px;
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--muted);
+  text-align: left;
+
+  &[data-state="installed"],
+  &[data-state="update"] {
+    color: var(--accent-deep);
+  }
+
+  &:disabled {
+    cursor: default;
+    background: none;
+  }
+
+  [data-variant="icon"] > & {
+    @include icon-button;
+    padding: 0;
+    background: none;
+  }
+
+  @media (pointer: coarse) {
+    [data-variant="row"] > & {
+      min-height: 36px;
+    }
+  }
+}
+
+.label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Progress ring: a conic fill masked down to a 2px band. Indeterminate
+// (size unknown, or unpacking) spins a fixed quarter instead.
+.ring {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: conic-gradient(var(--accent) var(--p, 0%), var(--divider) 0);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2.5px), #000 0);
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2.5px), #000 0);
+
+  &[data-indeterminate="true"] {
+    background: conic-gradient(var(--accent) 25%, var(--divider) 0);
+    animation: spin 0.9s linear infinite;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.dot {
+  position: absolute;
+  top: 2px;
+  left: 14px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.error {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 3px 5px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.errorText {
+  flex: 1;
+  min-width: 0;
+}
+
+.link {
+  @include bare-button;
+  @include focus-ring;
+  color: var(--accent-deep);
+  text-decoration: underline;
+}
+
+.dismiss {
+  @include bare-button;
+  @include focus-ring;
+  display: flex;
+  padding: 2px;
+  color: var(--faint);
+}
+
+.menu {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 4px);
+  z-index: 30;
+  min-width: 220px;
+  max-width: 280px;
+  background: var(--raise);
+  border: 1px solid var(--divider);
+  border-radius: 4px;
+  box-shadow: var(--shadow);
+  padding: 4px;
+
+  [data-variant="icon"] > & {
+    left: auto;
+    right: 0;
+  }
+}
+
+.menuInfo {
+  padding: 5px 8px 7px;
+  border-bottom: 1px solid var(--hair);
+  margin-bottom: 4px;
+}
+
+.menuTitle {
+  font-size: 13px;
+}
+
+.menuNote {
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--faint);
+}
+
+.menuItem {
+  @include bare-button;
+  @include hoverable-surface;
+  @include focus-ring;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 3px;
+  font-size: 13px;
+  text-align: left;
+}

@@ -43,10 +43,10 @@ export interface ConcordanceHitNode {
   verse: ConcordanceVerseRef;
 }
 
-export interface ConcordancePage {
+export interface ConcordancePageResult {
   totalCount: number;
   entry: ConcordanceEntry | null;
-  edges: { node: ConcordanceHitNode }[];
+  hits: ConcordanceHitNode[];
   pageInfo: { hasNextPage: boolean; endCursor: string | null };
 }
 

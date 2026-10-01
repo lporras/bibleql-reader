@@ -30,7 +30,9 @@
 }
 
 .item {
-  display: block;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
   width: 100%;
   text-align: left;
   padding: 5px 8px;
@@ -39,4 +41,17 @@
   font-size: 13px;
   line-height: 1.35;
   @include hoverable-surface;
+}
+
+.itemLabel {
+  flex: 1;
+  min-width: 0;
+}
+
+.badge {
+  flex: 0 0 auto;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent-deep);
 }

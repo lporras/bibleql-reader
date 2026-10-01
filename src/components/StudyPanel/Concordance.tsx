@@ -3,6 +3,7 @@ import { useAppState } from "../../state/AppStateContext";
 import { useConcordanceSupport } from "../../queries/useConcordanceSupport";
 import { useConcordance } from "../../queries/useConcordance";
 import { useTranslations } from "../../queries/useTranslations";
+import { useOfflineInstalled } from "../../queries/useOfflineInstalled";
 import { HAS_BIBLEQL_KEY } from "../../lib/graphql";
 import { useOpenRef } from "../../hooks/useOpenRef";
 import { fillTemplate, stripMarkContext } from "../../lib/format";
@@ -33,7 +34,8 @@ export function Concordance({ active }: ConcordanceProps): JSX.Element {
     setWord(w);
   }
 
-  const hasKey = HAS_BIBLEQL_KEY;
+  const offline = useOfflineInstalled();
+  const hasKey = HAS_BIBLEQL_KEY || offline.byId.has(state.transA);
   let notice = "";
   if (!hasKey) {
     notice = t.noKey;
