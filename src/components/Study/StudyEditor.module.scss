@@ -1,0 +1,119 @@
+@use "../../styles/mixins" as *;
+@use "../../styles/tokens" as t;
+
+.wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+// Sticks to the top of the scrolling page so formatting stays in reach
+// while writing a long sermon.
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 6px 0;
+  background: var(--bg);
+  border-bottom: 1px solid var(--hair);
+}
+
+.tool {
+  min-width: 30px;
+  height: 28px;
+  padding: 0 7px;
+  border-radius: t.$radius-md;
+  font-family: t.$font-body;
+  font-size: 13px;
+  color: var(--muted);
+  @include hoverable-surface;
+
+  &[data-tool="bold"] {
+    font-weight: 700;
+  }
+
+  &[data-tool="italic"] {
+    font-style: italic;
+  }
+
+  &[data-tool="quote"] {
+    font-family: t.$font-heading;
+    font-size: 20px;
+    line-height: 1;
+  }
+
+  &[data-on="yes"] {
+    background: var(--sel);
+    color: var(--accent-deep);
+  }
+
+  @media (pointer: coarse) {
+    min-width: 40px;
+    height: 40px;
+  }
+}
+
+.editor {
+  min-height: 260px;
+  padding: 16px 2px 40px;
+  font-size: 16px;
+  line-height: 1.75;
+  outline: none;
+  text-wrap: pretty;
+  overflow-wrap: break-word;
+
+  // TipTap's Placeholder extension marks the empty first paragraph with
+  // `is-editor-empty` and puts the text in its data-placeholder.
+  :global(p.is-editor-empty:first-child)::before {
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    color: var(--faint);
+    font-style: italic;
+    pointer-events: none;
+  }
+
+  p {
+    margin: 0 0 0.8em;
+  }
+
+  h2 {
+    font-family: t.$font-heading;
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 1.2;
+    margin: 1.1em 0 0.4em;
+  }
+
+  h3 {
+    font-family: t.$font-heading;
+    font-size: 21px;
+    font-weight: 600;
+    line-height: 1.25;
+    margin: 1em 0 0.35em;
+  }
+
+  ul,
+  ol {
+    margin: 0 0 0.8em;
+    padding-left: 1.6em;
+  }
+
+  li {
+    margin: 0.15em 0;
+  }
+
+  blockquote {
+    margin: 0.4em 0 1em;
+    padding: 2px 0 2px 16px;
+    border-left: 3px solid var(--accent);
+    color: var(--muted);
+    font-style: italic;
+
+    p:last-child {
+      margin-bottom: 0;
+    }
+  }
+}

@@ -1,9 +1,10 @@
 import type { JSX } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAppState } from "../../state/AppStateContext";
 import { IS_MAC } from "../../platform/host";
 import { OfflineButton } from "../Sidebar/OfflineButton";
 import { STR } from "../../data/strings";
-import { CompareIcon, KeyIcon, MoonIcon, StudyIcon, SunIcon } from "../icons";
+import { CompareIcon, KeyIcon, MoonIcon, SermonIcon, StudyIcon, SunIcon } from "../icons";
 import { RefSearchForm } from "./RefSearchForm";
 import styles from "./TitleBar.module.scss";
 
@@ -17,6 +18,7 @@ export function TitleBar({ showOffline = false }: TitleBarProps): JSX.Element {
   const { state, actions } = useAppState();
   const t = STR[state.locale];
   const isDark = state.theme === "dark";
+  const navigate = useNavigate();
 
   return (
     <div className={styles.bar} data-tauri-drag-region="deep">
@@ -53,6 +55,10 @@ export function TitleBar({ showOffline = false }: TitleBarProps): JSX.Element {
         >
           <StudyIcon />
           <span>{t.panel}</span>
+        </button>
+        <button type="button" className={styles.toolButton} title={t.studies} onClick={() => navigate("/study")}>
+          <SermonIcon />
+          <span>{t.studies}</span>
         </button>
         <span className={styles.divider} />
         {showOffline && <OfflineButton translationId={state.transA} variant="icon" />}

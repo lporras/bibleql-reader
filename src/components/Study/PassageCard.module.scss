@@ -1,0 +1,112 @@
+@use "../../styles/mixins" as *;
+@use "../../styles/tokens" as t;
+
+.card {
+  padding: 12px 0 14px;
+  border-bottom: 1px solid var(--hair);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ref {
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--accent-deep);
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.translation {
+  @include uppercase-label;
+  font-size: 9.5px;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: t.$radius-md;
+  color: var(--faint);
+
+  &:hover:not(:disabled) {
+    background: var(--sel);
+    color: var(--ink);
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+
+  @media (pointer: coarse) {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+// Removing is the one destructive action, so like the Marks list it only
+// shows on hover (or keyboard focus) instead of sitting under the cursor.
+.remove {
+  opacity: 0;
+
+  &:focus-visible {
+    opacity: 1;
+  }
+
+  @media (pointer: coarse) {
+    opacity: 1;
+  }
+}
+
+.card:hover .remove {
+  opacity: 1;
+}
+
+.text {
+  margin: 6px 0 0;
+  font-size: 14.5px;
+  line-height: 1.7;
+  text-wrap: pretty;
+}
+
+.compact .text {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.pending {
+  margin: 6px 0 0;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.why {
+  margin: 6px 0 0;
+  padding-left: 10px;
+  border-left: 2px solid var(--divider);
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--muted);
+}

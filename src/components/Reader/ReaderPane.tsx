@@ -8,6 +8,7 @@ import { HAS_BIBLEQL_KEY } from "../../lib/graphql";
 import { useFocusVerse } from "../../hooks/useFocusVerse";
 import { useSpeech } from "../../hooks/useSpeech";
 import { useVerseSelection } from "../../hooks/useVerseSelection";
+import { useAddToStudy } from "../../hooks/useAddToStudy";
 import { bookLabel, stepChapter } from "../../lib/refs";
 import { encodeVerses } from "../../lib/verseRanges";
 import { fillTemplate } from "../../lib/format";
@@ -152,6 +153,22 @@ export function ReaderPane({ compareEff }: ReaderPaneProps): JSX.Element {
     [textOf, bookId, chapter, state.locale, clearSelection]
   );
 
+  // "Add to study" snapshots the verse text along with the reference, so the
+  // study and its PDF don't depend on the network later. Not in sample mode,
+  // though: those verses are Psalm 23 whatever the URL says.
+  const { add: addPassage, has: studyHas } = useAddToStudy();
+  const addToStudy = useCallback(
+    (numbers: number[]) => {
+      const text = noKey ? "" : numbers.map((n) => textOf(n).trim()).join(" ");
+      addPassage({ bookId, chapter, verses: numbers, text, source: "reader" });
+    },
+    [addPassage, noKey, textOf, bookId, chapter]
+  );
+  const isInStudy = useCallback(
+    (numbers: number[]) => studyHas({ bookId, chapter, verses: numbers }),
+    [studyHas, bookId, chapter]
+  );
+
   const marking: VerseMarking = useMemo(
     () => ({
       bookId,
@@ -160,11 +177,12 @@ export function ReaderPane({ compareEff }: ReaderPaneProps): JSX.Element {
       onEditNote: (verse) => setNoteTarget({ verse, text: textOf(verse) }),
       onCopy: copyVerses,
       onCreateImage: createImage,
+      onAddToStudy: addToStudy,
+      isInStudy,
       onDone: clearSelection
     }),
-    [bookId, chapter, marks, textOf, copyVerses, createImage, clearSelection]
+    [bookId, chapter, marks, textOf, copyVerses, createImage, addToStudy, isInStudy, clearSelection]
   );
-
 
   const headingRef = `${bookLabel(bookId, state.locale)} ${chapter}`;
   const headingNote = compareEff

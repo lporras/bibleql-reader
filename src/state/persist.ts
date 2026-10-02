@@ -2,6 +2,7 @@ import type { Theme } from "../types/app";
 import type { Locale } from "../data/strings";
 import type { AnnotationMap } from "../types/annotations";
 import type { TranslationSummary } from "../types/bible";
+import type { StudiesState } from "../types/study";
 
 export interface PersistedPrefs {
   theme: Theme;
@@ -18,6 +19,7 @@ const PREFS_KEY = "biblereader.prefs";
 const AI_KEY_KEY = "biblereader.aikey";
 const ANNOTATIONS_KEY = "biblereader.annotations";
 const TRANSLATIONS_KEY = "biblereader.translations";
+const STUDIES_KEY = "biblereader.studies";
 
 export function readPrefs(): Partial<PersistedPrefs> {
   try {
@@ -104,6 +106,27 @@ export function readCachedTranslations(): TranslationSummary[] {
 export function writeCachedTranslations(list: TranslationSummary[]): void {
   try {
     localStorage.setItem(TRANSLATIONS_KEY, JSON.stringify(list));
+  } catch {
+    // storage unavailable or full
+  }
+}
+
+// Studies (sermons / lessons). Own key for the same reason as annotations: a
+// study's body grows without bound, while prefs stay small.
+export function readStudies(): StudiesState {
+  try {
+    const raw = JSON.parse(localStorage.getItem(STUDIES_KEY) || "{}") as Partial<StudiesState>;
+    const studies = Array.isArray(raw.studies) ? raw.studies : [];
+    const activeId = studies.some((s) => s.id === raw.activeId) ? (raw.activeId as string) : null;
+    return { studies, activeId };
+  } catch {
+    return { studies: [], activeId: null };
+  }
+}
+
+export function writeStudies(state: StudiesState): void {
+  try {
+    localStorage.setItem(STUDIES_KEY, JSON.stringify(state));
   } catch {
     // storage unavailable or full
   }

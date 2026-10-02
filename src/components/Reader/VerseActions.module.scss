@@ -57,6 +57,16 @@
   }
 }
 
+// Six segments at full width don't fit a phone-width column; tighten them
+// rather than letting the bar run off the edge of the text.
+@media (max-width: 600px) {
+  .action {
+    min-width: 54px;
+    padding: 9px 7px 7px;
+    font-size: 10px;
+  }
+}
+
 // The Highlight segment opens a submenu, so it carries a chevron at its right
 // edge without disturbing the centered icon-over-label stack.
 .withChevron {

@@ -10,4 +10,10 @@ export function getPlatform(): PlatformCapabilities {
   return { ...webPlatform, ...tauriPlatform };
 }
 
-export type { PlatformCapabilities, PickedFile, SaveImageRequest, SaveImageResult } from "./types";
+export type {
+  PlatformCapabilities,
+  PickedFile,
+  SaveDocumentRequest,
+  SaveImageRequest,
+  SaveImageResult
+} from "./types";

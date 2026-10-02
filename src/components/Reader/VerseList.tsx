@@ -15,6 +15,8 @@ export interface VerseMarking {
   onEditNote(verse: number): void;
   onCopy(verses: number[]): void;
   onCreateImage(): void;
+  onAddToStudy(verses: number[]): void;
+  isInStudy(verses: number[]): boolean;
   onDone(): void;
 }
 
@@ -187,6 +189,8 @@ export function VerseList({
           onEditNote={() => marking.onEditNote(selected[0])}
           onCopy={() => marking.onCopy(selected)}
           onCreateImage={marking.onCreateImage}
+          onAddToStudy={() => marking.onAddToStudy(selected)}
+          inStudy={marking.isInStudy(selected)}
           onDone={marking.onDone}
         />
       )}

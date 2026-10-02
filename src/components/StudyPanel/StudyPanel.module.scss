@@ -15,7 +15,7 @@
   gap: 0;
   padding: 0 6px;
   border-bottom: 1px solid var(--divider);
-  // Four tabs in two languages don't always fit the panel's minimum width;
+  // Five tabs in two languages don't always fit the panel's minimum width;
   // let them scroll rather than wrap the row or clip a label.
   overflow-x: auto;
   scrollbar-width: none;

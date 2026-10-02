@@ -195,3 +195,61 @@ export function OfflineReadyIcon({ size = 15, ...rest }: IconProps): JSX.Element
     </svg>
   );
 }
+
+export function PlusIcon({ size = 15, ...rest }: IconProps): JSX.Element {
+  return (
+    <svg {...base(size, { stroke: "currentColor", strokeWidth: 1.7, strokeLinecap: "round", ...rest })}>
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
+}
+
+export function CheckIcon({ size = 15, ...rest }: IconProps): JSX.Element {
+  return (
+    <svg {...base(size, { stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round", ...rest })}>
+      <path d="m5 12.5 4.5 4.5L19 7.5" />
+    </svg>
+  );
+}
+
+export function ArrowUpIcon({ size = 15, ...rest }: IconProps): JSX.Element {
+  return (
+    <svg {...base(size, { stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round", ...rest })}>
+      <path d="M12 19V5M6.5 10.5 12 5l5.5 5.5" />
+    </svg>
+  );
+}
+
+export function ArrowDownIcon({ size = 15, ...rest }: IconProps): JSX.Element {
+  return (
+    <svg {...base(size, { stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round", ...rest })}>
+      <path d="M12 5v14M6.5 13.5 12 19l5.5-5.5" />
+    </svg>
+  );
+}
+
+export function BookOpenIcon({ size = 15, ...rest }: IconProps): JSX.Element {
+  return (
+    <svg {...base(size, { stroke: "currentColor", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round", ...rest })}>
+      <path d="M3 5.5c3-1 6-1 9 1 3-2 6-2 9-1V19c-3-1-6-1-9 1-3-2-6-2-9-1z" />
+      <path d="M12 6.5V20" />
+    </svg>
+  );
+}
+
+export function QuoteIcon({ size = 15, ...rest }: IconProps): JSX.Element {
+  return (
+    <svg {...base(size, { fill: "currentColor", ...rest })}>
+      <path d="M5 17.5c0-4.5 1.6-8.2 5-10.5l1 1.3c-1.9 1.6-2.9 3.4-3 5.4H10v4.3H5zm8.5 0c0-4.5 1.6-8.2 5-10.5l1 1.3c-1.9 1.6-2.9 3.4-3 5.4h2v4.3h-5z" />
+    </svg>
+  );
+}
+
+export function SermonIcon({ size = 15, ...rest }: IconProps): JSX.Element {
+  return (
+    <svg {...base(size, { stroke: "currentColor", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round", ...rest })}>
+      <path d="M6 3.5h9l3 3V20.5H6z" />
+      <path d="M9 9h6M9 12.5h6M9 16h3.5" />
+    </svg>
+  );
+}

@@ -6,7 +6,8 @@ Guidance for agents working in this repository.
 
 Tauri 2 + Vite 7 + React 19 + TypeScript 5.9 (strict) desktop Bible reader over the BibleQL
 GraphQL API (`https://bibleql.org/graphql`), plus a Verse Image Creator (select verses → style
-them over a background → export as PNG/JPEG). `"type": "module"`. Yarn, not npm. The UI runs in
+them over a background → export as PNG/JPEG) and Studies — sermon/lesson prep: a title, a
+rich-text body, and passages collected from the reader or the AI assistant, exportable as PDF. `"type": "module"`. Yarn, not npm. The UI runs in
 the platform webview; `src-tauri/` is a thin Rust shell. Read the neighbouring file before
 inventing a pattern; there is almost always precedent.
 
@@ -36,7 +37,8 @@ repo secrets, run the full suite). No ESLint/Prettier. Match surrounding style b
 index.html                 Vite entry (at the repo root, per Tauri convention)
 public/bible-images/       curated Unsplash backgrounds (full/ + thumb/), served as static files
 src/
-  components/              Reader/, Sidebar/, StudyPanel/, TitleBar/, + standalone (Spinner, icons…)
+  components/              Reader/, Sidebar/, StudyPanel/, TitleBar/, Study/ (study page pieces +
+                            the TipTap editor), + standalone (Spinner, icons…)
   features/
     image-creator/         the Verse Image Creator — model/, components/, providers/, rendering/,
                             lib/, data/, state/, hooks/, assets/ (see its own files for detail)
@@ -45,8 +47,10 @@ src/
   routes/                  route-level composition shells (thin — pull their own state/data)
   queries/                 TanStack Query hooks, one per BibleQL query, key factory in keys.ts
   state/                   AppStateContext (Context + useReducer) + persist.ts (localStorage),
-                            AnnotationsContext, OfflineDownloadsContext
-  lib/                     graphql client, ai.ts, externalLinks.ts, refs.ts, speech.ts, format.ts
+                            AnnotationsContext, OfflineDownloadsContext, StudiesContext (+ study.ts,
+                            its pure reducer), AiChatContext (one chat transcript app-wide)
+  lib/                     graphql client, ai.ts, externalLinks.ts, refs.ts, speech.ts, format.ts,
+                            pdf/ (dependency-free PDF: WinAnsi text, layout, writer, studyPdf.ts)
   data/                    static data: books.ts, strings.ts (i18n), sample.ts, fallbackTranslations.ts
   types/                   shared TS types (bible.ts, app.ts, ai.ts, imageCreator.ts)
   styles/                  _tokens.scss (palette), _theme.scss, _mixins.scss, _fonts.scss, global.scss
@@ -69,7 +73,14 @@ Every component has a colocated `.module.scss`.
      `localStorage` via `state/persist.ts`.
   2. TanStack Query for server state (`queries/*.ts`, key factory in `queries/keys.ts`).
   3. Route + search params for location/selection.
-- **No component library, no Tailwind.** Styling is Sass Modules + a token system
+- **Studies** (`/study/:id`, `routes/StudyPage.tsx`): passages are stored as book/chapter/verses
+  plus a text snapshot (AI-suggested ones are backfilled by `PassageCard`). "Add to study" — the
+  verse toolbar and the assistant's reference chips, via `hooks/useAddToStudy.ts` — feeds the
+  *active* study, creating one if there is none; opening a study makes it active. The body editor
+  is TipTap, restricted to the nodes `lib/pdf/studyPdf.ts` can lay out — enable a new node or
+  mark only together with its PDF rendering. The PDF uses the standard 14 fonts (WinAnsi only;
+  `toWinAnsiText` folds anything else) and is saved through `getPlatform().saveDocument`.
+- **No component library, no Tailwind.** (TipTap is the rich-text engine only; its toolbar is ours.) Styling is Sass Modules + a token system
   (`styles/_tokens.scss` → CSS custom properties in `_theme.scss`, shared mixins in
   `_mixins.scss`). There is no generic `Button`/`Dialog`/`Select` — copy the shape of a
   neighbour (`components/KeyDialog.tsx` is the modal pattern; `icons.tsx` holds inline SVGs).

@@ -3,7 +3,18 @@ import { useAppState } from "../../state/AppStateContext";
 import { useAnnotations } from "../../state/AnnotationsContext";
 import { STR } from "../../data/strings";
 import { HIGHLIGHT_COLORS, verseKey, type HighlightColor, type VerseRef } from "../../types/annotations";
-import { ChevronRightIcon, CopyIcon, HighlightIcon, ImageIcon, MoreIcon, NoteIcon, StarIcon, TrashIcon } from "../icons";
+import {
+  CheckIcon,
+  ChevronRightIcon,
+  CopyIcon,
+  HighlightIcon,
+  ImageIcon,
+  MoreIcon,
+  NoteIcon,
+  SermonIcon,
+  StarIcon,
+  TrashIcon
+} from "../icons";
 import styles from "./VerseActions.module.scss";
 
 interface VerseActionsProps {
@@ -14,12 +25,25 @@ interface VerseActionsProps {
   onEditNote(): void;
   onCopy(): void;
   onCreateImage(): void;
+  onAddToStudy(): void;
+  /** The selection is already in the active study. */
+  inStudy: boolean;
   onDone(): void;
 }
 
 type Popover = "none" | "colors" | "more";
 
-export function VerseActions({ refs, top, above, onEditNote, onCopy, onCreateImage, onDone }: VerseActionsProps): JSX.Element {
+export function VerseActions({
+  refs,
+  top,
+  above,
+  onEditNote,
+  onCopy,
+  onCreateImage,
+  onAddToStudy,
+  inStudy,
+  onDone
+}: VerseActionsProps): JSX.Element {
   const { state } = useAppState();
   const t = STR[state.locale];
   const { annotations, actions } = useAnnotations();
@@ -101,6 +125,22 @@ export function VerseActions({ refs, top, above, onEditNote, onCopy, onCreateIma
         <button type="button" className={styles.action} onClick={onCreateImage} title={t.createImage}>
           <ImageIcon size={17} />
           <span>{t.createImage}</span>
+        </button>
+
+        <span className={styles.divider} />
+
+        {/* Stays put after adding, flipped to "In study", so the reader gets
+            confirmation without the selection (and this bar) vanishing. */}
+        <button
+          type="button"
+          className={styles.action}
+          data-on={inStudy ? "yes" : "no"}
+          onClick={onAddToStudy}
+          disabled={inStudy}
+          title={inStudy ? t.inStudy : t.addToStudy}
+        >
+          {inStudy ? <CheckIcon size={17} /> : <SermonIcon size={17} />}
+          <span>{inStudy ? t.inStudy : t.addToStudy}</span>
         </button>
 
         <span className={styles.divider} />
