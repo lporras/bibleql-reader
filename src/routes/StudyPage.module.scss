@@ -1,0 +1,89 @@
+@use "../styles/mixins" as *;
+@use "../styles/tokens" as t;
+
+.shell {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.body {
+  flex: 1 1 auto;
+  display: flex;
+  min-height: 0;
+}
+
+.page {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-y: auto;
+}
+
+// A readable measure for writing, the same idea as the reader's text column.
+.column {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 28px 32px 80px;
+
+  @media (max-width: 560px) {
+    padding: 18px 16px 60px;
+  }
+}
+
+.switcher {
+  width: 100%;
+  margin-bottom: 14px;
+  padding: 5px 6px;
+  border: 1px solid var(--divider);
+  border-radius: t.$radius-md;
+  background: var(--surface);
+  font-size: 13px;
+}
+
+.title {
+  width: 100%;
+  padding: 0 2px 8px;
+  border: 0;
+  background: none;
+  outline: none;
+  font-family: t.$font-heading;
+  font-size: 38px;
+  font-weight: 600;
+  line-height: 1.15;
+
+  &::placeholder {
+    color: var(--faint);
+  }
+
+  @media (max-width: 560px) {
+    font-size: 30px;
+  }
+}
+
+.passages {
+  margin-top: 28px;
+  padding-top: 18px;
+  border-top: 1px solid var(--divider);
+}
+
+.sectionLabel {
+  @include uppercase-label;
+  margin: 0 0 4px;
+  font-weight: 400;
+}
+
+.notice {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.assistant {
+  flex: 0 0 t.$study-panel-width;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-left: 1px solid var(--divider);
+  background: var(--surface);
+}

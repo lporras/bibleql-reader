@@ -1,66 +1,92 @@
 import { useState, type FormEvent, type JSX, type KeyboardEvent } from "react";
 import { useAppState } from "../../state/AppStateContext";
-import { useAi } from "../../queries/useAi";
+import { useAiChat } from "../../state/AiChatContext";
 import { useOpenRef } from "../../hooks/useOpenRef";
+import { useAddToStudy } from "../../hooks/useAddToStudy";
+import { translationAbbrev } from "../../state/study";
 import { STR } from "../../data/strings";
 import type { AiReference } from "../../types/ai";
+import { CheckIcon, PlusIcon } from "../icons";
+import { AiText } from "./AiText";
 import styles from "./AIAssistant.module.scss";
-
-interface ChatMessage {
-  who: string;
-  text: string;
-  refs: AiReference[];
-}
 
 interface AIAssistantProps {
   active: boolean;
+  /** Set on the study page: steers answers toward the study being written. */
+  studyTitle?: string;
+  suggestions?: string[];
 }
 
-export function AIAssistant({ active }: AIAssistantProps): JSX.Element {
+export function AIAssistant({ active, studyTitle, suggestions }: AIAssistantProps): JSX.Element {
   const { state } = useAppState();
   const t = STR[state.locale];
-  const es = state.locale === "es";
   const openRef = useOpenRef();
-  const ai = useAi();
+  const chat = useAiChat();
+  const study = useAddToStudy();
 
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
 
-  async function ask(question: string): Promise<void> {
-    const q = question.trim();
-    if (!q || ai.isPending) return;
-    setMessages((prev) => prev.concat([{ who: es ? "Tú" : "You", text: q, refs: [] }]));
+  function ask(question: string): void {
+    if (!question.trim() || chat.pending) return;
     setInput("");
-    try {
-      const answer = await ai.mutateAsync(q);
-      setMessages((prev) =>
-        prev.concat([{ who: es ? "Asistente" : "Assistant", text: answer.answer, refs: answer.references }])
-      );
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      setMessages((prev) => prev.concat([{ who: es ? "Asistente" : "Assistant", text: message, refs: [] }]));
-    }
+    void chat.ask(question, studyTitle);
   }
 
   function handleSubmit(event: FormEvent): void {
     event.preventDefault();
-    void ask(input);
+    ask(input);
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>): void {
-    if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) void ask(input);
+    if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) ask(input);
   }
 
-  const suggestions = [t.s1, t.s2, t.s3];
+  // Each reference is two targets: the reference itself opens it in the
+  // reader (as before), and the "+" beside it sends it to the active study.
+  // A reference that doesn't parse can't be stored or opened, so it gets
+  // neither — the chip still shows what the assistant said.
+  function renderRef(r: AiReference): JSX.Element {
+    const draft = study.fromRef(r.ref, r.why);
+    const inStudy = draft ? study.has(draft) : false;
+    return (
+      <span key={r.ref} className={styles.refChip}>
+        <button
+          type="button"
+          className={styles.refOpen}
+          title={r.why ? `${r.why}\n\n${t.openInReader}` : t.openInReader}
+          onClick={() => openRef(r.ref)}
+          disabled={!draft}
+        >
+          {r.ref}
+        </button>
+        {draft && (
+          <button
+            type="button"
+            className={styles.refAdd}
+            data-on={inStudy ? "yes" : "no"}
+            // Added in the translation being read; say which.
+            title={`${inStudy ? t.refInStudy : t.addRefToStudy} (${translationAbbrev(state.transA)})`}
+            aria-label={`${inStudy ? t.refInStudy : t.addRefToStudy}: ${r.ref}`}
+            disabled={inStudy}
+            onClick={() => study.add(draft)}
+          >
+            {inStudy ? <CheckIcon size={11} /> : <PlusIcon size={11} />}
+          </button>
+        )}
+      </span>
+    );
+  }
+
+  const prompts = suggestions ?? [t.s1, t.s2, t.s3];
 
   return (
     <div className={styles.body} hidden={!active}>
       <div className={styles.messages}>
-        {messages.length === 0 && (
+        {chat.messages.length === 0 && (
           <div className={styles.empty}>
             <p className={styles.introText}>{t.aiIntro}</p>
             <div className={styles.suggestions}>
-              {suggestions.map((text) => (
+              {prompts.map((text) => (
                 <button key={text} type="button" className={styles.suggestion} onClick={() => setInput(text)}>
                   {text}
                 </button>
@@ -68,28 +94,14 @@ export function AIAssistant({ active }: AIAssistantProps): JSX.Element {
             </div>
           </div>
         )}
-        {messages.map((m, i) => (
+        {chat.messages.map((m, i) => (
           <div key={i} className={styles.message}>
             <div className={styles.who}>{m.who}</div>
-            <div className={styles.text}>{m.text}</div>
-            {m.refs.length > 0 && (
-              <div className={styles.refs}>
-                {m.refs.map((r) => (
-                  <button
-                    key={r.ref}
-                    type="button"
-                    className={styles.refChip}
-                    title={r.why}
-                    onClick={() => openRef(r.ref)}
-                  >
-                    {r.ref}
-                  </button>
-                ))}
-              </div>
-            )}
+            {m.from === "assistant" ? <AiText text={m.text} /> : <div className={styles.text}>{m.text}</div>}
+            {m.refs.length > 0 && <div className={styles.refs}>{m.refs.map(renderRef)}</div>}
           </div>
         ))}
-        {ai.isPending && <div className={styles.thinking}>{t.thinking}</div>}
+        {chat.pending && <div className={styles.thinking}>{t.thinking}</div>}
       </div>
       <form className={styles.form} onSubmit={handleSubmit}>
         <textarea

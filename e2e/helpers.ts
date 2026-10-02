@@ -57,8 +57,8 @@ async function installTauriStub(page: Page, responses: TauriResponses = {}): Pro
       invoke: async (cmd: string, args: Record<string, unknown> = {}) => {
         window.__TAURI_CALLS__.push({ cmd, args });
         // `plugin:dialog|save` returning null reads as "user cancelled",
-        // which keeps the export flow from trying to write a file.
-        if (cmd === "plugin:dialog|save") return null;
+        // which keeps the export flow from trying to write a file — unless
+        // a spec answers it with a path, to inspect the bytes `write_file` gets.
         return cmd in responses ? responses[cmd] : null;
       },
       transformCallback: (cb: unknown) => cb,

@@ -126,13 +126,69 @@ export interface StringsShape {
   offlineRetry: string;
   offlineBadge: string;
   offlineVerses: string;
+  studyTab: string;
+  studies: string;
+  addToStudy: string;
+  inStudy: string;
+  addRefToStudy: string;
+  refInStudy: string;
+  openInReader: string;
+  untitledStudy: string;
+  studyIdle: string;
+  newStudy: string;
+  openStudy: string;
+  currentStudy: string;
+  noPassages: string;
+  passagesN: string;
+  removePassage: string;
+  studyTitlePlaceholder: string;
+  studyBodyPlaceholder: string;
+  passages: string;
+  insertIntoNotes: string;
+  moveUp: string;
+  moveDown: string;
+  exportPdf: string;
+  exporting: string;
+  exported: string;
+  exportError: string;
+  deleteStudy: string;
+  confirmDelete: string;
+  backToReader: string;
+  editedAt: string;
+  studyNotFound: string;
+  textPending: string;
+  fromAssistant: string;
+  fmtBold: string;
+  fmtItalic: string;
+  fmtHeading: string;
+  fmtSubheading: string;
+  fmtBullets: string;
+  fmtNumbers: string;
+  fmtQuote: string;
+  fmtAlignLeft: string;
+  fmtAlignCenter: string;
+  fmtAlignRight: string;
+  fmtJustify: string;
+  fmtRule: string;
+  fmtLink: string;
+  fmtImage: string;
+  fmtVideo: string;
+  linkUrl: string;
+  videoUrl: string;
+  applyUrl: string;
+  removeLink: string;
+  invalidVideo: string;
+  imageError: string;
+  ss1: string;
+  ss2: string;
+  ss3: string;
 }
 
 export const STR: Record<Locale, StringsShape> = {
   en: {
     refPlaceholder: "Go to reference — John 3:16",
     compare: "Compare",
-    panel: "Study",
+    panel: "Tools",
     theme: "Theme",
     apiKey: "BibleQL API key",
     aiApiKey: "Anthropic API key",
@@ -254,12 +310,68 @@ export const STR: Record<Locale, StringsShape> = {
     offlineChecksum: "The download was damaged (checksum mismatch). Try again.",
     offlineRetry: "Retry",
     offlineBadge: "offline",
-    offlineVerses: "%n verses on this device"
+    offlineVerses: "%n verses on this device",
+    studyTab: "Sermon",
+    studies: "Sermons",
+    addToStudy: "Add to study",
+    inStudy: "In study",
+    addRefToStudy: "Add to the current study",
+    refInStudy: "Already in the current study",
+    openInReader: "Open in the reader",
+    untitledStudy: "Untitled study",
+    studyIdle: "Gather passages for a sermon or a lesson: select verses in the reader, or ask the assistant, and add them to a study.",
+    newStudy: "New study",
+    openStudy: "Open study",
+    currentStudy: "Current study",
+    noPassages: "No passages yet.",
+    passagesN: "%n passages",
+    removePassage: "Remove from study",
+    studyTitlePlaceholder: "Sermon or study title",
+    studyBodyPlaceholder: "Write your outline, notes and application…",
+    passages: "Passages",
+    insertIntoNotes: "Insert into notes",
+    moveUp: "Move up",
+    moveDown: "Move down",
+    exportPdf: "Export PDF",
+    exporting: "Exporting…",
+    exported: "PDF saved",
+    exportError: "Couldn't save the PDF.",
+    deleteStudy: "Delete study",
+    confirmDelete: "Delete for good?",
+    backToReader: "Reader",
+    editedAt: "Edited %s",
+    studyNotFound: "This study no longer exists.",
+    textPending: "Loading text…",
+    fromAssistant: "Suggested by the assistant",
+    fmtBold: "Bold",
+    fmtItalic: "Italic",
+    fmtHeading: "Heading",
+    fmtSubheading: "Subheading",
+    fmtBullets: "Bulleted list",
+    fmtNumbers: "Numbered list",
+    fmtQuote: "Quote",
+    fmtAlignLeft: "Align left",
+    fmtAlignCenter: "Center",
+    fmtAlignRight: "Align right",
+    fmtJustify: "Justify",
+    fmtRule: "Divider",
+    fmtLink: "Link",
+    fmtImage: "Insert image",
+    fmtVideo: "Insert YouTube video",
+    linkUrl: "Link address",
+    videoUrl: "YouTube link",
+    applyUrl: "Apply",
+    removeLink: "Remove link",
+    invalidVideo: "That isn't a YouTube link.",
+    imageError: "That image couldn't be added.",
+    ss1: "Suggest key verses for this study",
+    ss2: "Outline a three-point sermon on this theme",
+    ss3: "Which cross-references support this theme?"
   },
   es: {
     refPlaceholder: "Ir a la referencia — Juan 3:16",
     compare: "Comparar",
-    panel: "Estudio",
+    panel: "Herramientas",
     theme: "Tema",
     apiKey: "Clave de API de BibleQL",
     aiApiKey: "Clave de API de Anthropic",
@@ -381,6 +493,62 @@ export const STR: Record<Locale, StringsShape> = {
     offlineChecksum: "La descarga llegó dañada (la suma de verificación no coincide). Inténtalo de nuevo.",
     offlineRetry: "Reintentar",
     offlineBadge: "sin conexión",
-    offlineVerses: "%n versículos en este dispositivo"
+    offlineVerses: "%n versículos en este dispositivo",
+    studyTab: "Sermón",
+    studies: "Sermones",
+    addToStudy: "Al estudio",
+    inStudy: "En el estudio",
+    addRefToStudy: "Añadir al estudio actual",
+    refInStudy: "Ya está en el estudio actual",
+    openInReader: "Abrir en el lector",
+    untitledStudy: "Estudio sin título",
+    studyIdle: "Reúne pasajes para un sermón o una lección: selecciona versículos en el lector, o pregúntale al asistente, y añádelos a un estudio.",
+    newStudy: "Nuevo estudio",
+    openStudy: "Abrir estudio",
+    currentStudy: "Estudio actual",
+    noPassages: "Aún no hay pasajes.",
+    passagesN: "%n pasajes",
+    removePassage: "Quitar del estudio",
+    studyTitlePlaceholder: "Título del sermón o estudio",
+    studyBodyPlaceholder: "Escribe tu bosquejo, notas y aplicación…",
+    passages: "Pasajes",
+    insertIntoNotes: "Insertar en las notas",
+    moveUp: "Subir",
+    moveDown: "Bajar",
+    exportPdf: "Exportar PDF",
+    exporting: "Exportando…",
+    exported: "PDF guardado",
+    exportError: "No se pudo guardar el PDF.",
+    deleteStudy: "Eliminar estudio",
+    confirmDelete: "¿Eliminar definitivamente?",
+    backToReader: "Lector",
+    editedAt: "Editado %s",
+    studyNotFound: "Este estudio ya no existe.",
+    textPending: "Cargando texto…",
+    fromAssistant: "Sugerido por el asistente",
+    fmtBold: "Negrita",
+    fmtItalic: "Cursiva",
+    fmtHeading: "Título",
+    fmtSubheading: "Subtítulo",
+    fmtBullets: "Lista con viñetas",
+    fmtNumbers: "Lista numerada",
+    fmtQuote: "Cita",
+    fmtAlignLeft: "Alinear a la izquierda",
+    fmtAlignCenter: "Centrar",
+    fmtAlignRight: "Alinear a la derecha",
+    fmtJustify: "Justificar",
+    fmtRule: "Línea divisoria",
+    fmtLink: "Enlace",
+    fmtImage: "Insertar imagen",
+    fmtVideo: "Insertar video de YouTube",
+    linkUrl: "Dirección del enlace",
+    videoUrl: "Enlace de YouTube",
+    applyUrl: "Aplicar",
+    removeLink: "Quitar enlace",
+    invalidVideo: "Ese no es un enlace de YouTube.",
+    imageError: "No se pudo añadir esa imagen.",
+    ss1: "Sugiere versículos clave para este estudio",
+    ss2: "Haz un bosquejo de sermón de tres puntos sobre este tema",
+    ss3: "¿Qué referencias cruzadas apoyan este tema?"
   }
 };

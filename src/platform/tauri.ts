@@ -1,6 +1,7 @@
 import { save } from "@tauri-apps/plugin-dialog";
 import { writeFile } from "@tauri-apps/plugin-fs";
-import type { PlatformCapabilities, SaveImageRequest, SaveImageResult } from "./types";
+import { openPath } from "@tauri-apps/plugin-opener";
+import type { PlatformCapabilities, SaveDocumentRequest, SaveImageRequest, SaveImageResult } from "./types";
 
 // The only capability that genuinely needs the shell: a webview has no
 // filesystem access of its own, so the native "Save As" dialog and disk
@@ -14,9 +15,12 @@ import type { PlatformCapabilities, SaveImageRequest, SaveImageResult } from "./
 // path, and the fs plugin's mobile `resolve_file` takes its URL branch — which
 // opens the URI through the Kotlin side and skips the path scope entirely — so
 // those globs neither help nor hinder there.
-async function saveImage(request: SaveImageRequest): Promise<SaveImageResult> {
-  const ext = request.mimeType === "image/png" ? "png" : "jpg";
-
+async function saveBytes(
+  data: Uint8Array,
+  suggestedName: string,
+  filter: { name: string; extensions: string[] },
+  what: string
+): Promise<SaveImageResult> {
   // Desktop resolves to null when the user dismisses the dialog, but Android's
   // DialogPlugin *rejects* with "File picker cancelled" instead (it maps
   // Activity.RESULT_CANCELED onto invoke.reject). Both mean the same thing to
@@ -25,25 +29,42 @@ async function saveImage(request: SaveImageRequest): Promise<SaveImageResult> {
   let filePath: string | null;
   try {
     filePath = await save({
-      defaultPath: request.suggestedName,
-      filters: [{ name: "Image", extensions: [ext] }]
+      defaultPath: suggestedName,
+      filters: [filter]
     });
   } catch (err) {
     const message = (err as { message?: string }).message ?? String(err);
     if (/cancel/i.test(message)) return { canceled: true };
-    throw new Error(`Couldn't save the image: ${message}`);
+    throw new Error(`Couldn't save the ${what}: ${message}`);
   }
 
   if (!filePath) return { canceled: true };
 
   try {
-    await writeFile(filePath, request.data);
+    await writeFile(filePath, data);
   } catch (err) {
     const message = (err as { message?: string }).message ?? String(err);
-    throw new Error(`Couldn't save the image: ${message}`);
+    throw new Error(`Couldn't save the ${what}: ${message}`);
   }
 
   return { canceled: false, filePath };
 }
 
-export const tauriPlatform: Pick<PlatformCapabilities, "saveImage"> = { saveImage };
+function saveImage(request: SaveImageRequest): Promise<SaveImageResult> {
+  const ext = request.mimeType === "image/png" ? "png" : "jpg";
+  return saveBytes(request.data, request.suggestedName, { name: "Image", extensions: [ext] }, "image");
+}
+
+function saveDocument(request: SaveDocumentRequest): Promise<SaveImageResult> {
+  return saveBytes(request.data, request.suggestedName, { name: "PDF", extensions: ["pdf"] }, "document");
+}
+
+function openFile(filePath: string): Promise<void> {
+  return openPath(filePath);
+}
+
+export const tauriPlatform: Pick<PlatformCapabilities, "saveImage" | "saveDocument" | "openFile"> = {
+  saveImage,
+  saveDocument,
+  openFile
+};

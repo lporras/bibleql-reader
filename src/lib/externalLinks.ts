@@ -45,3 +45,12 @@ export function attachExternalLinkHandling(): void {
     if (isHttps(resolved.href)) void openUrl(resolved.href);
   });
 }
+
+/**
+ * Opens a link in the system browser, under the same https-only policy —
+ * for callers that handle the click themselves (the study editor, where a
+ * plain click on a link places the caret and Cmd/Ctrl-click follows it).
+ */
+export function openExternal(url: string): void {
+  if (isHttps(url)) void openUrl(url);
+}

@@ -1,0 +1,87 @@
+@use "../../styles/mixins" as *;
+@use "../../styles/tokens" as t;
+
+$coarse-control-height: 36px;
+
+.bar {
+  flex: 0 0 auto;
+  height: t.$titlebar-height;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--divider);
+  background: var(--surface);
+  user-select: none;
+}
+
+.trafficLightsSpacer {
+  flex: 0 0 auto;
+  width: 58px;
+}
+
+.title {
+  font-family: t.$font-heading;
+  font-size: 18px;
+  font-weight: 600;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.button,
+.primaryButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid var(--divider);
+  border-radius: t.$radius-md;
+  font-size: 12px;
+  flex: 0 0 auto;
+  @include hoverable-surface;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  @media (pointer: coarse) {
+    min-height: $coarse-control-height;
+  }
+}
+
+.primaryButton {
+  border-color: var(--accent);
+  color: var(--accent-deep);
+  font-weight: 600;
+}
+
+// Same muted tone for both outcomes, as in the Image Creator's export
+// controls — the app has no dedicated error color.
+.statusOk,
+.statusError {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+// Phones: icon + label buttons crowd the bar; keep the export label only.
+@media (max-width: 560px) {
+  .button span {
+    display: none;
+  }
+
+  .statusOk,
+  .statusError {
+    display: none;
+  }
+}

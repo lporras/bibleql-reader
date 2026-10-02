@@ -1,0 +1,240 @@
+@use "../../styles/mixins" as *;
+@use "../../styles/tokens" as t;
+
+.wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+// Sticks to the top of the scrolling page so formatting stays in reach
+// while writing a long sermon.
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--bg);
+  border-bottom: 1px solid var(--hair);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  row-gap: 2px;
+  padding: 6px 0;
+}
+
+.group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+
+  & + & {
+    margin-left: 7px;
+    padding-left: 7px;
+    border-left: 1px solid var(--hair);
+  }
+}
+
+.tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 28px;
+  padding: 0 7px;
+  border-radius: t.$radius-md;
+  font-family: t.$font-body;
+  font-size: 13px;
+  color: var(--muted);
+  @include hoverable-surface;
+
+  sub {
+    font-size: 0.68em;
+    vertical-align: -0.25em;
+    line-height: 0;
+  }
+
+  &[data-tool="bold"] {
+    font-weight: 700;
+  }
+
+  &[data-tool="italic"] {
+    font-style: italic;
+  }
+
+  &[data-on="yes"] {
+    background: var(--sel);
+    color: var(--accent-deep);
+  }
+
+  @media (pointer: coarse) {
+    min-width: 40px;
+    height: 40px;
+  }
+}
+
+// The link / YouTube address field, under the buttons.
+.urlBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 0 0 8px;
+}
+
+.urlInput {
+  flex: 1 1 220px;
+  min-width: 0;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--divider);
+  border-radius: t.$radius-md;
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+
+  &:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  &[aria-invalid="true"] {
+    border-color: var(--accent-deep);
+  }
+}
+
+.urlButton {
+  height: 30px;
+  padding: 0 10px;
+  border-radius: t.$radius-md;
+  font-family: t.$font-body;
+  font-size: 12.5px;
+  color: var(--muted);
+  @include hoverable-surface;
+
+  &[type="submit"] {
+    color: var(--accent-deep);
+    font-weight: 600;
+  }
+}
+
+.urlError {
+  flex-basis: 100%;
+  margin: 0 0 8px;
+  font-size: 12px;
+  // The app has no dedicated error color (see StudyTopBar.module.scss).
+  color: var(--accent-deep);
+}
+
+.editor {
+  min-height: 260px;
+  padding: 16px 2px 40px;
+  font-size: 16px;
+  line-height: 1.75;
+  outline: none;
+  text-wrap: pretty;
+  overflow-wrap: break-word;
+
+  // TipTap's Placeholder extension marks the empty first paragraph with
+  // `is-editor-empty` and puts the text in its data-placeholder.
+  :global(p.is-editor-empty:first-child)::before {
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    color: var(--faint);
+    font-style: italic;
+    pointer-events: none;
+  }
+
+  p {
+    margin: 0 0 0.8em;
+  }
+
+  h2 {
+    font-family: t.$font-heading;
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 1.2;
+    margin: 1.1em 0 0.4em;
+  }
+
+  h3 {
+    font-family: t.$font-heading;
+    font-size: 21px;
+    font-weight: 600;
+    line-height: 1.25;
+    margin: 1em 0 0.35em;
+  }
+
+  ul,
+  ol {
+    margin: 0 0 0.8em;
+    padding-left: 1.6em;
+  }
+
+  li {
+    margin: 0.15em 0;
+  }
+
+  a {
+    color: var(--accent-deep);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: text;
+  }
+
+  hr {
+    margin: 1.4em 0;
+    border: 0;
+    border-top: 1px solid var(--hair);
+  }
+
+  img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 0.6em auto 1em;
+    border-radius: t.$radius-md;
+
+    // Its stored copy is gone (site data cleared): keep a visible slot so it
+    // can still be selected and deleted.
+    &[data-missing] {
+      min-width: 160px;
+      min-height: 90px;
+      background: var(--hair);
+    }
+  }
+
+  div[data-youtube-video] {
+    margin: 0.6em 0 1em;
+
+    iframe {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 16 / 9;
+      border: 0;
+      border-radius: t.$radius-md;
+    }
+  }
+
+  // An image or video picked as a node (click, or arrow keys onto it).
+  :global(.ProseMirror-selectednode) {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  blockquote {
+    margin: 0.4em 0 1em;
+    padding: 2px 0 2px 16px;
+    border-left: 3px solid var(--accent);
+    color: var(--muted);
+    font-style: italic;
+
+    p:last-child {
+      margin-bottom: 0;
+    }
+  }
+}

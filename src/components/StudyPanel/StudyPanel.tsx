@@ -6,9 +6,10 @@ import { AIAssistant } from "./AIAssistant";
 import { Concordance } from "./Concordance";
 import { SearchTab } from "./SearchTab";
 import { MarksTab } from "./MarksTab";
+import { StudyView } from "./StudyView";
 import styles from "./StudyPanel.module.scss";
 
-const PANELS = ["ai", "conc", "search", "marks"] as const;
+const PANELS = ["ai", "conc", "search", "marks", "study"] as const;
 type PanelId = (typeof PANELS)[number];
 
 // Every tab stays mounted (hidden via the `hidden` attribute, not unmounted)
@@ -60,12 +61,21 @@ export function StudyPanel(): JSX.Element {
         >
           {t.marks}
         </button>
+        <button
+          type="button"
+          className={styles.tab}
+          data-tab={activePanel === "study" ? "on" : "off"}
+          onClick={() => switchTo("study")}
+        >
+          {t.studyTab}
+        </button>
       </div>
 
       <AIAssistant active={activePanel === "ai"} />
       <Concordance active={activePanel === "conc"} />
       <SearchTab active={activePanel === "search"} />
       <MarksTab active={activePanel === "marks"} />
+      <StudyView active={activePanel === "study"} />
     </div>
   );
 }

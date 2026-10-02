@@ -175,6 +175,21 @@
           "text": "One who believes in the Son has eternal life, but one who disobeys\n the Son won’t see life, but the wrath of God remains on him.”"
         }
       ]
+    },
+    "spa-rv1909|Juan 3": {
+      "reference": "Juan 3",
+      "translationName": "Reina Valera 1909",
+      "translationNote": "Public Domain",
+      "verses": [
+        {
+          "verse": 16,
+          "text": "Porque de tal manera amó Dios al mundo, que haya dado á su Hijo unigénito, para que todo aquel que en él cree, no se pierda, mas tenga vida eterna."
+        },
+        {
+          "verse": 17,
+          "text": "Porque no envió Dios á su Hijo al mundo, para que condene al mundo, mas para que el mundo sea salvo por él."
+        }
+      ]
     }
   }
 }

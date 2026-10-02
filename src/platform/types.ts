@@ -30,6 +30,12 @@ export interface SaveImageResult {
   filePath?: string;
 }
 
+export interface SaveDocumentRequest {
+  data: Uint8Array;
+  suggestedName: string;
+  mimeType: "application/pdf";
+}
+
 export interface PlatformCapabilities {
   /**
    * Opens a picker for a single local image and returns it decoded
@@ -43,6 +49,19 @@ export interface PlatformCapabilities {
    * capability backed by the Tauri shell — see platform/tauri.ts.
    */
   saveImage(request: SaveImageRequest): Promise<SaveImageResult>;
+
+  /**
+   * The same native "Save As" + disk write, for a generated document (a
+   * study exported as PDF). Shares saveImage's implementation and fs scope.
+   */
+  saveDocument(request: SaveDocumentRequest): Promise<SaveImageResult>;
+
+  /**
+   * Opens a file saved by saveDocument/saveImage in the OS's default app for
+   * it (Preview for a PDF on macOS). Shell-backed, scoped in
+   * capabilities/default.json to the same folders the fs write is.
+   */
+  openFile(filePath: string): Promise<void>;
 
   /**
    * Copies image bytes to the system clipboard. Uses the standard Async

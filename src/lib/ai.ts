@@ -38,15 +38,28 @@ const AiAnswerSchema = z.object({
   references: z.array(z.object({ ref: z.string(), why: z.string() }))
 });
 
-function buildSystemPrompt(locale: "en" | "es"): string {
+function buildSystemPrompt(locale: "en" | "es", studyTitle?: string): string {
   const es = locale === "es";
+  // On the study page the user is preparing a sermon or lesson; naming it
+  // lets "suggest verses" and outline questions answer for that theme.
+  const study = studyTitle?.trim()
+    ? ` The user is preparing a sermon or Bible study titled "${studyTitle.trim()}"; when a question is open-ended, ` +
+      "favor references and insights that would serve that study."
+    : "";
   return (
     "You are a careful Bible study assistant inside a Bible reading app. Answer in " +
     (es ? "Spanish" : "English") +
     ". Be concise (120 words maximum), grounded in the biblical text, and note when " +
-    "faithful traditions read a passage differently instead of asserting one view. Reply with structured data: " +
+    "faithful traditions read a passage differently instead of asserting one view. " +
+    // The answer is shown as paragraphs and lists (lib/aiText.ts); without
+    // this it tends to arrive as one run-on block.
+    "Format the answer for easy reading: short paragraphs separated by a blank line (\\n\\n); " +
+    'an outline or several points as a list, one item per line starting with "1." or "-"; ' +
+    "**bold** only for a key phrase; no headings, no tables. Always put a space after every period. " +
+    "Reply with structured data: " +
     "an answer and 2 to 5 references. Each reference's `ref` must be a plain reference like " +
-    `"${es ? "Mateo 18:21-22" : "Matthew 18:21-22"}" using ${es ? "Spanish" : "English"} book names.`
+    `"${es ? "Mateo 18:21-22" : "Matthew 18:21-22"}" using ${es ? "Spanish" : "English"} book names.` +
+    study
   );
 }
 
@@ -94,7 +107,8 @@ function describeAiError(err: unknown): string {
 export async function askAi(
   question: string,
   locale: "en" | "es",
-  anthropicApiKey: string
+  anthropicApiKey: string,
+  studyTitle?: string
 ): Promise<AiAnswer> {
   if (!anthropicApiKey?.trim()) {
     throw new Error("No Anthropic API key configured. Add one in the key dialog.");
@@ -110,7 +124,7 @@ export async function askAi(
     const { object } = await generateObject({
       model: anthropic("claude-sonnet-5"),
       schema: AiAnswerSchema,
-      system: buildSystemPrompt(locale),
+      system: buildSystemPrompt(locale, studyTitle),
       prompt: question
     });
     return object;
