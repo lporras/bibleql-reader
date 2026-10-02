@@ -253,3 +253,80 @@ export function SermonIcon({ size = 15, ...rest }: IconProps): JSX.Element {
     </svg>
   );
 }
+
+// Rich-text toolbar (components/Study/StudyEditor.tsx).
+
+const strokeProps = { stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round" } as const;
+
+export function BulletListIcon({ size = 16, ...rest }: IconProps): JSX.Element {
+  return (
+    <svg {...base(size, { ...strokeProps, ...rest })}>
+      <path d="M9 6h11M9 12h11M9 18h11" />
+      <circle cx="4.5" cy="6" r="0.9" fill="currentColor" />
+      <circle cx="4.5" cy="12" r="0.9" fill="currentColor" />
+      <circle cx="4.5" cy="18" r="0.9" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function NumberedListIcon({ size = 16, ...rest }: IconProps): JSX.Element {
+  return (
+    <svg {...base(size, { ...strokeProps, ...rest })}>
+      <path d="M10 6h10M10 12h10M10 18h10" />
+      <path d="M4 4.5 5.2 4v4" strokeWidth={1.3} />
+      <path d="M3.8 15.2c.3-.6.8-.9 1.4-.9.7 0 1.2.5 1.2 1.1 0 .9-1.2 1.5-2.6 2.8h2.7" strokeWidth={1.3} />
+    </svg>
+  );
+}
+
+function alignIcon(lines: [number, number][]) {
+  return function AlignIcon({ size = 16, ...rest }: IconProps): JSX.Element {
+    return (
+      <svg {...base(size, { ...strokeProps, ...rest })}>
+        <path d={lines.map(([x1, x2], i) => `M${x1} ${5 + i * 4.67}H${x2}`).join("")} />
+      </svg>
+    );
+  };
+}
+
+export const AlignLeftIcon = alignIcon([[4, 20], [4, 14], [4, 20], [4, 14]]);
+export const AlignCenterIcon = alignIcon([[4, 20], [7, 17], [4, 20], [7, 17]]);
+export const AlignRightIcon = alignIcon([[4, 20], [10, 20], [4, 20], [10, 20]]);
+export const AlignJustifyIcon = alignIcon([[4, 20], [4, 20], [4, 20], [4, 20]]);
+
+export function RuleIcon({ size = 16, ...rest }: IconProps): JSX.Element {
+  return (
+    <svg {...base(size, { ...strokeProps, ...rest })}>
+      <path d="M5 12h14" />
+    </svg>
+  );
+}
+
+export function LinkIcon({ size = 16, ...rest }: IconProps): JSX.Element {
+  return (
+    <svg {...base(size, { ...strokeProps, ...rest })}>
+      <path d="M10 8H7.5a4 4 0 0 0 0 8H10M14 8h2.5a4 4 0 0 1 0 8H14M8.5 12h7" />
+    </svg>
+  );
+}
+
+export function ImagePlusIcon({ size = 16, ...rest }: IconProps): JSX.Element {
+  return (
+    <svg {...base(size, { ...strokeProps, ...rest })}>
+      <path d="M13 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7" />
+      <path d="m4 16 4.5-4.5a1.5 1.5 0 0 1 2.1 0L17 18" />
+      <path d="m14 15 1.5-1.5a1.5 1.5 0 0 1 2.1 0L20 16" />
+      <path d="M18 3v6M15 6h6" />
+      <circle cx="9" cy="8.5" r="1.3" />
+    </svg>
+  );
+}
+
+export function VideoIcon({ size = 16, ...rest }: IconProps): JSX.Element {
+  return (
+    <svg {...base(size, { ...strokeProps, ...rest })}>
+      <rect x="3" y="5" width="18" height="14" rx="4" />
+      <path d="M10.5 9.5v5l4-2.5z" fill="currentColor" />
+    </svg>
+  );
+}

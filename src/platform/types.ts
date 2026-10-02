@@ -57,6 +57,13 @@ export interface PlatformCapabilities {
   saveDocument(request: SaveDocumentRequest): Promise<SaveImageResult>;
 
   /**
+   * Opens a file saved by saveDocument/saveImage in the OS's default app for
+   * it (Preview for a PDF on macOS). Shell-backed, scoped in
+   * capabilities/default.json to the same folders the fs write is.
+   */
+  openFile(filePath: string): Promise<void>;
+
+  /**
    * Copies image bytes to the system clipboard. Uses the standard Async
    * Clipboard API (`navigator.clipboard.write`) — a normal web platform
    * capability, not shell-specific, so it needs no IPC and works

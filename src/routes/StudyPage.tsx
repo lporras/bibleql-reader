@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type JSX } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { useAppState } from "../state/AppStateContext";
 import { useStudies } from "../state/StudiesContext";
-import { byRecent } from "../state/study";
+import { byRecent, translationAbbrev } from "../state/study";
 import { useViewportWidth } from "../hooks/useViewportWidth";
 import { STR } from "../data/strings";
 import { StudyTopBar } from "../components/Study/StudyTopBar";
@@ -21,7 +21,6 @@ function escapeHtml(text: string): string {
 // `/study` on its own: open the study "Add to study" is feeding, else the
 // most recently edited one, else start a fresh one.
 export function StudyRedirect(): JSX.Element | null {
-  const { state } = useAppState();
   const { studies, active, actions } = useStudies();
   const navigate = useNavigate();
   const target = active ?? byRecent(studies)[0] ?? null;
@@ -31,8 +30,8 @@ export function StudyRedirect(): JSX.Element | null {
   useEffect(() => {
     if (target || created.current) return;
     created.current = true;
-    navigate(`/study/${actions.create(STR[state.locale].untitledStudy)}`, { replace: true });
-  }, [target, actions, navigate, state.locale]);
+    navigate(`/study/${actions.create()}`, { replace: true });
+  }, [target, actions, navigate]);
 
   return target ? <Navigate to={`/study/${target.id}`} replace /> : null;
 }
@@ -68,9 +67,12 @@ export function StudyPage(): JSX.Element {
     [studyId, actions]
   );
 
+  // The quote is attributed with its translation — "John 3:16 (WEB)" — since
+  // a study often sets the same verses side by side in two of them.
   function insertPassage(passage: StudyPassage, reference: string): void {
     const body = passage.text ? `<p>${escapeHtml(passage.text)}</p>` : "";
-    editorRef.current?.insertHtml(`<blockquote>${body}<p><strong>${escapeHtml(reference)}</strong></p></blockquote><p></p>`);
+    const cite = `${reference} (${translationAbbrev(passage.translationId)})`;
+    editorRef.current?.insertHtml(`<blockquote>${body}<p><strong>${escapeHtml(cite)}</strong></p></blockquote><p></p>`);
   }
 
   return (
@@ -96,8 +98,12 @@ export function StudyPage(): JSX.Element {
                 </select>
               )}
               <input
+                // Remount per study, so autoFocus applies to each new one.
+                key={`title-${study.id}`}
                 className={styles.title}
                 value={study.title}
+                // A brand-new study: start where it starts, with its title.
+                autoFocus={!study.title && !study.descriptionHtml && !study.passages.length}
                 placeholder={t.studyTitlePlaceholder}
                 aria-label={t.studyTitlePlaceholder}
                 onChange={(event) => actions.update(study.id, { title: event.target.value })}

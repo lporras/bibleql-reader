@@ -22,7 +22,7 @@ export function StudyList({ locale, currentId }: StudyListProps): JSX.Element {
   const dateFmt = new Intl.DateTimeFormat(locale === "es" ? "es" : "en", { dateStyle: "medium" });
 
   function createStudy(): void {
-    navigate(`/study/${actions.create(t.untitledStudy)}`);
+    navigate(`/study/${actions.create()}`);
   }
 
   function remove(id: string): void {

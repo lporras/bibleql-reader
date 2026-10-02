@@ -162,10 +162,23 @@ export interface StringsShape {
   fmtItalic: string;
   fmtHeading: string;
   fmtSubheading: string;
-  fmtParagraph: string;
   fmtBullets: string;
   fmtNumbers: string;
   fmtQuote: string;
+  fmtAlignLeft: string;
+  fmtAlignCenter: string;
+  fmtAlignRight: string;
+  fmtJustify: string;
+  fmtRule: string;
+  fmtLink: string;
+  fmtImage: string;
+  fmtVideo: string;
+  linkUrl: string;
+  videoUrl: string;
+  applyUrl: string;
+  removeLink: string;
+  invalidVideo: string;
+  imageError: string;
   ss1: string;
   ss2: string;
   ss3: string;
@@ -175,7 +188,7 @@ export const STR: Record<Locale, StringsShape> = {
   en: {
     refPlaceholder: "Go to reference — John 3:16",
     compare: "Compare",
-    panel: "Study",
+    panel: "Tools",
     theme: "Theme",
     apiKey: "BibleQL API key",
     aiApiKey: "Anthropic API key",
@@ -299,7 +312,7 @@ export const STR: Record<Locale, StringsShape> = {
     offlineBadge: "offline",
     offlineVerses: "%n verses on this device",
     studyTab: "Sermon",
-    studies: "Studies",
+    studies: "Sermons",
     addToStudy: "Add to study",
     inStudy: "In study",
     addRefToStudy: "Add to the current study",
@@ -334,10 +347,23 @@ export const STR: Record<Locale, StringsShape> = {
     fmtItalic: "Italic",
     fmtHeading: "Heading",
     fmtSubheading: "Subheading",
-    fmtParagraph: "Body text",
     fmtBullets: "Bulleted list",
     fmtNumbers: "Numbered list",
     fmtQuote: "Quote",
+    fmtAlignLeft: "Align left",
+    fmtAlignCenter: "Center",
+    fmtAlignRight: "Align right",
+    fmtJustify: "Justify",
+    fmtRule: "Divider",
+    fmtLink: "Link",
+    fmtImage: "Insert image",
+    fmtVideo: "Insert YouTube video",
+    linkUrl: "Link address",
+    videoUrl: "YouTube link",
+    applyUrl: "Apply",
+    removeLink: "Remove link",
+    invalidVideo: "That isn't a YouTube link.",
+    imageError: "That image couldn't be added.",
     ss1: "Suggest key verses for this study",
     ss2: "Outline a three-point sermon on this theme",
     ss3: "Which cross-references support this theme?"
@@ -345,7 +371,7 @@ export const STR: Record<Locale, StringsShape> = {
   es: {
     refPlaceholder: "Ir a la referencia — Juan 3:16",
     compare: "Comparar",
-    panel: "Estudio",
+    panel: "Herramientas",
     theme: "Tema",
     apiKey: "Clave de API de BibleQL",
     aiApiKey: "Clave de API de Anthropic",
@@ -469,7 +495,7 @@ export const STR: Record<Locale, StringsShape> = {
     offlineBadge: "sin conexión",
     offlineVerses: "%n versículos en este dispositivo",
     studyTab: "Sermón",
-    studies: "Estudios",
+    studies: "Sermones",
     addToStudy: "Al estudio",
     inStudy: "En el estudio",
     addRefToStudy: "Añadir al estudio actual",
@@ -504,10 +530,23 @@ export const STR: Record<Locale, StringsShape> = {
     fmtItalic: "Cursiva",
     fmtHeading: "Título",
     fmtSubheading: "Subtítulo",
-    fmtParagraph: "Texto normal",
     fmtBullets: "Lista con viñetas",
     fmtNumbers: "Lista numerada",
     fmtQuote: "Cita",
+    fmtAlignLeft: "Alinear a la izquierda",
+    fmtAlignCenter: "Centrar",
+    fmtAlignRight: "Alinear a la derecha",
+    fmtJustify: "Justificar",
+    fmtRule: "Línea divisoria",
+    fmtLink: "Enlace",
+    fmtImage: "Insertar imagen",
+    fmtVideo: "Insertar video de YouTube",
+    linkUrl: "Dirección del enlace",
+    videoUrl: "Enlace de YouTube",
+    applyUrl: "Aplicar",
+    removeLink: "Quitar enlace",
+    invalidVideo: "Ese no es un enlace de YouTube.",
+    imageError: "No se pudo añadir esa imagen.",
     ss1: "Sugiere versículos clave para este estudio",
     ss2: "Haz un bosquejo de sermón de tres puntos sobre este tema",
     ss3: "¿Qué referencias cruzadas apoyan este tema?"

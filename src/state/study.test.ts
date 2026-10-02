@@ -1,5 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { emptyStudy, passageReference, studiesReducer, versesFromRange, type StudiesAction } from "./study";
+import {
+  emptyStudy,
+  passageReference,
+  studiesReducer,
+  studyImageIds,
+  translationAbbrev,
+  versesFromRange,
+  type StudiesAction
+} from "./study";
 import type { StudiesState, StudyPassage } from "../types/study";
 
 function passage(id: string, bookId: string, chapter: number, verses: number[], translationId = "eng-web"): StudyPassage {
@@ -140,5 +148,20 @@ describe("passage helpers", () => {
     expect(versesFromRange(16, null)).toEqual([16]);
     expect(versesFromRange(21, 23)).toEqual([21, 22, 23]);
     expect(versesFromRange(5, 2)).toEqual([5]);
+  });
+});
+
+describe("translationAbbrev", () => {
+  it("drops the language code and uppercases", () => {
+    expect(translationAbbrev("eng-web")).toBe("WEB");
+    expect(translationAbbrev("spa-rv1909")).toBe("RV1909");
+    expect(translationAbbrev("kjv")).toBe("KJV");
+  });
+});
+
+describe("studyImageIds", () => {
+  it("finds stored images and ignores other sources", () => {
+    const html = '<p>x</p><img src="study-image:a1-b2"><img src="https://example.com/p.jpg"><img src="study-image:c3">';
+    expect(studyImageIds(html)).toEqual(["a1-b2", "c3"]);
   });
 });

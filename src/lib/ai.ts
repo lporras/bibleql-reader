@@ -50,7 +50,13 @@ function buildSystemPrompt(locale: "en" | "es", studyTitle?: string): string {
     "You are a careful Bible study assistant inside a Bible reading app. Answer in " +
     (es ? "Spanish" : "English") +
     ". Be concise (120 words maximum), grounded in the biblical text, and note when " +
-    "faithful traditions read a passage differently instead of asserting one view. Reply with structured data: " +
+    "faithful traditions read a passage differently instead of asserting one view. " +
+    // The answer is shown as paragraphs and lists (lib/aiText.ts); without
+    // this it tends to arrive as one run-on block.
+    "Format the answer for easy reading: short paragraphs separated by a blank line (\\n\\n); " +
+    'an outline or several points as a list, one item per line starting with "1." or "-"; ' +
+    "**bold** only for a key phrase; no headings, no tables. Always put a space after every period. " +
+    "Reply with structured data: " +
     "an answer and 2 to 5 references. Each reference's `ref` must be a plain reference like " +
     `"${es ? "Mateo 18:21-22" : "Matthew 18:21-22"}" using ${es ? "Spanish" : "English"} book names.` +
     study

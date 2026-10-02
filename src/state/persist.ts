@@ -1,5 +1,5 @@
 import type { Theme } from "../types/app";
-import type { Locale } from "../data/strings";
+import { STR, type Locale } from "../data/strings";
 import type { AnnotationMap } from "../types/annotations";
 import type { TranslationSummary } from "../types/bible";
 import type { StudiesState } from "../types/study";
@@ -116,7 +116,12 @@ export function writeCachedTranslations(list: TranslationSummary[]): void {
 export function readStudies(): StudiesState {
   try {
     const raw = JSON.parse(localStorage.getItem(STUDIES_KEY) || "{}") as Partial<StudiesState>;
-    const studies = Array.isArray(raw.studies) ? raw.studies : [];
+    // Studies used to be created titled "Untitled study"; that's now only
+    // the fallback a blank title displays as, so blank those out.
+    const untitled = new Set(Object.values(STR).map((t) => t.untitledStudy));
+    const studies = (Array.isArray(raw.studies) ? raw.studies : []).map((s) =>
+      untitled.has(s.title) ? { ...s, title: "" } : s
+    );
     const activeId = studies.some((s) => s.id === raw.activeId) ? (raw.activeId as string) : null;
     return { studies, activeId };
   } catch {

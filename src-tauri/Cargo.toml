@@ -19,7 +19,12 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [] }
+# macos-private-api: turns on WKWebView's (private) fullScreenEnabled
+# preference via wry's `fullscreen` feature — without it, element fullscreen is
+# off in WKWebView, and YouTube embeds in a study show a dead fullscreen
+# button. Must match `app.macOSPrivateApi` in tauri.conf.json. Fine for
+# Developer ID distribution; it would block a Mac App Store submission.
+tauri = { version = "2", features = ["macos-private-api"] }
 tauri-plugin-opener = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"

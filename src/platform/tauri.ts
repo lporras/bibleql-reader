@@ -1,5 +1,6 @@
 import { save } from "@tauri-apps/plugin-dialog";
 import { writeFile } from "@tauri-apps/plugin-fs";
+import { openPath } from "@tauri-apps/plugin-opener";
 import type { PlatformCapabilities, SaveDocumentRequest, SaveImageRequest, SaveImageResult } from "./types";
 
 // The only capability that genuinely needs the shell: a webview has no
@@ -58,4 +59,12 @@ function saveDocument(request: SaveDocumentRequest): Promise<SaveImageResult> {
   return saveBytes(request.data, request.suggestedName, { name: "PDF", extensions: ["pdf"] }, "document");
 }
 
-export const tauriPlatform: Pick<PlatformCapabilities, "saveImage" | "saveDocument"> = { saveImage, saveDocument };
+function openFile(filePath: string): Promise<void> {
+  return openPath(filePath);
+}
+
+export const tauriPlatform: Pick<PlatformCapabilities, "saveImage" | "saveDocument" | "openFile"> = {
+  saveImage,
+  saveDocument,
+  openFile
+};

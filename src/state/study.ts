@@ -50,6 +50,27 @@ export function passageReference(p: Pick<StudyPassage, "bookId" | "chapter" | "v
   return p.verses.length ? `${head}:${formatVerseList(p.verses)}` : head;
 }
 
+/**
+ * "WEB", "RV1909" — the short name a translation goes by in print. BibleQL
+ * identifiers are "<language>-<abbreviation>" ("eng-web", "spa-rv1909"),
+ * so drop the language code; anything else is shown uppercased as-is.
+ */
+export function translationAbbrev(translationId: string): string {
+  return translationId.replace(/^[a-z]{2,3}-(?=.)/i, "").toUpperCase();
+}
+
+// Images in a study body live in IndexedDB (state/studyImages.ts), not in
+// the HTML — a few photos would fill localStorage, where the whole store is
+// one JSON blob. The body refers to them as <img src="study-image:<id>">.
+export const STUDY_IMAGE_SCHEME = "study-image:";
+
+/** The ids of every stored image a study body refers to. */
+export function studyImageIds(html: string): string[] {
+  const ids: string[] = [];
+  for (const m of html.matchAll(/src="study-image:([\w-]+)"/g)) ids.push(m[1]);
+  return ids;
+}
+
 /** A parsed "from"–"to" range (lib/refs parseRef) as a verse list. */
 export function versesFromRange(from: number | null, to: number | null): number[] {
   if (from === null) return [];

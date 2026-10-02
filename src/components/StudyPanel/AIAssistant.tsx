@@ -3,9 +3,11 @@ import { useAppState } from "../../state/AppStateContext";
 import { useAiChat } from "../../state/AiChatContext";
 import { useOpenRef } from "../../hooks/useOpenRef";
 import { useAddToStudy } from "../../hooks/useAddToStudy";
+import { translationAbbrev } from "../../state/study";
 import { STR } from "../../data/strings";
 import type { AiReference } from "../../types/ai";
 import { CheckIcon, PlusIcon } from "../icons";
+import { AiText } from "./AiText";
 import styles from "./AIAssistant.module.scss";
 
 interface AIAssistantProps {
@@ -62,7 +64,8 @@ export function AIAssistant({ active, studyTitle, suggestions }: AIAssistantProp
             type="button"
             className={styles.refAdd}
             data-on={inStudy ? "yes" : "no"}
-            title={inStudy ? t.refInStudy : t.addRefToStudy}
+            // Added in the translation being read; say which.
+            title={`${inStudy ? t.refInStudy : t.addRefToStudy} (${translationAbbrev(state.transA)})`}
             aria-label={`${inStudy ? t.refInStudy : t.addRefToStudy}: ${r.ref}`}
             disabled={inStudy}
             onClick={() => study.add(draft)}
@@ -94,7 +97,7 @@ export function AIAssistant({ active, studyTitle, suggestions }: AIAssistantProp
         {chat.messages.map((m, i) => (
           <div key={i} className={styles.message}>
             <div className={styles.who}>{m.who}</div>
-            <div className={styles.text}>{m.text}</div>
+            {m.from === "assistant" ? <AiText text={m.text} /> : <div className={styles.text}>{m.text}</div>}
             {m.refs.length > 0 && <div className={styles.refs}>{m.refs.map(renderRef)}</div>}
           </div>
         ))}

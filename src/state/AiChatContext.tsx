@@ -4,6 +4,8 @@ import { useAi } from "../queries/useAi";
 import type { AiReference } from "../types/ai";
 
 export interface ChatMessage {
+  /** The question is shown as typed; answers are formatted (components/StudyPanel/AiText). */
+  from: "user" | "assistant";
   who: string;
   text: string;
   refs: AiReference[];
@@ -34,15 +36,15 @@ export function AiChatProvider({ children }: { children: ReactNode }): React.JSX
     async (question: string, studyTitle?: string) => {
       const q = question.trim();
       if (!q || isPending) return;
-      setMessages((prev) => prev.concat([{ who: es ? "Tú" : "You", text: q, refs: [] }]));
+      setMessages((prev) => prev.concat([{ from: "user", who: es ? "Tú" : "You", text: q, refs: [] }]));
       try {
         const answer = await mutateAsync({ question: q, studyTitle });
         setMessages((prev) =>
-          prev.concat([{ who: es ? "Asistente" : "Assistant", text: answer.answer, refs: answer.references }])
+          prev.concat([{ from: "assistant", who: es ? "Asistente" : "Assistant", text: answer.answer, refs: answer.references }])
         );
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        setMessages((prev) => prev.concat([{ who: es ? "Asistente" : "Assistant", text: message, refs: [] }]));
+        setMessages((prev) => prev.concat([{ from: "assistant", who: es ? "Asistente" : "Assistant", text: message, refs: [] }]));
       }
     },
     [es, isPending, mutateAsync]

@@ -2,7 +2,8 @@ import { useEffect, type JSX } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAppState } from "../../state/AppStateContext";
 import { useStudies } from "../../state/StudiesContext";
-import { passageReference } from "../../state/study";
+import { passageReference, translationAbbrev } from "../../state/study";
+import { useTranslationOptions } from "../../queries/useTranslationOptions";
 import { usePassage } from "../../queries/usePassage";
 import { STR } from "../../data/strings";
 import type { StudyPassage } from "../../types/study";
@@ -30,12 +31,13 @@ function textFor(verses: { verse: number; text: string }[], wanted: number[]): s
 }
 
 export function PassageCard({ studyId, passage, compact = false, isFirst, isLast, onInsert }: PassageCardProps): JSX.Element {
-  const { state } = useAppState();
+  const { state, actions: app } = useAppState();
   const t = STR[state.locale];
   const navigate = useNavigate();
   const { panel } = useParams();
   const { actions } = useStudies();
   const reference = passageReference(passage, state.locale);
+  const { labelOf } = useTranslationOptions();
 
   // A passage the assistant recommended arrives as a bare reference. Fetch
   // its chapter (shared cache with the reader) and snapshot the text into
@@ -49,6 +51,9 @@ export function PassageCard({ studyId, passage, compact = false, isFirst, isLast
   }, [needsText, chapter.data, passage.verses, passage.id, studyId, actions]);
 
   function openInReader(): void {
+    // Open it in the translation it was collected in: a study often holds the
+    // same verses in two translations, and each card should show its own.
+    if (state.transA !== passage.translationId) app.setTransA(passage.translationId);
     const from = passage.verses[0];
     const to = passage.verses[passage.verses.length - 1];
     // From the study page there's no panel in the URL; land on the Study tab
@@ -63,7 +68,9 @@ export function PassageCard({ studyId, passage, compact = false, isFirst, isLast
         <button type="button" className={styles.ref} onClick={openInReader} title={t.openInReader}>
           {reference}
         </button>
-        <span className={styles.translation}>{passage.translationId}</span>
+        <span className={styles.translation} title={labelOf(passage.translationId)}>
+          {translationAbbrev(passage.translationId)}
+        </span>
         <span className={styles.spacer} />
         {!compact && (
           <>

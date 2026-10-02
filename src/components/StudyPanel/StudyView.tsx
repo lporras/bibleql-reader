@@ -24,7 +24,7 @@ export function StudyView({ active }: StudyViewProps): JSX.Element {
   const { studies, active: study, actions } = useStudies();
 
   function createAndOpen(): void {
-    const id = actions.create(t.untitledStudy);
+    const id = actions.create();
     navigate(`/study/${id}`);
   }
 

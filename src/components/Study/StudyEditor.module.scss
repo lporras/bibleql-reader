@@ -8,19 +8,38 @@
 
 // Sticks to the top of the scrolling page so formatting stays in reach
 // while writing a long sermon.
-.toolbar {
+.bar {
   position: sticky;
   top: 0;
   z-index: 2;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px;
-  padding: 6px 0;
   background: var(--bg);
   border-bottom: 1px solid var(--hair);
 }
 
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  row-gap: 2px;
+  padding: 6px 0;
+}
+
+.group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+
+  & + & {
+    margin-left: 7px;
+    padding-left: 7px;
+    border-left: 1px solid var(--hair);
+  }
+}
+
 .tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: 30px;
   height: 28px;
   padding: 0 7px;
@@ -30,18 +49,18 @@
   color: var(--muted);
   @include hoverable-surface;
 
+  sub {
+    font-size: 0.68em;
+    vertical-align: -0.25em;
+    line-height: 0;
+  }
+
   &[data-tool="bold"] {
     font-weight: 700;
   }
 
   &[data-tool="italic"] {
     font-style: italic;
-  }
-
-  &[data-tool="quote"] {
-    font-family: t.$font-heading;
-    font-size: 20px;
-    line-height: 1;
   }
 
   &[data-on="yes"] {
@@ -53,6 +72,60 @@
     min-width: 40px;
     height: 40px;
   }
+}
+
+// The link / YouTube address field, under the buttons.
+.urlBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 0 0 8px;
+}
+
+.urlInput {
+  flex: 1 1 220px;
+  min-width: 0;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--divider);
+  border-radius: t.$radius-md;
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+
+  &:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  &[aria-invalid="true"] {
+    border-color: var(--accent-deep);
+  }
+}
+
+.urlButton {
+  height: 30px;
+  padding: 0 10px;
+  border-radius: t.$radius-md;
+  font-family: t.$font-body;
+  font-size: 12.5px;
+  color: var(--muted);
+  @include hoverable-surface;
+
+  &[type="submit"] {
+    color: var(--accent-deep);
+    font-weight: 600;
+  }
+}
+
+.urlError {
+  flex-basis: 100%;
+  margin: 0 0 8px;
+  font-size: 12px;
+  // The app has no dedicated error color (see StudyTopBar.module.scss).
+  color: var(--accent-deep);
 }
 
 .editor {
@@ -103,6 +176,54 @@
 
   li {
     margin: 0.15em 0;
+  }
+
+  a {
+    color: var(--accent-deep);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: text;
+  }
+
+  hr {
+    margin: 1.4em 0;
+    border: 0;
+    border-top: 1px solid var(--hair);
+  }
+
+  img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 0.6em auto 1em;
+    border-radius: t.$radius-md;
+
+    // Its stored copy is gone (site data cleared): keep a visible slot so it
+    // can still be selected and deleted.
+    &[data-missing] {
+      min-width: 160px;
+      min-height: 90px;
+      background: var(--hair);
+    }
+  }
+
+  div[data-youtube-video] {
+    margin: 0.6em 0 1em;
+
+    iframe {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 16 / 9;
+      border: 0;
+      border-radius: t.$radius-md;
+    }
+  }
+
+  // An image or video picked as a node (click, or arrow keys onto it).
+  :global(.ProseMirror-selectednode) {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
   }
 
   blockquote {

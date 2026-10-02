@@ -1,6 +1,8 @@
 import { useEffect, useState, type JSX } from "react";
 import { useAppState } from "../../state/AppStateContext";
 import { useAnnotations } from "../../state/AnnotationsContext";
+import { useTranslationOptions } from "../../queries/useTranslationOptions";
+import { translationAbbrev } from "../../state/study";
 import { STR } from "../../data/strings";
 import { HIGHLIGHT_COLORS, verseKey, type HighlightColor, type VerseRef } from "../../types/annotations";
 import {
@@ -48,6 +50,7 @@ export function VerseActions({
   const t = STR[state.locale];
   const { annotations, actions } = useAnnotations();
   const [popover, setPopover] = useState<Popover>("none");
+  const { labelOf } = useTranslationOptions();
 
   const marks = refs.map((ref) => annotations[verseKey(ref)]);
   const allFavorite = marks.every((m) => m?.favorite);
@@ -137,10 +140,15 @@ export function VerseActions({
           data-on={inStudy ? "yes" : "no"}
           onClick={onAddToStudy}
           disabled={inStudy}
-          title={inStudy ? t.inStudy : t.addToStudy}
+          title={`${inStudy ? t.inStudy : t.addToStudy} · ${labelOf(state.transA)}`}
         >
           {inStudy ? <CheckIcon size={17} /> : <SermonIcon size={17} />}
           <span>{inStudy ? t.inStudy : t.addToStudy}</span>
+          {/* Which translation the passage is stored in — the same verses
+              can go in again in another one. Visual only; the tooltip names it. */}
+          <span className={styles.translationTag} aria-hidden="true">
+            {translationAbbrev(state.transA)}
+          </span>
         </button>
 
         <span className={styles.divider} />

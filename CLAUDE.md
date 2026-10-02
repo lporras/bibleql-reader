@@ -170,6 +170,13 @@ Two layers, deliberately different in kind:
   non-browser to the remote service: Anthropic still demands
   `anthropic-dangerous-direct-browser-access: true`, which `lib/ai.ts` sends. Expect the same
   from any other API that gates on Origin.
+- **Fullscreen video needs the shell's help.** macOS: WKWebView only allows element
+  fullscreen because `tauri` is built with `macos-private-api` (+ `app.macOSPrivateApi` in
+  `tauri.conf.json`; the two must match) — drop it and YouTube's fullscreen button goes dead.
+  It's a private API: fine for Developer ID builds, a blocker for the Mac App Store. Android:
+  the generated `RustWebChromeClient` dismisses `onShowCustomView`, so `MainActivity.kt` wraps
+  wry's client (posted from `onWebViewCreate`, since wry sets it right after) — any callback
+  `RustWebChromeClient` gains in a Tauri upgrade must be forwarded there too.
 - **Android WebView's `speechSynthesis` is a silent stub** (no voices, `speak()` does nothing).
   Read-aloud on Android goes through `window.AndroidTts`, a `@JavascriptInterface` over the
   platform `TextToSpeech` in `MainActivity.kt`; `lib/speech.ts` picks it when present and falls

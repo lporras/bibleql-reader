@@ -3,7 +3,6 @@ import { useAppState } from "../state/AppStateContext";
 import { useStudies } from "../state/StudiesContext";
 import { hasPassage, versesFromRange } from "../state/study";
 import { parseRef } from "../lib/refs";
-import { STR } from "../data/strings";
 import type { PassageSource, Study } from "../types/study";
 
 export interface PassageDraft {
@@ -33,7 +32,6 @@ export interface AddToStudyApi {
 export function useAddToStudy(): AddToStudyApi {
   const { state } = useAppState();
   const { active, actions } = useStudies();
-  const untitled = STR[state.locale].untitledStudy;
   const translationId = state.transA;
 
   // Asked about the translation being read: switching translations turns
@@ -56,11 +54,10 @@ export function useAddToStudy(): AddToStudyApi {
             source: draft.source,
             why: draft.why ?? ""
           }
-        ],
-        untitled
+        ]
       );
     },
-    [actions, translationId, untitled]
+    [actions, translationId]
   );
 
   const fromRef = useCallback<AddToStudyApi["fromRef"]>((text, why) => {

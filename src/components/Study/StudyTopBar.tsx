@@ -35,13 +35,18 @@ export function StudyTopBar({ locale, study, aiOpen, onToggleAi }: StudyTopBarPr
     if (!study) return;
     setStatus({ kind: "busy" });
     try {
-      const data = renderStudyPdf(study, locale);
+      const data = await renderStudyPdf(study, locale);
       const result = await getPlatform().saveDocument({
         data,
         suggestedName: studyPdfFilename(study.title, t.untitledStudy),
         mimeType: "application/pdf"
       });
       setStatus(result.canceled ? { kind: "idle" } : { kind: "done" });
+      // Show the handout straight away, in the default PDF viewer (Preview
+      // on macOS). Best-effort: the file is saved either way, so a viewer
+      // that can't be launched (or Android's content:// URIs falling outside
+      // the path scope) isn't reported as a failed export.
+      if (!result.canceled && result.filePath) void getPlatform().openFile(result.filePath).catch(() => {});
     } catch {
       setStatus({ kind: "error" });
     }
