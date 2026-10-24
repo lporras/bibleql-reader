@@ -1,5 +1,8 @@
 # Bible Reader
 
+[![CI](https://github.com/lporras/bibleql-reader/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/lporras/bibleql-reader/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/lporras/bibleql-reader/branch/main/graph/badge.svg)](https://codecov.io/gh/lporras/bibleql-reader)
+
 An open-source desktop Bible reader built on the [BibleQL](https://github.com/lporras/bibleql) GraphQL API.
 
 ## What it does
@@ -176,6 +179,7 @@ build.
 
 ```bash
 yarn test       # Vitest — pure-logic unit tests (no network, no shell)
+yarn test:coverage  # the same, plus a coverage report in coverage/
 yarn test:e2e   # Playwright — builds the app, then drives it in a browser
 ```
 

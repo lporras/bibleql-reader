@@ -22,6 +22,7 @@ yarn dev                # frontend only, in a browser at :1420 (no shell APIs)
 yarn tauri build        # typecheck + vitest, then bundle installers
 yarn typecheck          # tsc --noEmit across tsconfig.json, tsconfig.node.json, e2e/tsconfig.json
 yarn test               # vitest run — pure-logic unit tests, no network, no shell
+yarn test:coverage      # same + v8 coverage of src/**/*.ts (CI uploads it to Codecov)
 yarn test:e2e           # Playwright drives the app in headless Chromium
 cargo check --manifest-path src-tauri/Cargo.toml    # the Rust side
 cargo test --manifest-path src-tauri/Cargo.toml     # Rust unit tests (offline.rs)
