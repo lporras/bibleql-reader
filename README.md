@@ -29,6 +29,10 @@ src/         the React app (components/, features/, queries/, hooks/, state/, li
 src-tauri/   the Rust shell: window config, plugin registration, capability permissions
 ```
 
+New to the codebase? [docs/onboarding.md](docs/onboarding.md) walks through the architecture and
+how the main features are built: the AI assistant, the concordance, studies (sermons), and the
+Verse Image Creator.
+
 ## Running as a desktop app
 
 Needs [Node](https://nodejs.org), [Yarn](https://yarnpkg.com) and a
@@ -200,7 +204,8 @@ with an Apple Developer ID and notarized in CI.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md), and [docs/onboarding.md](docs/onboarding.md) for an
+architecture tour.
 
 ## License
 
