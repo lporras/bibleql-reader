@@ -16,6 +16,16 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["src/**/*.test.ts"]
+    include: ["src/**/*.test.ts"],
+    // `yarn test:coverage` (CI uploads the lcov report to Codecov for the
+    // README badge). Measured over .ts only: components (.tsx) are covered
+    // by the Playwright suite, not by Vitest, and would only drag the
+    // number down without saying anything about the logic tests.
+    coverage: {
+      provider: "v8",
+      include: ["src/**/*.ts"],
+      exclude: ["src/**/*.test.ts", "src/**/*.d.ts"],
+      reporter: ["text-summary", "lcov"]
+    }
   }
 });

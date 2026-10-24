@@ -27,7 +27,17 @@ jobs:
         run: yarn typecheck
 
       - name: Unit tests (Vitest)
-        run: yarn test
+        run: yarn test:coverage
+
+      # Feeds the coverage badge in the README. Needs the CODECOV_TOKEN repo
+      # secret; fork PRs don't get it, so a failed upload never fails CI.
+      - name: Upload coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage/lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
 
       - name: Install Playwright's Chromium
         run: yarn playwright install --with-deps chromium
