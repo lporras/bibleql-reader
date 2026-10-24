@@ -26,6 +26,8 @@ yarn test:coverage      # same + v8 coverage of src/**/*.ts (CI uploads it to Co
 yarn test:e2e           # Playwright drives the app in headless Chromium
 cargo check --manifest-path src-tauri/Cargo.toml    # the Rust side
 cargo test --manifest-path src-tauri/Cargo.toml     # Rust unit tests (offline.rs)
+yarn audit --groups dependencies --level high       # what security.yml gates on (+ CodeQL)
+cargo audit --file src-tauri/Cargo.lock             # likewise for the Rust crates
 ```
 
 `yarn test:e2e` needs no API keys: BibleQL and Unsplash are both mocked, and

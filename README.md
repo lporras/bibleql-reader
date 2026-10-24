@@ -1,6 +1,7 @@
 # Bible Reader
 
 [![CI](https://github.com/lporras/bibleql-reader/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/lporras/bibleql-reader/actions/workflows/ci.yml)
+[![Security](https://github.com/lporras/bibleql-reader/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/lporras/bibleql-reader/actions/workflows/security.yml)
 [![codecov](https://codecov.io/gh/lporras/bibleql-reader/branch/main/graph/badge.svg)](https://codecov.io/gh/lporras/bibleql-reader)
 
 An open-source desktop Bible reader built on the [BibleQL](https://github.com/lporras/bibleql) GraphQL API.
