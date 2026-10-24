@@ -11,6 +11,7 @@ export interface PersistedPrefs {
   panelOpen: boolean;
   transA: string;
   transB: string;
+  aiModel: string;
   bookId: string;
   chapter: number;
 }

@@ -1,7 +1,9 @@
 import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
 import { NoObjectGeneratedError, NoOutputGeneratedError, Output, streamText, type DeepPartial } from "ai";
 import { createAnthropic } from "@ai-sdk/anthropic";
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { z } from "zod";
+import { findAiModel, OLLAMA_BASE_URL, OLLAMA_HOST, type AiModelOption } from "./aiModels";
 import type { AiAnswer, AiReference } from "../types/ai";
 
 // Was the `ai:ask` Electron IPC handler (src/main/ipc/ai.ts), which ran
@@ -88,15 +90,25 @@ function withDetail(summary: string, err: unknown): string {
   return detail ? `${summary} (${detail})` : summary;
 }
 
-function describeAiError(err: unknown): string {
+function describeAiError(err: unknown, option: AiModelOption): string {
   if (NoObjectGeneratedError.isInstance(err) || NoOutputGeneratedError.isInstance(err)) {
     return "The assistant's reply didn't match the expected format. Try rephrasing.";
   }
   const statusCode = (err as { statusCode?: number }).statusCode;
-  if (statusCode === 401 || statusCode === 403) {
+  if (option.provider === "ollama") {
+    if (statusCode === 404) {
+      return withDetail(`Ollama doesn't have ${option.model}. Run \`ollama pull ${option.model}\`.`, err);
+    }
+    if (statusCode === 403) {
+      return "Ollama refused this app's origin. Set OLLAMA_ORIGINS=http://tauri.localhost and restart Ollama.";
+    }
+    if (statusCode === undefined) {
+      return `Couldn't reach Ollama at ${OLLAMA_HOST}. Is it running?`;
+    }
+  } else if (statusCode === 401 || statusCode === 403) {
     return withDetail("The Anthropic API key was rejected.", err);
   }
-  if (statusCode === 429) {
+  if (statusCode === 429 && option.provider === "anthropic") {
     return withDetail("Rate limited by Anthropic. Try again in a moment.", err);
   }
   const detail = apiDetail(err);
@@ -116,6 +128,38 @@ function partialAnswer(partial: DeepPartial<AiAnswer> | undefined): AiAnswer {
   };
 }
 
+function languageModel(option: AiModelOption, anthropicApiKey: string) {
+  switch (option.provider) {
+    case "anthropic": {
+      if (!anthropicApiKey?.trim()) {
+        throw new Error("No Anthropic API key configured. Add one in the key dialog.");
+      }
+      const anthropic = createAnthropic({
+        apiKey: anthropicApiKey,
+        fetch: tauriFetch as unknown as typeof globalThis.fetch,
+        headers: { "anthropic-dangerous-direct-browser-access": "true" }
+      });
+      return anthropic(option.model);
+    }
+    case "ollama": {
+      const ollama = createOpenAICompatible({
+        name: "ollama",
+        baseURL: OLLAMA_BASE_URL,
+        supportsStructuredOutputs: true
+      });
+      return ollama(option.model);
+    }
+  }
+}
+
+export interface AskAiOptions {
+  locale: "en" | "es";
+  modelId: string;
+  anthropicApiKey: string;
+  studyTitle?: string;
+  onPartial?: (answer: AiAnswer) => void;
+}
+
 /**
  * Streams the reply: `onPartial` gets the answer-so-far as each chunk
  * arrives, and the promise resolves with the complete, schema-validated
@@ -123,27 +167,17 @@ function partialAnswer(partial: DeepPartial<AiAnswer> | undefined): AiAnswer {
  */
 export async function askAi(
   question: string,
-  locale: "en" | "es",
-  anthropicApiKey: string,
-  studyTitle?: string,
-  onPartial?: (answer: AiAnswer) => void
+  { locale, modelId, anthropicApiKey, studyTitle, onPartial }: AskAiOptions
 ): Promise<AiAnswer> {
-  if (!anthropicApiKey?.trim()) {
-    throw new Error("No Anthropic API key configured. Add one in the key dialog.");
-  }
-
-  const anthropic = createAnthropic({
-    apiKey: anthropicApiKey,
-    fetch: tauriFetch as unknown as typeof globalThis.fetch,
-    headers: { "anthropic-dangerous-direct-browser-access": "true" }
-  });
+  const option = findAiModel(modelId);
+  const model = languageModel(option, anthropicApiKey);
 
   // partialOutputStream swallows errors and `output` rejects with a generic
   // "no output" one, so keep the original (it carries the status code and
   // Anthropic's message that describeAiError digs out).
   let streamError: unknown;
   const result = streamText({
-    model: anthropic("claude-sonnet-5"),
+    model,
     output: Output.object({ schema: AiAnswerSchema }),
     system: buildSystemPrompt(locale, studyTitle),
     prompt: question,
@@ -156,6 +190,6 @@ export async function askAi(
     for await (const partial of result.partialOutputStream) onPartial?.(partialAnswer(partial));
     return await result.output;
   } catch (err) {
-    throw new Error(describeAiError(streamError ?? err));
+    throw new Error(describeAiError(streamError ?? err, option));
   }
 }

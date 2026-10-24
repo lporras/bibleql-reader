@@ -3,6 +3,7 @@ import type { Theme } from "../types/app";
 import type { Locale } from "../data/strings";
 import { readAiKey, readPrefs, writeAiKey, writePrefs } from "./persist";
 import { syncSystemBars } from "../platform/host";
+import { findAiModel } from "../lib/aiModels";
 
 const DEFAULT_TRANS_A = "eng-web";
 const DEFAULT_TRANS_B = "spa-rv1909";
@@ -14,6 +15,7 @@ export interface AppState {
   panelOpen: boolean;
   transA: string;
   transB: string;
+  aiModel: string;
   aiApiKey: string;
   keyDialogOpen: boolean;
 }
@@ -25,6 +27,7 @@ type Action =
   | { type: "TOGGLE_PANEL" }
   | { type: "SET_TRANS_A"; id: string }
   | { type: "SET_TRANS_B"; id: string }
+  | { type: "SET_AI_MODEL"; id: string }
   | { type: "SAVE_KEYS"; aiApiKey: string }
   | { type: "OPEN_KEY_DIALOG" }
   | { type: "CLOSE_KEY_DIALOG" };
@@ -43,6 +46,8 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, transA: action.id };
     case "SET_TRANS_B":
       return { ...state, transB: action.id };
+    case "SET_AI_MODEL":
+      return { ...state, aiModel: action.id };
     case "SAVE_KEYS":
       return { ...state, aiApiKey: action.aiApiKey, keyDialogOpen: false };
     case "OPEN_KEY_DIALOG":
@@ -63,6 +68,7 @@ function init(): AppState {
     panelOpen: prefs.panelOpen ?? true,
     transA: prefs.transA ?? DEFAULT_TRANS_A,
     transB: prefs.transB ?? DEFAULT_TRANS_B,
+    aiModel: findAiModel(prefs.aiModel).id,
     aiApiKey: readAiKey(),
     keyDialogOpen: false
   };
@@ -75,6 +81,7 @@ export interface AppStateActions {
   togglePanel(): void;
   setTransA(id: string): void;
   setTransB(id: string): void;
+  setAiModel(id: string): void;
   saveKeys(aiApiKey: string): void;
   openKeyDialog(): void;
   closeKeyDialog(): void;
@@ -97,9 +104,10 @@ export function AppStateProvider({ children }: { children: ReactNode }): React.J
       compare: state.compare,
       panelOpen: state.panelOpen,
       transA: state.transA,
-      transB: state.transB
+      transB: state.transB,
+      aiModel: state.aiModel
     });
-  }, [state.theme, state.locale, state.compare, state.panelOpen, state.transA, state.transB]);
+  }, [state.theme, state.locale, state.compare, state.panelOpen, state.transA, state.transB, state.aiModel]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = state.theme;
@@ -114,6 +122,7 @@ export function AppStateProvider({ children }: { children: ReactNode }): React.J
       togglePanel: () => dispatch({ type: "TOGGLE_PANEL" }),
       setTransA: (id: string) => dispatch({ type: "SET_TRANS_A", id }),
       setTransB: (id: string) => dispatch({ type: "SET_TRANS_B", id }),
+      setAiModel: (id: string) => dispatch({ type: "SET_AI_MODEL", id }),
       saveKeys: (aiApiKey: string) => {
         writeAiKey(aiApiKey);
         dispatch({ type: "SAVE_KEYS", aiApiKey });

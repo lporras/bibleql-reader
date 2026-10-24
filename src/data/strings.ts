@@ -17,6 +17,9 @@ export interface StringsShape {
   aiIntro: string;
   aiPlaceholder: string;
   ask: string;
+  aiModel: string;
+  ollamaOffline: string;
+  ollamaNoModels: string;
   thinking: string;
   concPlaceholder: string;
   look: string;
@@ -202,6 +205,9 @@ export const STR: Record<Locale, StringsShape> = {
     aiIntro: "Ask a question about Scripture and get an answer with references you can open.",
     aiPlaceholder: "What does the Bible say about forgiving someone repeatedly?",
     ask: "Ask",
+    aiModel: "Model",
+    ollamaOffline: "Ollama — not running",
+    ollamaNoModels: "No models — run ollama pull",
     thinking: "Thinking…",
     concPlaceholder: "Word to study",
     look: "Look up",
@@ -385,6 +391,9 @@ export const STR: Record<Locale, StringsShape> = {
     aiIntro: "Haz una pregunta sobre las Escrituras y recibe una respuesta con referencias que puedes abrir.",
     aiPlaceholder: "¿Qué dice la Biblia sobre perdonar muchas veces?",
     ask: "Preguntar",
+    aiModel: "Modelo",
+    ollamaOffline: "Ollama — no está activo",
+    ollamaNoModels: "Sin modelos — usa ollama pull",
     thinking: "Pensando…",
     concPlaceholder: "Palabra a estudiar",
     look: "Buscar",

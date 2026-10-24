@@ -52,7 +52,7 @@ src/
   state/                   AppStateContext (Context + useReducer) + persist.ts (localStorage),
                             AnnotationsContext, OfflineDownloadsContext, StudiesContext (+ study.ts,
                             its pure reducer), AiChatContext (one chat transcript app-wide)
-  lib/                     graphql client, ai.ts, externalLinks.ts, refs.ts, speech.ts, format.ts,
+  lib/                     graphql client, ai.ts + aiModels.ts (assistant model picker registry), externalLinks.ts, refs.ts, speech.ts, format.ts,
                             pdf/ (dependency-free PDF: WinAnsi text, layout, writer, studyPdf.ts)
   data/                    static data: books.ts, strings.ts (i18n), sample.ts, fallbackTranslations.ts
   types/                   shared TS types (bible.ts, app.ts, ai.ts, imageCreator.ts)
@@ -166,6 +166,16 @@ Two layers, deliberately different in kind:
   which mocks them at the network layer. (Offline packages are downloaded by `offline.rs` in
   Rust, using the plugin's re-exported `reqwest` directly — the package host sends no CORS
   headers at all.)
+- **Local models go through Ollama with plain `fetch`** (`OLLAMA_BASE_URL` in `lib/aiModels.ts`,
+  via `@ai-sdk/openai-compatible`). Host and stand-in model are build-time `OLLAMA_URL` /
+  `OLLAMA_MODEL` (`define:` in `vite.config.ts`, defaults `http://localhost:11434` /
+  `gemma4:e4b`; `vitest.config.ts` pins the defaults) — deliberately not `OLLAMA_HOST`, which is
+  Ollama's own server setting. Ollama's default CORS allow-list covers `http://localhost:*`
+  and `tauri://*` but not the bundled Windows origin `http://tauri.localhost` — there it answers
+  403 until the user sets `OLLAMA_ORIGINS=http://tauri.localhost`. The picker lists whatever is
+  pulled (`lib/ollama.ts` reads `/api/version` + `/api/tags`, via `queries/useOllamaStatus.ts`);
+  `AI_MODELS` only adds labels and offline stand-ins. A new provider needs a case in `ai.ts`'s
+  `languageModel`. `launchApp` aborts `localhost:11434` so a dev machine's Ollama never answers E2E.
 - **The HTTP plugin always sends an `Origin` header** — it strips the caller's as a forbidden
   header, then sets its own (`http://localhost:1420` in dev, `tauri://localhost` bundled); see
   its `commands.rs`, "ensure we have an Origin header set". Only the plugin's `unsafe-headers`

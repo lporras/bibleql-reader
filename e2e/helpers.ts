@@ -136,6 +136,9 @@ export interface App {
 export async function launchApp(page: Page, hashRoute = "", tauri: TauriResponses = {}): Promise<App> {
   await installTauriStub(page, tauri);
   await mockBibleQL(page);
+  for (const path of ["**/api/version", "**/api/tags", "**/v1/chat/completions"]) {
+    await page.route(path, (route) => route.abort("connectionrefused"));
+  }
   await page.goto(`/${hashRoute}`);
   await page.waitForLoadState("domcontentloaded");
   return { page };

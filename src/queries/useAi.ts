@@ -15,6 +15,12 @@ export function useAi(): UseMutationResult<AiAnswer, Error, AiQuestion> {
   const { state } = useAppState();
   return useMutation({
     mutationFn: ({ question, studyTitle, onPartial }: AiQuestion) =>
-      askAi(question, state.locale, state.aiApiKey, studyTitle, onPartial)
+      askAi(question, {
+        locale: state.locale,
+        modelId: state.aiModel,
+        anthropicApiKey: state.aiApiKey,
+        studyTitle,
+        onPartial
+      })
   });
 }

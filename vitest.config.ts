@@ -12,7 +12,9 @@ export default defineConfig({
   // Unsplash APIs (see lib/graphql.ts, providers/UnsplashProvider.ts).
   define: {
     __BIBLEQL_API_KEY__: JSON.stringify(""),
-    __UNSPLASH_ACCESS_KEY__: JSON.stringify("")
+    __UNSPLASH_ACCESS_KEY__: JSON.stringify(""),
+    __OLLAMA_URL__: JSON.stringify("http://localhost:11434"),
+    __OLLAMA_MODEL__: JSON.stringify("gemma4:e4b")
   },
   test: {
     environment: "node",

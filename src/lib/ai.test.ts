@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 // Mocks the Tauri HTTP plugin rather than letting anything reach
 // api.anthropic.com — per this project's standing rule, specs never call
@@ -8,6 +8,12 @@ const fetchMock = vi.fn();
 vi.mock("@tauri-apps/plugin-http", () => ({ fetch: (...args: unknown[]) => fetchMock(...args) }));
 
 const { askAi } = await import("./ai");
+
+function claude(anthropicApiKey: string) {
+  return { locale: "en" as const, modelId: "claude-sonnet-5", anthropicApiKey };
+}
+
+const gemma = { locale: "en" as const, modelId: "ollama:gemma4:e4b", anthropicApiKey: "" };
 
 function headerFrom(init: RequestInit | undefined, name: string): string | undefined {
   const headers = init?.headers as Record<string, string> | undefined;
@@ -20,7 +26,7 @@ describe("askAi", () => {
   beforeEach(() => fetchMock.mockReset());
 
   it("refuses to call out at all when no key is configured", async () => {
-    await expect(askAi("Who is Melchizedek?", "en", "   ")).rejects.toThrow(/No Anthropic API key/);
+    await expect(askAi("Who is Melchizedek?", claude("   "))).rejects.toThrow(/No Anthropic API key/);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -32,7 +38,7 @@ describe("askAi", () => {
       })
     );
 
-    await expect(askAi("Who is Melchizedek?", "en", "sk-ant-test-123")).rejects.toThrow();
+    await expect(askAi("Who is Melchizedek?", claude("sk-ant-test-123"))).rejects.toThrow();
 
     expect(fetchMock).toHaveBeenCalled();
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
@@ -56,7 +62,7 @@ describe("askAi", () => {
       })
     );
 
-    await expect(askAi("Who is Melchizedek?", "en", "sk-ant-test-123")).rejects.toThrow();
+    await expect(askAi("Who is Melchizedek?", claude("sk-ant-test-123"))).rejects.toThrow();
 
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(headerFrom(init, "anthropic-dangerous-direct-browser-access")).toBe("true");
@@ -70,8 +76,52 @@ describe("askAi", () => {
       })
     );
 
-    await expect(askAi("Who is Melchizedek?", "en", "sk-ant-bad")).rejects.toThrow(
+    await expect(askAi("Who is Melchizedek?", claude("sk-ant-bad"))).rejects.toThrow(
       /rejected.*API key is invalid/s
     );
+  });
+});
+
+describe("askAi with Ollama", () => {
+  const webFetch = vi.fn();
+
+  beforeEach(() => {
+    fetchMock.mockReset();
+    webFetch.mockReset();
+    vi.stubGlobal("fetch", webFetch);
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("needs no API key and calls the local OpenAI-compatible endpoint, not the plugin", async () => {
+    webFetch.mockResolvedValue(
+      new Response(JSON.stringify({ error: { message: "nope" } }), {
+        status: 400,
+        headers: { "content-type": "application/json" }
+      })
+    );
+
+    await expect(askAi("Who is Melchizedek?", gemma)).rejects.toThrow();
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    const [url, init] = webFetch.mock.calls[0] as [string, RequestInit];
+    expect(String(url)).toBe("http://localhost:11434/v1/chat/completions");
+    expect(JSON.parse(String(init.body)).model).toBe("gemma4:e4b");
+  });
+
+  it("says Ollama isn't running when the connection fails", async () => {
+    webFetch.mockRejectedValue(new TypeError("Failed to fetch"));
+
+    await expect(askAi("Who is Melchizedek?", gemma)).rejects.toThrow(/reach Ollama.*running/);
+  });
+
+  it("names the pull command when the model isn't installed", async () => {
+    webFetch.mockResolvedValue(
+      new Response(JSON.stringify({ error: { message: 'model "gemma4:e4b" not found' } }), {
+        status: 404,
+        headers: { "content-type": "application/json" }
+      })
+    );
+
+    await expect(askAi("Who is Melchizedek?", gemma)).rejects.toThrow(/ollama pull gemma4:e4b/);
   });
 });

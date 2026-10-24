@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import { useAppState } from "./AppStateContext";
 import { useAi } from "../queries/useAi";
+import { findAiModel } from "../lib/aiModels";
 import type { AiReference } from "../types/ai";
 
 export interface ChatMessage {
@@ -31,6 +32,7 @@ const AiChatContext = createContext<AiChatContextValue | null>(null);
 export function AiChatProvider({ children }: { children: ReactNode }): React.JSX.Element {
   const { state } = useAppState();
   const es = state.locale === "es";
+  const modelLabel = findAiModel(state.aiModel).label;
   const ai = useAi();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const { isPending, mutateAsync } = ai;
@@ -45,10 +47,11 @@ export function AiChatProvider({ children }: { children: ReactNode }): React.JSX
       // arrive. `replace` is read before the update is queued: React may run
       // the updater later, by which point `started` is already true.
       let started = false;
+      const who = `${es ? "Asistente" : "Assistant"} · ${modelLabel}`;
       const show = (text: string, refs: AiReference[]): void => {
         const replace = started;
         started = true;
-        const message: ChatMessage = { from: "assistant", who: es ? "Asistente" : "Assistant", text, refs };
+        const message: ChatMessage = { from: "assistant", who, text, refs };
         setMessages((prev) => (replace ? prev.slice(0, -1) : prev).concat([message]));
       };
       try {
@@ -64,7 +67,7 @@ export function AiChatProvider({ children }: { children: ReactNode }): React.JSX
         show(err instanceof Error ? err.message : String(err), []);
       }
     },
-    [es, isPending, mutateAsync]
+    [es, modelLabel, isPending, mutateAsync]
   );
 
   const thinking = isPending && messages[messages.length - 1]?.from === "user";

@@ -25,6 +25,8 @@ Build-time keys (in `.env` / `.env.local`, inlined by `vite.config.ts`):
 |---|---|---|
 | `BIBLEQL_API_KEY` | `lib/graphql.ts` | Only downloaded (offline) translations can be read |
 | `UNSPLASH_ACCESS_KEY` | Image Creator background search | The Unsplash search tab is hidden |
+| `OLLAMA_URL` | Assistant's local models (`lib/aiModels.ts`) | Defaults to `http://localhost:11434` |
+| `OLLAMA_MODEL` | The Ollama model offered while Ollama is unreachable | Defaults to `gemma4:e4b` |
 
 The **Anthropic key is not a build-time key.** Each user types their own into the key dialog
 (`components/KeyDialog.tsx`); it is stored in `localStorage` (`biblereader.aikey`) and passed

@@ -5,6 +5,8 @@ import { useOpenRef } from "../../hooks/useOpenRef";
 import { useAddToStudy } from "../../hooks/useAddToStudy";
 import { translationAbbrev } from "../../state/study";
 import { STR } from "../../data/strings";
+import { aiModelGroups, type AiModelOption } from "../../lib/aiModels";
+import { useOllamaStatus } from "../../queries/useOllamaStatus";
 import type { AiReference } from "../../types/ai";
 import { CheckIcon, PlusIcon } from "../icons";
 import { AiText } from "./AiText";
@@ -18,7 +20,7 @@ interface AIAssistantProps {
 }
 
 export function AIAssistant({ active, studyTitle, suggestions }: AIAssistantProps): JSX.Element {
-  const { state } = useAppState();
+  const { state, actions } = useAppState();
   const t = STR[state.locale];
   const openRef = useOpenRef();
   const chat = useAiChat();
@@ -97,6 +99,18 @@ export function AIAssistant({ active, studyTitle, suggestions }: AIAssistantProp
 
   const prompts = suggestions ?? [t.s1, t.s2, t.s3];
 
+  const ollama = useOllamaStatus(active);
+  const groups = aiModelGroups(ollama?.models, state.aiModel);
+  let ollamaLabel = "Ollama";
+  if (ollama === null) ollamaLabel = t.ollamaOffline;
+  else if (ollama && groups.ollama.length === 0) ollamaLabel = t.ollamaNoModels;
+  else if (ollama) ollamaLabel = `Ollama ${ollama.version}`;
+  const renderOption = (m: AiModelOption): JSX.Element => (
+    <option key={m.id} value={m.id}>
+      {m.label}
+    </option>
+  );
+
   return (
     <div className={styles.body} hidden={!active}>
       <div ref={messagesRef} className={styles.messages} onScroll={handleScroll}>
@@ -130,9 +144,22 @@ export function AIAssistant({ active, studyTitle, suggestions }: AIAssistantProp
           placeholder={t.aiPlaceholder}
           rows={3}
         />
-        <button type="submit" className={styles.askButton}>
-          {t.ask}
-        </button>
+        <div className={styles.formRow}>
+          <select
+            className={styles.modelSelect}
+            aria-label={t.aiModel}
+            title={t.aiModel}
+            value={state.aiModel}
+            onChange={(event) => actions.setAiModel(event.target.value)}
+            disabled={chat.pending}
+          >
+            <optgroup label="Claude">{groups.anthropic.map(renderOption)}</optgroup>
+            <optgroup label={ollamaLabel}>{groups.ollama.map(renderOption)}</optgroup>
+          </select>
+          <button type="submit" className={styles.askButton}>
+            {t.ask}
+          </button>
+        </div>
       </form>
     </div>
   );

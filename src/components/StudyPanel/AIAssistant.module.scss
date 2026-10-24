@@ -126,8 +126,31 @@
   outline: none;
 }
 
+.formRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.modelSelect {
+  min-width: 0;
+  max-width: 60%;
+  padding: 5px 8px;
+  border: 1px solid var(--divider);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 12.5px;
+  outline: none;
+
+  &:disabled {
+    color: var(--faint);
+  }
+}
+
 .askButton {
-  align-self: flex-end;
+  flex: 0 0 auto;
   padding: 6px 16px;
   border: 1px solid var(--accent);
   border-radius: 4px;
