@@ -1,8 +1,8 @@
 import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
-import { generateObject, NoObjectGeneratedError } from "ai";
+import { NoObjectGeneratedError, NoOutputGeneratedError, Output, streamText, type DeepPartial } from "ai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { z } from "zod";
-import type { AiAnswer } from "../types/ai";
+import type { AiAnswer, AiReference } from "../types/ai";
 
 // Was the `ai:ask` Electron IPC handler (src/main/ipc/ai.ts), which ran
 // in the Node main process. Tauri has no Node side, so the whole thing
@@ -89,7 +89,7 @@ function withDetail(summary: string, err: unknown): string {
 }
 
 function describeAiError(err: unknown): string {
-  if (NoObjectGeneratedError.isInstance(err)) {
+  if (NoObjectGeneratedError.isInstance(err) || NoOutputGeneratedError.isInstance(err)) {
     return "The assistant's reply didn't match the expected format. Try rephrasing.";
   }
   const statusCode = (err as { statusCode?: number }).statusCode;
@@ -104,11 +104,29 @@ function describeAiError(err: unknown): string {
   return detail ?? message ?? "The AI assistant request failed.";
 }
 
+/**
+ * What a half-streamed reply can show. References only count once their
+ * `ref` is complete — keys stream in schema order, so that's as soon as
+ * `why` has started — or a chip would flicker through "Mat", "Matt"…
+ */
+function partialAnswer(partial: DeepPartial<AiAnswer> | undefined): AiAnswer {
+  return {
+    answer: partial?.answer ?? "",
+    references: (partial?.references ?? []).filter((r): r is AiReference => !!r?.ref && r.why !== undefined)
+  };
+}
+
+/**
+ * Streams the reply: `onPartial` gets the answer-so-far as each chunk
+ * arrives, and the promise resolves with the complete, schema-validated
+ * answer once the stream ends.
+ */
 export async function askAi(
   question: string,
   locale: "en" | "es",
   anthropicApiKey: string,
-  studyTitle?: string
+  studyTitle?: string,
+  onPartial?: (answer: AiAnswer) => void
 ): Promise<AiAnswer> {
   if (!anthropicApiKey?.trim()) {
     throw new Error("No Anthropic API key configured. Add one in the key dialog.");
@@ -120,15 +138,24 @@ export async function askAi(
     headers: { "anthropic-dangerous-direct-browser-access": "true" }
   });
 
+  // partialOutputStream swallows errors and `output` rejects with a generic
+  // "no output" one, so keep the original (it carries the status code and
+  // Anthropic's message that describeAiError digs out).
+  let streamError: unknown;
+  const result = streamText({
+    model: anthropic("claude-sonnet-5"),
+    output: Output.object({ schema: AiAnswerSchema }),
+    system: buildSystemPrompt(locale, studyTitle),
+    prompt: question,
+    onError: ({ error }) => {
+      streamError = error;
+    }
+  });
+
   try {
-    const { object } = await generateObject({
-      model: anthropic("claude-sonnet-5"),
-      schema: AiAnswerSchema,
-      system: buildSystemPrompt(locale, studyTitle),
-      prompt: question
-    });
-    return object;
+    for await (const partial of result.partialOutputStream) onPartial?.(partialAnswer(partial));
+    return await result.output;
   } catch (err) {
-    throw new Error(describeAiError(err));
+    throw new Error(describeAiError(streamError ?? err));
   }
 }

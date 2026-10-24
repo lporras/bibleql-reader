@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type JSX, type KeyboardEvent } from "react";
+import { useLayoutEffect, useRef, useState, type FormEvent, type JSX, type KeyboardEvent } from "react";
 import { useAppState } from "../../state/AppStateContext";
 import { useAiChat } from "../../state/AiChatContext";
 import { useOpenRef } from "../../hooks/useOpenRef";
@@ -26,9 +26,27 @@ export function AIAssistant({ active, studyTitle, suggestions }: AIAssistantProp
 
   const [input, setInput] = useState("");
 
+  // Follow the reply as it streams in, like a terminal: keep the newest
+  // lines in view while the user is at the bottom, but stop following once
+  // they scroll up to reread something, and pick up again when they return
+  // or ask a new question.
+  const messagesRef = useRef<HTMLDivElement>(null);
+  const followRef = useRef(true);
+
+  function handleScroll(): void {
+    const el = messagesRef.current;
+    if (el) followRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+  }
+
+  useLayoutEffect(() => {
+    const el = messagesRef.current;
+    if (el && active && followRef.current) el.scrollTop = el.scrollHeight;
+  }, [chat.messages, chat.thinking, active]);
+
   function ask(question: string): void {
     if (!question.trim() || chat.pending) return;
     setInput("");
+    followRef.current = true;
     void chat.ask(question, studyTitle);
   }
 
@@ -81,7 +99,7 @@ export function AIAssistant({ active, studyTitle, suggestions }: AIAssistantProp
 
   return (
     <div className={styles.body} hidden={!active}>
-      <div className={styles.messages}>
+      <div ref={messagesRef} className={styles.messages} onScroll={handleScroll}>
         {chat.messages.length === 0 && (
           <div className={styles.empty}>
             <p className={styles.introText}>{t.aiIntro}</p>
@@ -101,7 +119,7 @@ export function AIAssistant({ active, studyTitle, suggestions }: AIAssistantProp
             {m.refs.length > 0 && <div className={styles.refs}>{m.refs.map(renderRef)}</div>}
           </div>
         ))}
-        {chat.pending && <div className={styles.thinking}>{t.thinking}</div>}
+        {chat.thinking && <div className={styles.thinking}>{t.thinking}</div>}
       </div>
       <form className={styles.form} onSubmit={handleSubmit}>
         <textarea
