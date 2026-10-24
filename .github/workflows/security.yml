@@ -1,0 +1,80 @@
+name: Security
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  # New advisories are published against code that hasn't changed, so the
+  # audits also run weekly instead of only when someone pushes.
+  schedule:
+    - cron: "0 6 * * 1"
+
+jobs:
+  codeql:
+    name: CodeQL
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # The frontend, plus the workflows themselves (injection via
+        # untrusted PR input in `run:` steps and the like).
+        language: [javascript-typescript, actions]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: /language:${{ matrix.language }}
+
+  yarn-audit:
+    name: yarn audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Only what ships in the app bundle, and only high/critical: dev
+      # tooling (Vite, Playwright, Vitest…) never reaches users, and failing
+      # on every moderate advisory in it would just teach people to ignore
+      # this job. Run `yarn audit` locally for the full picture.
+      - name: Audit production dependencies
+        run: yarn audit --groups dependencies --level high
+
+  cargo-audit:
+    name: cargo audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install cargo-audit
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-audit
+
+      # Fails on vulnerabilities only. "Unmaintained"/"unsound" warnings
+      # (mostly the GTK stack Tauri's Linux build pulls in) are printed but
+      # don't fail the job — there's nothing to bump until Tauri does.
+      - name: Audit the Tauri shell's crates
+        run: cargo audit --file src-tauri/Cargo.lock
