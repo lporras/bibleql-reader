@@ -176,6 +176,20 @@ phone, use the debug build.
 As on desktop, the BibleQL key is compiled in from `.env` at build time, so set it before you
 build.
 
+## Running on an iPad
+
+The Xcode project is generated and committed in `src-tauri/gen/apple`. You need the full Xcode
+(the Command Line Tools aren't enough), an iOS Simulator runtime, the iOS Rust targets, and
+XcodeGen. Once those are installed:
+
+```bash
+xcrun simctl list devices available | grep iPad    # pick a simulator
+yarn tauri ios dev "iPad Pro 13-inch (M5)"
+```
+
+[docs/ios.md](docs/ios.md) covers the full setup, running on a physical iPad (signing, Developer
+Mode), self-contained builds, and troubleshooting.
+
 ## Running tests
 
 ```bash

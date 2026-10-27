@@ -1,0 +1,489 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0AC17BEB87387689577ABFB1 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 250F2F57AEBBFAC892F2D7D7 /* LaunchScreen.storyboard */; };
+		11F40AA3227B8D8B114BC01B /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0B2253D3F1BFADF2F038921A /* UIKit.framework */; };
+		466A2FE1854F78753282B6B1 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3C5067A5687DE7D284BCB348 /* Metal.framework */; };
+		4753C25DA6B071EFDDA505AD /* libapp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B618CAE65AD16E28274A258F /* libapp.a */; };
+		57847F95CEE455FA6AA73796 /* main.mm in Sources */ = {isa = PBXBuildFile; fileRef = 52EE1428DFBE2C378F481CA5 /* main.mm */; };
+		5C37CA83A46605C558EBE70D /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4E096DF8A2AD72B95353F702 /* Security.framework */; };
+		6065C842E18C88EF0CD7620A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2B3C791B6E1B15F8D1732CD3 /* Assets.xcassets */; };
+		611EA0C5FAB157DF4C410BD6 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 54C35A401047013CA0C1FEDE /* QuartzCore.framework */; };
+		6322BBE3C740C4F2286C0DB4 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6E33C376C8F8656C44D3E447 /* CoreGraphics.framework */; };
+		7F4F6684917EA291F13B8E4C /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E3B9B788893B14D5B3E78EA1 /* MetalKit.framework */; };
+		99CB91B8BB58678C105D8044 /* assets in Resources */ = {isa = PBXBuildFile; fileRef = FA063F445CC078897B6BBD7F /* assets */; };
+		A32DB9A38323B9940B945FC6 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3F47D971E8A8FF1BC4EB9C54 /* WebKit.framework */; };
+		E23C4D98921689A5FC1A2A34 /* libapp.a in Resources */ = {isa = PBXBuildFile; fileRef = ADF4B6DE2E699669CF960EFC /* libapp.a */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		0B2253D3F1BFADF2F038921A /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
+		21B0221E2EF1984E9445CBB4 /* bibleql-reader_iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "bibleql-reader_iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		250F2F57AEBBFAC892F2D7D7 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
+		2B3C791B6E1B15F8D1732CD3 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		2C125EC35877FFBB7B16F83C /* offline.rs */ = {isa = PBXFileReference; path = offline.rs; sourceTree = "<group>"; };
+		3C5067A5687DE7D284BCB348 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
+		3F47D971E8A8FF1BC4EB9C54 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
+		4CDC5B8E1D718E80EE440B5F /* bibleql-reader_iOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "bibleql-reader_iOS.entitlements"; sourceTree = "<group>"; };
+		4E096DF8A2AD72B95353F702 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
+		52EE1428DFBE2C378F481CA5 /* main.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = main.mm; sourceTree = "<group>"; };
+		54C35A401047013CA0C1FEDE /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
+		6E33C376C8F8656C44D3E447 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
+		705527069953306E19CD7EC4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		76F1D35C51DD73245B6FB942 /* lib.rs */ = {isa = PBXFileReference; path = lib.rs; sourceTree = "<group>"; };
+		A683C4BFB31460C15C5836C4 /* bindings.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = bindings.h; sourceTree = "<group>"; };
+		ADF4B6DE2E699669CF960EFC /* libapp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libapp.a; sourceTree = "<group>"; };
+		B618CAE65AD16E28274A258F /* libapp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libapp.a; sourceTree = "<group>"; };
+		D8A55C5F1E83B03EF0B15360 /* main.rs */ = {isa = PBXFileReference; path = main.rs; sourceTree = "<group>"; };
+		E3B9B788893B14D5B3E78EA1 /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
+		FA063F445CC078897B6BBD7F /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; path = assets; sourceTree = SOURCE_ROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		79733F3DA86312493A9DBC30 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4753C25DA6B071EFDDA505AD /* libapp.a in Frameworks */,
+				6322BBE3C740C4F2286C0DB4 /* CoreGraphics.framework in Frameworks */,
+				466A2FE1854F78753282B6B1 /* Metal.framework in Frameworks */,
+				7F4F6684917EA291F13B8E4C /* MetalKit.framework in Frameworks */,
+				611EA0C5FAB157DF4C410BD6 /* QuartzCore.framework in Frameworks */,
+				5C37CA83A46605C558EBE70D /* Security.framework in Frameworks */,
+				11F40AA3227B8D8B114BC01B /* UIKit.framework in Frameworks */,
+				A32DB9A38323B9940B945FC6 /* WebKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		13DBF2EC709DA5B56A51A593 /* arm64 */ = {
+			isa = PBXGroup;
+			children = (
+				42590D1A5153AF67C1B10462 /* debug */,
+			);
+			path = arm64;
+			sourceTree = "<group>";
+		};
+		29C0000299DD37E6CDEDE2A6 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				21B0221E2EF1984E9445CBB4 /* bibleql-reader_iOS.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		2A5E9A970188A3CB2CEEC62B /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				F5FCEB339B13A00921A9E44D /* bibleql-reader */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		42590D1A5153AF67C1B10462 /* debug */ = {
+			isa = PBXGroup;
+			children = (
+				ADF4B6DE2E699669CF960EFC /* libapp.a */,
+			);
+			path = debug;
+			sourceTree = "<group>";
+		};
+		73670BA63224CB5BEA7FC65D /* bindings */ = {
+			isa = PBXGroup;
+			children = (
+				A683C4BFB31460C15C5836C4 /* bindings.h */,
+			);
+			path = bindings;
+			sourceTree = "<group>";
+		};
+		A0CCFA612207EE7117EE1EC7 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				6E33C376C8F8656C44D3E447 /* CoreGraphics.framework */,
+				B618CAE65AD16E28274A258F /* libapp.a */,
+				3C5067A5687DE7D284BCB348 /* Metal.framework */,
+				E3B9B788893B14D5B3E78EA1 /* MetalKit.framework */,
+				54C35A401047013CA0C1FEDE /* QuartzCore.framework */,
+				4E096DF8A2AD72B95353F702 /* Security.framework */,
+				0B2253D3F1BFADF2F038921A /* UIKit.framework */,
+				3F47D971E8A8FF1BC4EB9C54 /* WebKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		A42D814401AD6ABC6576C2A7 /* bibleql-reader_iOS */ = {
+			isa = PBXGroup;
+			children = (
+				4CDC5B8E1D718E80EE440B5F /* bibleql-reader_iOS.entitlements */,
+				705527069953306E19CD7EC4 /* Info.plist */,
+			);
+			path = "bibleql-reader_iOS";
+			sourceTree = "<group>";
+		};
+		A9E120EEBCD389AFEE001258 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				76F1D35C51DD73245B6FB942 /* lib.rs */,
+				D8A55C5F1E83B03EF0B15360 /* main.rs */,
+				2C125EC35877FFBB7B16F83C /* offline.rs */,
+			);
+			name = src;
+			path = ../../src;
+			sourceTree = "<group>";
+		};
+		C8A471371DC02224F147681F /* Externals */ = {
+			isa = PBXGroup;
+			children = (
+				13DBF2EC709DA5B56A51A593 /* arm64 */,
+			);
+			path = Externals;
+			sourceTree = "<group>";
+		};
+		F5FCEB339B13A00921A9E44D /* bibleql-reader */ = {
+			isa = PBXGroup;
+			children = (
+				52EE1428DFBE2C378F481CA5 /* main.mm */,
+				73670BA63224CB5BEA7FC65D /* bindings */,
+			);
+			path = "bibleql-reader";
+			sourceTree = "<group>";
+		};
+		FE26FE0E99FE283323F50ADD = {
+			isa = PBXGroup;
+			children = (
+				FA063F445CC078897B6BBD7F /* assets */,
+				2B3C791B6E1B15F8D1732CD3 /* Assets.xcassets */,
+				250F2F57AEBBFAC892F2D7D7 /* LaunchScreen.storyboard */,
+				A42D814401AD6ABC6576C2A7 /* bibleql-reader_iOS */,
+				C8A471371DC02224F147681F /* Externals */,
+				2A5E9A970188A3CB2CEEC62B /* Sources */,
+				A9E120EEBCD389AFEE001258 /* src */,
+				A0CCFA612207EE7117EE1EC7 /* Frameworks */,
+				29C0000299DD37E6CDEDE2A6 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		"TEMP_35355BF3-DE4E-4B83-ABEC-CFBEE581BF95" /* x86_64 */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = x86_64;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		EC20D1D5277BD45C4A4143B6 /* bibleql-reader_iOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CF77097CC768348E9E9E9890 /* Build configuration list for PBXNativeTarget "bibleql-reader_iOS" */;
+			buildPhases = (
+				756B579464AA92DBC005F486 /* Build Rust Code */,
+				F44A6F281E72DFE4D30178EF /* Sources */,
+				83B770C57AFB50A978BC8077 /* Resources */,
+				79733F3DA86312493A9DBC30 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "bibleql-reader_iOS";
+			packageProductDependencies = (
+			);
+			productName = "bibleql-reader_iOS";
+			productReference = 21B0221E2EF1984E9445CBB4 /* bibleql-reader_iOS.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		1632A3A97B8E3E1FA664C939 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = 45D39211A69BCC9C31965970 /* Build configuration list for PBXProject "bibleql-reader" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = FE26FE0E99FE283323F50ADD;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 29C0000299DD37E6CDEDE2A6 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				EC20D1D5277BD45C4A4143B6 /* bibleql-reader_iOS */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		83B770C57AFB50A978BC8077 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6065C842E18C88EF0CD7620A /* Assets.xcassets in Resources */,
+				0AC17BEB87387689577ABFB1 /* LaunchScreen.storyboard in Resources */,
+				99CB91B8BB58678C105D8044 /* assets in Resources */,
+				E23C4D98921689A5FC1A2A34 /* libapp.a in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		756B579464AA92DBC005F486 /* Build Rust Code */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Build Rust Code";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(SRCROOT)/Externals/x86_64/${CONFIGURATION}/libapp.a",
+				"$(SRCROOT)/Externals/arm64/${CONFIGURATION}/libapp.a",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "yarn tauri ios xcode-script -v --platform ${PLATFORM_DISPLAY_NAME:?} --sdk-root ${SDKROOT:?} --framework-search-paths \"${FRAMEWORK_SEARCH_PATHS:?}\" --header-search-paths \"${HEADER_SEARCH_PATHS:?}\" --gcc-preprocessor-definitions \"${GCC_PREPROCESSOR_DEFINITIONS:-}\" --configuration ${CONFIGURATION:?} ${FORCE_COLOR} ${ARCHS:?}";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		F44A6F281E72DFE4D30178EF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				57847F95CEE455FA6AA73796 /* main.mm in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		DBF5A95D0D68A10B8FEDD4F1 /* debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = debug;
+		};
+		E4A236E7307F5055F3DF67E8 /* release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ARCHS = (
+					arm64,
+				);
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = "bibleql-reader_iOS/bibleql-reader_iOS.entitlements";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				ENABLE_BITCODE = NO;
+				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\".\"",
+				);
+				INFOPLIST_FILE = "bibleql-reader_iOS/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				"LIBRARY_SEARCH_PATHS[arch=arm64]" = "$(inherited) $(PROJECT_DIR)/Externals/arm64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME) $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/$(PLATFORM_NAME)";
+				"LIBRARY_SEARCH_PATHS[arch=x86_64]" = "$(inherited) $(PROJECT_DIR)/Externals/x86_64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME) $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/$(PLATFORM_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = org.bibleql.reader;
+				PRODUCT_NAME = "BibleQL Reader";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 2;
+				VALID_ARCHS = arm64;
+			};
+			name = release;
+		};
+		F1B6A670624792EF322AA2BE /* debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ARCHS = (
+					arm64,
+				);
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = "bibleql-reader_iOS/bibleql-reader_iOS.entitlements";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				ENABLE_BITCODE = NO;
+				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\".\"",
+				);
+				INFOPLIST_FILE = "bibleql-reader_iOS/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				"LIBRARY_SEARCH_PATHS[arch=arm64]" = "$(inherited) $(PROJECT_DIR)/Externals/arm64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME) $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/$(PLATFORM_NAME)";
+				"LIBRARY_SEARCH_PATHS[arch=x86_64]" = "$(inherited) $(PROJECT_DIR)/Externals/x86_64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME) $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/$(PLATFORM_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = org.bibleql.reader;
+				PRODUCT_NAME = "BibleQL Reader";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 2;
+				VALID_ARCHS = arm64;
+			};
+			name = debug;
+		};
+		FE3A39F401C8B0461A212743 /* release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		45D39211A69BCC9C31965970 /* Build configuration list for PBXProject "bibleql-reader" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DBF5A95D0D68A10B8FEDD4F1 /* debug */,
+				FE3A39F401C8B0461A212743 /* release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = debug;
+		};
+		CF77097CC768348E9E9E9890 /* Build configuration list for PBXNativeTarget "bibleql-reader_iOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F1B6A670624792EF322AA2BE /* debug */,
+				E4A236E7307F5055F3DF67E8 /* release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 1632A3A97B8E3E1FA664C939 /* Project object */;
+}

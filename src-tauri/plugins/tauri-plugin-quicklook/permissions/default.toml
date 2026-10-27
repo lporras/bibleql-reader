@@ -1,0 +1,5 @@
+"$schema" = "schemas/schema.json"
+
+[default]
+description = "Allows showing a file in Quick Look."
+permissions = ["allow-preview"]

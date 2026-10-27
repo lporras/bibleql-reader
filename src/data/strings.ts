@@ -173,6 +173,7 @@ export interface StringsShape {
   fmtLink: string;
   fmtImage: string;
   fmtVideo: string;
+  watchOnYoutube: string;
   linkUrl: string;
   videoUrl: string;
   applyUrl: string;
@@ -358,6 +359,7 @@ export const STR: Record<Locale, StringsShape> = {
     fmtLink: "Link",
     fmtImage: "Insert image",
     fmtVideo: "Insert YouTube video",
+    watchOnYoutube: "Watch on YouTube",
     linkUrl: "Link address",
     videoUrl: "YouTube link",
     applyUrl: "Apply",
@@ -541,6 +543,7 @@ export const STR: Record<Locale, StringsShape> = {
     fmtLink: "Enlace",
     fmtImage: "Insertar imagen",
     fmtVideo: "Insertar video de YouTube",
+    watchOnYoutube: "Ver en YouTube",
     linkUrl: "Dirección del enlace",
     videoUrl: "Enlace de YouTube",
     applyUrl: "Aplicar",

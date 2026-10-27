@@ -15,6 +15,9 @@ pub fn run() {
         .plugin(tauri_plugin_http::init())
         // os: `platform()` for the macOS-only frameless title bar.
         .plugin(tauri_plugin_os::init())
+        // quicklook (local, plugins/): iOS can't open a saved file in another
+        // app's viewer, so the exported study PDF is shown in Quick Look.
+        .plugin(tauri_plugin_quicklook::init())
         // Offline translation packages: download, verify, and query the
         // downloaded SQLite files. App commands need no capability entry.
         .manage(offline::OfflineState::default())

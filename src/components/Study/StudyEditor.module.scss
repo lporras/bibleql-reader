@@ -22,6 +22,34 @@
   align-items: center;
   row-gap: 2px;
   padding: 6px 0;
+
+  // Touch-sized tools don't fit the editor column on an iPad, and wrapping
+  // strands the second group (divider and all) on a line of its own. Keep one
+  // row and let it scroll sideways instead, like the iOS Notes format bar.
+  @media (pointer: coarse) {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
+    // With the scrollbar hidden, fade whichever edge has tools past it
+    // (data-more-* is kept current by StudyEditor) so the cut-off row reads
+    // as "swipe for more".
+    $fade: 36px;
+    &[data-more-right="yes"] {
+      mask-image: linear-gradient(to right, #000 calc(100% - #{$fade}), transparent);
+    }
+    &[data-more-left="yes"] {
+      mask-image: linear-gradient(to left, #000 calc(100% - #{$fade}), transparent);
+    }
+    &[data-more-left="yes"][data-more-right="yes"] {
+      mask-image: linear-gradient(to right, transparent, #000 $fade, #000 calc(100% - #{$fade}), transparent);
+    }
+  }
 }
 
 .group {
@@ -33,6 +61,11 @@
     margin-left: 7px;
     padding-left: 7px;
     border-left: 1px solid var(--hair);
+  }
+
+  @media (pointer: coarse) {
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
   }
 }
 
@@ -69,6 +102,7 @@
   }
 
   @media (pointer: coarse) {
+    flex: 0 0 auto;
     min-width: 40px;
     height: 40px;
   }
@@ -217,6 +251,39 @@
       aspect-ratio: 16 / 9;
       border: 0;
       border-radius: t.$radius-md;
+    }
+
+    // Where embeds can't play (tauri:// — see StudyEditor's studyYoutube):
+    // the thumbnail, with a button that opens the video on YouTube.
+    &[data-card] {
+      position: relative;
+      aspect-ratio: 16 / 9;
+      border-radius: t.$radius-md;
+      overflow: hidden;
+      background: #000;
+
+      img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      button {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        min-height: 44px;
+        padding: 0 18px;
+        border: 0;
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.72);
+        color: #fff;
+        font-family: t.$font-body;
+        font-size: 15px;
+        cursor: pointer;
+      }
     }
   }
 

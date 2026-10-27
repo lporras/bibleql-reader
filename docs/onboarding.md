@@ -6,7 +6,7 @@ then walks through how the four main features are built: the **AI Assistant**, t
 
 Read it alongside [`CLAUDE.md`](../CLAUDE.md) (the rules and gotchas list) and the focused docs
 in this folder: [platform-abstraction.md](platform-abstraction.md),
-[offline-mode.md](offline-mode.md), [unsplash.md](unsplash.md).
+[offline-mode.md](offline-mode.md), [unsplash.md](unsplash.md), [ios.md](ios.md).
 
 ---
 
