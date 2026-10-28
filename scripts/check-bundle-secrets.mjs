@@ -7,8 +7,11 @@
 // `tauri build`'s beforeBuildCommand and the release workflow).
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const DIST = new URL("../dist/", import.meta.url).pathname;
+// fileURLToPath, not `.pathname`: on Windows the latter is "/D:/…", which
+// resolves to "D:\D:\…".
+const DIST = fileURLToPath(new URL("../dist/", import.meta.url));
 
 // Shapes a key would leave behind: BibleQL's token prefixes, and the
 // Authorization scheme and host of a direct Unsplash API call.
