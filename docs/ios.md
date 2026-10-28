@@ -52,6 +52,9 @@ with `tool 'xcodebuild' requires Xcode, but active developer directory
    rustup target add aarch64-apple-ios aarch64-apple-ios-sim
    ```
 
+   You don't need to install `llvm-tools` yourself. `rust-toolchain.toml` lists it, and rustup
+   installs it on the first `cargo` run.
+
 5. Install **XcodeGen**. Tauri uses it to generate the `.xcodeproj` from `project.yml`:
 
    ```bash
@@ -274,6 +277,12 @@ An iPad you register later needs a rebuild. Ad hoc profiles last a year.
 - **The first boot of a new simulator takes 5 to 15 minutes**, and system apps such as Calendar
   may crash with `0x8BADF00D` (watchdog) while it settles. That's harmless and doesn't happen on
   later boots.
+- **`Undefined symbols for architecture arm64: "_init_plugin_dialog"`** (or `_init_plugin_opener`,
+  `_init_plugin_quicklook`), after a build warning `swift-rs: llvm-objcopy not found`. On Xcode 27,
+  swift-rs needs `llvm-objcopy` to export the Swift plugins' entry points. `rust-toolchain.toml`
+  installs it; if it's still missing, run `rustup component add llvm-tools`. Then clear the stale
+  builds with `cargo clean --release --target aarch64-apple-ios -p tauri -p tauri-plugin-dialog
+  -p tauri-plugin-opener -p tauri-plugin-quicklook` (run in `src-tauri`), and rebuild.
 - **`xcodegen: command not found` during `init`.** Run `brew install xcodegen`.
 - **"Signing for … requires a development team".** This only happens on device builds. Set
   `bundle.iOS.developmentTeam` or `APPLE_DEVELOPMENT_TEAM`.
