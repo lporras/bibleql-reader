@@ -80,12 +80,37 @@ const BIBLEQL: BibleQLFixture = JSON.parse(
   fs.readFileSync(path.join(import.meta.dirname, "fixtures/bibleql.json"), "utf8")
 );
 
+/** `backgroundImages`' answer for any query: two Unsplash photos, proxied. */
+export const BACKGROUND_IMAGES = JSON.parse(
+  fs.readFileSync(path.join(import.meta.dirname, "fixtures/background-images.json"), "utf8")
+);
+
+/** The token the stub credential store holds unless a spec says otherwise. */
+export const E2E_TOKEN = "bql_test_e2e-stored-token";
+export const E2E_INSTALLATION_ID = "6f9619ff-8b86-4d11-b42d-00c04fc964ff";
+/** What the mocked `registerInstallation` returns. */
+export const E2E_REGISTERED_TOKEN = "bql_test_e2e-registered-token";
+
+/** A BibleQL request as the mock saw it. */
+export interface BibleQLRequest {
+  query: string;
+  variables: Record<string, unknown>;
+  authorization: string | undefined;
+}
+
+const requestLog = new WeakMap<Page, BibleQLRequest[]>();
+
+/** Every BibleQL request the page has made so far, in order. */
+export function bibleqlRequests(page: Page): BibleQLRequest[] {
+  return requestLog.get(page) ?? [];
+}
+
 /**
  * Answers every BibleQL request from `fixtures/bibleql.json` instead of the
- * live API. Specs never hit a real service (see CLAUDE.md), and that also
- * means the suite doesn't need a real BIBLEQL_API_KEY. A fork's PR gets no
- * repo secrets on CI, which used to leave the app on its no-key sample
- * chapter, so every spec timed out waiting for John 3.
+ * live API. Specs never hit a real service (see CLAUDE.md). Installation
+ * registration, `backgroundImages` and `trackImageDownload` are answered
+ * too, and every request is recorded, Authorization header included, for
+ * `bibleqlRequests`.
  *
  * Passages are keyed "<translation>|<reference>", matching the variables
  * usePassage sends. Anything the fixture lacks comes back as a GraphQL
@@ -93,13 +118,24 @@ const BIBLEQL: BibleQLFixture = JSON.parse(
  * falling through to the network.
  */
 async function mockBibleQL(page: Page): Promise<void> {
+  const log: BibleQLRequest[] = [];
+  requestLog.set(page, log);
   await page.route("https://bibleql.org/graphql", (route) => {
     const { query, variables = {} } = route.request().postDataJSON() as {
       query: string;
       variables?: Record<string, string>;
     };
+    log.push({ query, variables, authorization: route.request().headers()["authorization"] });
 
-    if (query.includes("passage(")) {
+    if (query.includes("registerInstallation")) {
+      return route.fulfill({
+        json: { data: { registerInstallation: { token: E2E_REGISTERED_TOKEN, installationId: variables.id, dailyLimit: 1000 } } }
+      });
+    } else if (query.includes("backgroundImages")) {
+      return route.fulfill({ json: { data: { backgroundImages: BACKGROUND_IMAGES } } });
+    } else if (query.includes("trackImageDownload")) {
+      return route.fulfill({ json: { data: { trackImageDownload: { queued: true } } } });
+    } else if (query.includes("passage(")) {
       const passage = BIBLEQL.passages[`${variables.t}|${variables.r}`];
       if (passage) return route.fulfill({ json: { data: { passage } } });
     } else if (query.includes("translations")) {
@@ -134,11 +170,26 @@ export interface App {
  * profile directory to clean up afterwards.
  */
 export async function launchApp(page: Page, hashRoute = "", tauri: TauriResponses = {}): Promise<App> {
-  await installTauriStub(page, tauri);
-  await mockBibleQL(page);
+  await prepareApp(page, tauri);
   await page.goto(`/${hashRoute}`);
   await page.waitForLoadState("domcontentloaded");
   return { page };
+}
+
+/**
+ * launchApp without the navigation: for a spec that must add its own
+ * BibleQL route (registered later, so it sees requests first) before the
+ * app makes its first request — registration included.
+ */
+export async function prepareApp(page: Page, tauri: TauriResponses = {}): Promise<void> {
+  // The stub credential store already holds a token, as on every launch but
+  // the first; installation.spec.ts overrides `get_install_token` to test
+  // registration itself.
+  await installTauriStub(page, {
+    get_install_token: { installationId: E2E_INSTALLATION_ID, token: E2E_TOKEN },
+    ...tauri
+  });
+  await mockBibleQL(page);
 }
 
 /** Every Tauri command the page has invoked so far, in order. */

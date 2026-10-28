@@ -1,8 +1,9 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { gqlRequest, HAS_BIBLEQL_KEY } from "../lib/graphql";
+import { gqlRequest } from "../lib/graphql";
 import { offlineBible } from "../platform/offline";
 import { queryKeys } from "./keys";
+import { useInstallation } from "./useInstallation";
 import { OFFLINE_SCHEMA_VERSION, type OfflineAvailability } from "../types/offline";
 
 interface AvailabilityResponse {
@@ -21,10 +22,11 @@ async function fetchAvailability(): Promise<OfflineAvailability[]> {
 // package of each — a different sha256 than the installed one means an
 // update. Only asked inside a shell, since only the shell can download.
 export function useOfflineAvailability(): ReadonlyMap<string, OfflineAvailability> {
+  const installation = useInstallation();
   const { data } = useQuery({
     queryKey: queryKeys.offlineAvailability(),
     queryFn: fetchAvailability,
-    enabled: HAS_BIBLEQL_KEY && offlineBible.canDownload(),
+    enabled: installation.ready && offlineBible.canDownload(),
     staleTime: 30 * 60_000,
     retry: false
   });

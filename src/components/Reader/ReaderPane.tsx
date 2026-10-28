@@ -4,7 +4,7 @@ import { useAppState } from "../../state/AppStateContext";
 import { chapterMarks, useAnnotations } from "../../state/AnnotationsContext";
 import { usePassage } from "../../queries/usePassage";
 import { useOfflineInstalled } from "../../queries/useOfflineInstalled";
-import { HAS_BIBLEQL_KEY } from "../../lib/graphql";
+import { useInstallation } from "../../queries/useInstallation";
 import { useFocusVerse } from "../../hooks/useFocusVerse";
 import { useSpeech } from "../../hooks/useSpeech";
 import { useVerseSelection } from "../../hooks/useVerseSelection";
@@ -34,10 +34,15 @@ export function ReaderPane({ compareEff }: ReaderPaneProps): JSX.Element {
   const [searchParams] = useSearchParams();
   const fromVerse = searchParams.get("from") ? Number(searchParams.get("from")) : null;
   const toVerse = searchParams.get("to") ? Number(searchParams.get("to")) : fromVerse;
-  // A downloaded translation reads locally, so it needs no API key.
+  // A downloaded translation reads locally, so it needs no BibleQL token.
+  // Until this installation has one, remote columns show a spinner (first
+  // launch, registering) or, if registering failed, the bundled sample.
   const offline = useOfflineInstalled();
-  const noKey = !HAS_BIBLEQL_KEY && !offline.byId.has(state.transA);
-  const noKeyB = !HAS_BIBLEQL_KEY && !offline.byId.has(state.transB);
+  const installation = useInstallation();
+  const noKey = installation.failed && !offline.byId.has(state.transA);
+  const noKeyB = installation.failed && !offline.byId.has(state.transB);
+  const waitingA = installation.pending && !offline.byId.has(state.transA);
+  const waitingB = installation.pending && !offline.byId.has(state.transB);
 
   const passageA = usePassage("a", state.transA, bookId, chapter);
   const passageB = usePassage("b", state.transB, bookId, chapter, state.compare);
@@ -63,14 +68,14 @@ export function ReaderPane({ compareEff }: ReaderPaneProps): JSX.Element {
     return {
       label: passageA.data?.translationName || state.transA,
       showLabel: compareEff,
-      loading: passageA.isLoading,
+      loading: passageA.isLoading || waitingA,
       notice: passageA.error?.message ?? "",
       verses
     };
-  }, [noKey, passageA.data, passageA.isLoading, passageA.error, fromVerse, toVerse, compareEff, state.transA, state.locale, t.noKey]);
+  }, [noKey, waitingA, passageA.data, passageA.isLoading, passageA.error, fromVerse, toVerse, compareEff, state.transA, state.locale, t.noKey]);
 
   const colB: ColumnView = useMemo(() => {
-    // Faithful quirk: with no API key, the original only ever built a
+    // Faithful quirk: with no BibleQL connection, the original only ever built a
     // sample/notice fallback for column A — column B just stays blank.
     if (noKeyB) return { label: state.transB, showLabel: true, loading: false, notice: "", verses: [] };
     const verses = (passageB.data?.verses ?? []).map((v) => ({
@@ -84,11 +89,11 @@ export function ReaderPane({ compareEff }: ReaderPaneProps): JSX.Element {
     return {
       label: passageB.data?.translationName || state.transB,
       showLabel: true,
-      loading: passageB.isLoading,
+      loading: passageB.isLoading || waitingB,
       notice: passageB.error?.message ?? "",
       verses
     };
-  }, [noKeyB, passageB.data, passageB.isLoading, passageB.error, fromVerse, toVerse, state.transB]);
+  }, [noKeyB, waitingB, passageB.data, passageB.isLoading, passageB.error, fromVerse, toVerse, state.transB]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   useFocusVerse(scrollRef, fromVerse, passageA.dataUpdatedAt);

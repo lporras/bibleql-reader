@@ -1,7 +1,8 @@
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
-import { gqlRequest, HAS_BIBLEQL_KEY } from "../lib/graphql";
+import { gqlRequest } from "../lib/graphql";
 import { writeCachedTranslations } from "../state/persist";
 import { queryKeys } from "./keys";
+import { useInstallation } from "./useInstallation";
 import type { TranslationSummary } from "../types/bible";
 
 interface TranslationsResponse {
@@ -18,10 +19,11 @@ async function fetchTranslations(): Promise<TranslationSummary[]> {
 }
 
 export function useTranslations(): UseQueryResult<TranslationSummary[]> {
+  const installation = useInstallation();
   return useQuery({
     queryKey: queryKeys.translations(),
     queryFn: fetchTranslations,
-    enabled: HAS_BIBLEQL_KEY,
+    enabled: installation.ready,
     staleTime: Infinity,
     // The original silently swallows a failed fetch and keeps the fallback list.
     retry: false

@@ -1,8 +1,9 @@
 import { useQuery, keepPreviousData, type UseQueryResult } from "@tanstack/react-query";
-import { gqlRequest, HAS_BIBLEQL_KEY } from "../lib/graphql";
+import { gqlRequest } from "../lib/graphql";
 import { refFor } from "../lib/refs";
 import { offlineBible } from "../platform/offline";
 import { queryKeys } from "./keys";
+import { useInstallation } from "./useInstallation";
 import { useOfflineSource } from "./useOfflineInstalled";
 import type { PassageResult } from "../types/bible";
 
@@ -40,6 +41,7 @@ export function usePassage(
 ): UseQueryResult<PassageResult> {
   void slot;
   const offline = useOfflineSource(translationId);
+  const installation = useInstallation();
   return useQuery({
     queryKey: queryKeys.passage(translationId, bookId, chapter),
     queryFn: () =>
@@ -47,7 +49,7 @@ export function usePassage(
         ? offlineBible.passage(translationId, bookId, chapter)
         : fetchPassage(translationId, refFor(translationId, bookId, chapter)),
     networkMode: offline.networkMode,
-    enabled: enabled && offline.ready && (offline.local || HAS_BIBLEQL_KEY) && !!translationId && !!bookId,
+    enabled: enabled && offline.ready && (offline.local || installation.ready) && !!translationId && !!bookId,
     staleTime: 5 * 60_000,
     placeholderData: keepPreviousData
   });

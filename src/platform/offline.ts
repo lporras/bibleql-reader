@@ -1,4 +1,5 @@
-import { Channel, invoke } from "@tauri-apps/api/core";
+import { Channel } from "@tauri-apps/api/core";
+import { call, hasShell } from "./shell";
 import type { ConcordancePageResult, PassageResult, SearchHit } from "../types/bible";
 import {
   OFFLINE_SCHEMA_VERSION,
@@ -15,10 +16,7 @@ import {
 // Outside a Tauri shell (`yarn dev` in a browser) nothing is ever installed:
 // `list` resolves to [] and every translation keeps reading from GraphQL.
 // The E2E suite's stub `__TAURI_INTERNALS__` counts as a shell, so specs can
-// answer these commands themselves. Checked per call, never at module scope.
-function hasShell(): boolean {
-  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
-}
+// answer these commands themselves (see shell.ts).
 
 export interface OfflineBible {
   canDownload(): boolean;
@@ -33,15 +31,6 @@ export interface OfflineBible {
   passage(identifier: string, bookCode: string, chapter: number): Promise<PassageResult>;
   search(identifier: string, query: string, limit: number): Promise<SearchHit[]>;
   concordance(identifier: string, word: string, first: number, after: string | null): Promise<ConcordancePageResult>;
-}
-
-// Rust returns its errors as plain strings; give callers real Errors.
-async function call<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
-  try {
-    return await invoke<T>(cmd, args);
-  } catch (err) {
-    throw err instanceof Error ? err : new Error(String(err));
-  }
 }
 
 export const offlineBible: OfflineBible = {

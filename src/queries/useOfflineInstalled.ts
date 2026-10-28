@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import { onlineManager, useQuery, useQueryClient } from "@tanstack/react-query";
-import { HAS_BIBLEQL_KEY } from "../lib/graphql";
 import { offlineBible } from "../platform/offline";
 import { queryKeys } from "./keys";
 import type { InstalledTranslation } from "../types/offline";
@@ -59,7 +58,7 @@ export function useOfflineSource(translationId: string): OfflineSource {
 }
 
 function networkAvailable(): boolean {
-  return HAS_BIBLEQL_KEY && onlineManager.isOnline() && (typeof navigator === "undefined" || navigator.onLine);
+  return onlineManager.isOnline() && (typeof navigator === "undefined" || navigator.onLine);
 }
 
 // Search and concordance prefer BibleQL whenever it's reachable, even for a

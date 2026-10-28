@@ -1,32 +1,24 @@
-import { test, expect } from "@playwright/test";
-import path from "node:path";
-import fs from "node:fs";
-import { launchApp } from "./helpers";
+import { test, expect, type Page } from "@playwright/test";
+import { BACKGROUND_IMAGES, E2E_TOKEN, bibleqlRequests, launchApp } from "./helpers";
 
-// Mocked entirely — this app's specs must never hit a real external API
-// (BibleQL, Unsplash) — see docs/unsplash.md and CLAUDE.md's testing
-// section. `images.unsplash.com` (the actual photo bytes, once a result
-// is selected) is left un-mocked and hits the real CDN: per Unsplash's
-// own docs those requests don't count against the API rate limit, only
-// requests to api.unsplash.com do, which is everything mocked here.
-const FIXTURE = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, "fixtures/unsplash-search.json"), "utf8"));
+// Background search goes through BibleQL's `backgroundImages` (the server
+// holds the Unsplash key and calls Unsplash itself), which launchApp's mock
+// answers from fixtures/background-images.json. The app must never call
+// api.unsplash.com directly any more; every test checks that.
+// `images.unsplash.com` (the actual photo bytes, hotlinked from Unsplash's
+// CDN) is left un-mocked: those requests don't count against any API quota.
 
-test.describe("Unsplash search", () => {
-  let downloadTriggered = false;
-  let downloadUrl = "";
-  let downloadAuth: string | undefined;
+const searchesFor = (page: Page) => bibleqlRequests(page).filter((r) => r.query.includes("backgroundImages"));
+const trackingFor = (page: Page) => bibleqlRequests(page).filter((r) => r.query.includes("trackImageDownload"));
+
+test.describe("Background image search", () => {
+  let unsplashApiCalls: string[] = [];
 
   test.beforeEach(async ({ page }) => {
-    downloadTriggered = false;
-    downloadUrl = "";
-    downloadAuth = undefined;
-
-    await page.route("https://api.unsplash.com/search/photos**", (route) => route.fulfill({ json: FIXTURE }));
-    await page.route("https://api.unsplash.com/photos/*/download**", (route) => {
-      downloadTriggered = true;
-      downloadUrl = route.request().url();
-      downloadAuth = route.request().headers()["authorization"];
-      return route.fulfill({ json: { url: "https://images.unsplash.com/mock-download" } });
+    unsplashApiCalls = [];
+    await page.route("https://api.unsplash.com/**", (route) => {
+      unsplashApiCalls.push(route.request().url());
+      return route.abort();
     });
 
     await launchApp(page, "#/read/JHN/3/ai");
@@ -37,36 +29,27 @@ test.describe("Unsplash search", () => {
 
     // "Curated" is the default Background tab — switch to "Search".
     await page.getByRole("tab", { name: /Search|Buscar/i }).click();
-
-    // Fail fast with a clear message here rather than a confusing 30s
-    // timeout in the first real assertion: the Search tab only renders
-    // the search box when UNSPLASH_ACCESS_KEY was non-empty at build
-    // time (see BackgroundPanel.tsx) — otherwise it shows the "offline"
-    // fallback text instead. playwright.config.ts supplies a placeholder
-    // key, so this only trips if that build env went missing.
-    const hasSearchBox = await page
-      .getByRole("searchbox")
-      .waitFor({ timeout: 5000 })
-      .then(() => true)
-      .catch(() => false);
-    if (!hasSearchBox) {
-      throw new Error(
-        "The Search tab isn't showing a search box — UNSPLASH_ACCESS_KEY was empty at build time " +
-          "(playwright.config.ts's webServer.env should supply a placeholder)."
-      );
-    }
+    await page.getByRole("searchbox").waitFor();
   });
 
-  test("searching shows results from the (mocked) API", async ({ page }) => {
+  test.afterEach(() => {
+    expect(unsplashApiCalls).toEqual([]);
+  });
+
+  test("searching asks BibleQL, with the installation token, and shows its results", async ({ page }) => {
     await page.getByRole("searchbox").fill("mountains");
 
     // Debounced (see hooks/useDebouncedValue.ts) — the grid should
     // settle on exactly the two mocked results.
     const thumbs = page.locator("img[src*='images.unsplash.com']");
     await expect(thumbs).toHaveCount(2, { timeout: 5000 });
+
+    const [search] = searchesFor(page);
+    expect(search.variables).toMatchObject({ q: "mountains", p: 1, n: 24 });
+    expect(search.authorization).toBe(`Bearer ${E2E_TOKEN}`);
   });
 
-  test("selecting a result applies it as the background, with attribution, and pings the download endpoint", async ({ page }) => {
+  test("selecting a result applies it as the background, with attribution, and tracks the download", async ({ page }) => {
     await page.getByRole("searchbox").fill("mountains");
 
     const firstThumb = page.locator("img[src*='images.unsplash.com']").first();
@@ -79,14 +62,10 @@ test.describe("Unsplash search", () => {
     await expect(selected).toContainText("Kalen Emsley");
     await expect(selected.getByRole("link", { name: "Unsplash" })).toBeVisible();
 
-    await expect.poll(() => downloadTriggered).toBe(true);
-    // The guideline requires pinging the API's own `links.download_location`,
-    // whose signed ixid ties the event to the originating search. A
-    // hand-built `/photos/:id/download` cannot produce this.
-    expect(downloadUrl).toContain("ixid=mock-ixid-1");
-    // The ping is a plain fetch rather than an SDK call, so it has to
-    // carry auth itself.
-    expect(downloadAuth).toMatch(/^Client-ID /);
+    // The server pings Unsplash's download_location for this photo; the app
+    // only names it.
+    await expect.poll(() => trackingFor(page).length).toBe(1);
+    expect(trackingFor(page)[0].variables).toEqual({ id: "Bkci_8qcdvQ" });
   });
 
   test("every search result shows a linked photographer credit", async ({ page }) => {
@@ -100,11 +79,24 @@ test.describe("Unsplash search", () => {
     await expect(credit).toHaveAttribute("href", /utm_medium=referral/);
   });
 
-  test("does not trigger the download ping just from displaying search results", async ({ page }) => {
+  test("does not track a download just from displaying search results", async ({ page }) => {
     await page.getByRole("searchbox").fill("mountains");
     await page.locator("img[src*='images.unsplash.com']").first().waitFor();
 
-    expect(downloadTriggered).toBe(false);
+    expect(trackingFor(page)).toEqual([]);
+  });
+
+  test("says so when the server reports Unsplash's rate limit", async ({ page }) => {
+    // Registered after launchApp's mock, so it sees BibleQL requests first.
+    await page.route("https://bibleql.org/graphql", (route) => {
+      if (!(route.request().postData() ?? "").includes("backgroundImages")) return route.fallback();
+      return route.fulfill({
+        json: { data: { backgroundImages: { images: [], page: 1, totalPages: 0, hasMore: false, errorCode: "RATE_LIMITED" } } }
+      });
+    });
+
+    await page.getByRole("searchbox").fill("mountains");
+    await expect(page.getByText(/Too many image searches|Demasiadas búsquedas/)).toBeVisible();
   });
 
   test("starting a new search fully replaces the results grid, not just its images", async ({ page }) => {
@@ -134,27 +126,29 @@ test.describe("Unsplash search", () => {
     // Matches the reported repro exactly: search, select a result,
     // scroll to the bottom (right where "Load More" sits — easy to hit
     // while scrolling), then search again before that page finishes
-    // loading. Unlike the fixture-wide mock above, this route
-    // distinguishes page 1 vs. page 2 vs. a different term, and delays
-    // page 2 so there's a real window for a race to land in.
-    await page.unroute("https://api.unsplash.com/search/photos**");
+    // loading. Unlike the fixture-wide mock, this route distinguishes
+    // page 1 vs. page 2 vs. a different term, and delays page 2 so
+    // there's a real window for a race to land in.
+    const [mountain, desert] = BACKGROUND_IMAGES.images;
+    const withThumb = (image: typeof mountain, id: string) => ({
+      ...image,
+      id,
+      urls: { ...image.urls, thumb: `https://images.unsplash.com/${id}?w=200` }
+    });
+    const result = (images: unknown[], page: number, totalPages: number) => ({
+      data: { backgroundImages: { images, page, totalPages, hasMore: page < totalPages, errorCode: null } }
+    });
 
-    const page1 = { total: 4, total_pages: 2, results: FIXTURE.results };
-    const page2Photo = { ...FIXTURE.results[0], id: "page2-photo", urls: { ...FIXTURE.results[0].urls, thumb: "https://images.unsplash.com/page2-photo?w=200" } };
-    const page2 = { total: 4, total_pages: 2, results: [page2Photo] };
-    const oceanPhoto = { ...FIXTURE.results[1], id: "ocean-photo", urls: { ...FIXTURE.results[1].urls, thumb: "https://images.unsplash.com/ocean-photo?w=200" } };
-    const oceanPage1 = { total: 1, total_pages: 1, results: [oceanPhoto] };
-
-    await page.route("https://api.unsplash.com/search/photos**", async (route) => {
-      const url = new URL(route.request().url());
-      const query = url.searchParams.get("query");
-      const pageParam = url.searchParams.get("page");
-      if (query === "mountains" && pageParam === "2") {
+    await page.route("https://bibleql.org/graphql", async (route) => {
+      const body = route.request().postDataJSON() as { query: string; variables: { q: string; p: number } };
+      if (!body.query.includes("backgroundImages")) return route.fallback();
+      const { q, p } = body.variables;
+      if (q === "mountains" && p === 2) {
         await new Promise((r) => setTimeout(r, 1200)); // still in flight when the next search fires
-        return route.fulfill({ json: page2 });
+        return route.fulfill({ json: result([withThumb(mountain, "page2-photo")], 2, 2) });
       }
-      if (query === "ocean") return route.fulfill({ json: oceanPage1 });
-      return route.fulfill({ json: page1 });
+      if (q === "ocean") return route.fulfill({ json: result([withThumb(desert, "ocean-photo")], 1, 1) });
+      return route.fulfill({ json: result([mountain, desert], 1, 2) });
     });
 
     const searchBox = page.getByRole("searchbox");

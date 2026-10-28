@@ -1,3 +1,4 @@
+mod install;
 mod offline;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -10,8 +11,8 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         // http: only api.anthropic.com goes through the plugin's JS API — it
-        // rejects browser-origin requests (offline.rs reuses its reqwest). BibleQL and Unsplash both send
-        // `access-control-allow-origin: *`, so they use plain `fetch`.
+        // rejects browser-origin requests (offline.rs reuses its reqwest). BibleQL sends
+        // `access-control-allow-origin: *`, so it uses plain `fetch`.
         .plugin(tauri_plugin_http::init())
         // os: `platform()` for the macOS-only frameless title bar.
         .plugin(tauri_plugin_os::init())
@@ -21,7 +22,12 @@ pub fn run() {
         // Offline translation packages: download, verify, and query the
         // downloaded SQLite files. App commands need no capability entry.
         .manage(offline::OfflineState::default())
+        // Per-installation BibleQL token, kept in the OS credential store.
+        .manage(install::InstallState::default())
         .invoke_handler(tauri::generate_handler![
+            install::get_install_token,
+            install::set_install_token,
+            install::clear_install_token,
             offline::offline_list,
             offline::offline_install,
             offline::offline_cancel,

@@ -9,6 +9,7 @@ import { RootRedirect } from "./routes/RootRedirect";
 import { ReaderPage } from "./routes/ReaderPage";
 import { ImageCreatorPage } from "./routes/ImageCreatorPage";
 import { StudyPage, StudyRedirect } from "./routes/StudyPage";
+import { UpdateBanner } from "./components/UpdateBanner";
 
 export default function App(): JSX.Element {
   return (
@@ -26,6 +27,7 @@ export default function App(): JSX.Element {
                 <Route path="/study/:id" element={<StudyPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
+              <UpdateBanner />
             </AiChatProvider>
           </StudiesProvider>
         </OfflineDownloadsProvider>

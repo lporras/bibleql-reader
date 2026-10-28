@@ -1,7 +1,8 @@
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
-import { gqlRequest, HAS_BIBLEQL_KEY } from "../lib/graphql";
+import { gqlRequest } from "../lib/graphql";
 import { offlineBible } from "../platform/offline";
 import { queryKeys } from "./keys";
+import { useInstallation } from "./useInstallation";
 import { remoteFirst, useOfflineSource } from "./useOfflineInstalled";
 import type { SearchHit } from "../types/bible";
 
@@ -21,6 +22,7 @@ async function fetchSearch(translationId: string, query: string): Promise<Search
 
 export function useSearch(translationId: string, query: string, enabled: boolean): UseQueryResult<SearchHit[]> {
   const offline = useOfflineSource(translationId);
+  const installation = useInstallation();
   return useQuery({
     queryKey: queryKeys.search(translationId, query),
     queryFn: () =>
@@ -30,7 +32,7 @@ export function useSearch(translationId: string, query: string, enabled: boolean
         () => offlineBible.search(translationId, query, LIMIT)
       ),
     networkMode: offline.networkMode,
-    enabled: enabled && offline.ready && (offline.local || HAS_BIBLEQL_KEY) && !!query,
+    enabled: enabled && offline.ready && (offline.local || installation.ready) && !!query,
     retry: false
   });
 }

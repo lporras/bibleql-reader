@@ -4,7 +4,7 @@ import { useConcordanceSupport } from "../../queries/useConcordanceSupport";
 import { useConcordance } from "../../queries/useConcordance";
 import { useTranslations } from "../../queries/useTranslations";
 import { useOfflineInstalled } from "../../queries/useOfflineInstalled";
-import { HAS_BIBLEQL_KEY } from "../../lib/graphql";
+import { useInstallation } from "../../queries/useInstallation";
 import { useOpenRef } from "../../hooks/useOpenRef";
 import { fillTemplate, stripMarkContext } from "../../lib/format";
 import { STR } from "../../data/strings";
@@ -35,13 +35,14 @@ export function Concordance({ active }: ConcordanceProps): JSX.Element {
   }
 
   const offline = useOfflineInstalled();
-  const hasKey = HAS_BIBLEQL_KEY || offline.byId.has(state.transA);
+  const installation = useInstallation();
+  const hasKey = !installation.failed || offline.byId.has(state.transA);
   let notice = "";
   if (!hasKey) {
     notice = t.noKey;
   } else if (!word) {
     notice = t.concIdle;
-  } else if (support.isLoading) {
+  } else if (support.isLoading || installation.pending) {
     notice = t.loading;
   } else if (!supported) {
     const indexed = (translations.data ?? []).filter((x) => x.concordanceIndexedAt).map((x) => x.identifier);

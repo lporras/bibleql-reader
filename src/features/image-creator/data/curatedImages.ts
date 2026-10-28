@@ -15,7 +15,7 @@ import type { Attribution } from "../model/types";
 // These six were downloaded from unsplash.com under the Unsplash License,
 // *not* obtained through the API, so the API's hotlinking rule doesn't
 // reach them (it governs "all API uses"). Every live search result is
-// hotlinked — see providers/mapUnsplashPhoto.ts and docs/unsplash.md.
+// hotlinked — see providers/mapBackgroundImage.ts and docs/unsplash.md.
 //
 // Attribution is still required regardless of how a photo was obtained
 // (spec §8), and it must actually resolve: the guideline wants a working
@@ -66,7 +66,7 @@ function curated(source: CuratedImageSource): CuratedImage {
     width: source.width,
     height: source.height,
     // Same builder (and UTM parameters) live search uses — see
-    // lib/attribution.ts and providers/mapUnsplashPhoto.ts, so neither
+    // lib/attribution.ts and providers/mapBackgroundImage.ts, so neither
     // path can drift out of compliance independently.
     attribution: buildUnsplashAttribution(
       source.photographerName,

@@ -64,17 +64,17 @@ jobs:
         run: yarn install --frozen-lockfile
 
       # tauri-action runs `tauri build`, which runs `beforeBuildCommand`
-      # (yarn build -> typecheck + unit tests + vite build), then bundles
-      # and uploads the installers to a draft GitHub release.
+      # (yarn build -> typecheck + unit tests + vite build + the bundle secret
+      # check), then bundles and uploads the installers to a draft GitHub
+      # release.
       #
-      # Both keys must be present here, not just at bundle time: they're
-      # inlined into the frontend by vite.config.ts's `define`.
+      # No API keys: each installation registers its own BibleQL token at
+      # first launch, and Unsplash is reached through BibleQL. The secret
+      # check fails this step if a key ever ends up in the bundle again.
       - name: Build and release
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BIBLEQL_API_KEY: ${{ secrets.BIBLEQL_API_KEY }}
-          UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "BibleQL Reader ${{ github.ref_name }}"

@@ -25,14 +25,13 @@ yarn test               # vitest run — pure-logic unit tests, no network, no s
 yarn test:coverage      # same + v8 coverage of src/**/*.ts (CI uploads it to Codecov)
 yarn test:e2e           # Playwright drives the app in headless Chromium
 cargo check --manifest-path src-tauri/Cargo.toml    # the Rust side
-cargo test --manifest-path src-tauri/Cargo.toml     # Rust unit tests (offline.rs)
+cargo test --manifest-path src-tauri/Cargo.toml     # Rust unit tests (offline.rs, install.rs)
 yarn audit --groups dependencies --level high       # what security.yml gates on (+ CodeQL)
 cargo audit --file src-tauri/Cargo.lock             # likewise for the Rust crates
 ```
 
-`yarn test:e2e` needs no API keys: BibleQL and Unsplash are both mocked, and
-`playwright.config.ts` builds with placeholder keys when none are set (so fork PRs, which get no
-repo secrets, run the full suite). No ESLint/Prettier. Match surrounding style by hand.
+`yarn test:e2e` needs no API keys: BibleQL (image search included) is mocked, and the app has no
+compiled-in keys at all (so fork PRs, which get no repo secrets, run the full suite). No ESLint/Prettier. Match surrounding style by hand.
 
 ## Layout
 
@@ -47,12 +46,13 @@ src/
                             lib/, data/, state/, hooks/, assets/ (see its own files for detail)
   platform/                PlatformCapabilities — the shell seam (see docs/platform-abstraction.md)
                             + host.ts (IS_MAC) + offline.ts (offline translations, docs/offline-mode.md)
+                            + install.ts (installation token, docs/installation-keys.md)
   routes/                  route-level composition shells (thin — pull their own state/data)
   queries/                 TanStack Query hooks, one per BibleQL query, key factory in keys.ts
   state/                   AppStateContext (Context + useReducer) + persist.ts (localStorage),
                             AnnotationsContext, OfflineDownloadsContext, StudiesContext (+ study.ts,
                             its pure reducer), AiChatContext (one chat transcript app-wide)
-  lib/                     graphql client, ai.ts, externalLinks.ts, refs.ts, speech.ts, format.ts,
+  lib/                     graphql client (+ graphqlClient.ts, installation.ts), ai.ts, externalLinks.ts, refs.ts, speech.ts, format.ts,
                             pdf/ (dependency-free PDF: WinAnsi text, layout, writer, studyPdf.ts)
   data/                    static data: books.ts, strings.ts (i18n), sample.ts, fallbackTranslations.ts
   types/                   shared TS types (bible.ts, app.ts, ai.ts, imageCreator.ts)
@@ -60,6 +60,7 @@ src/
 src-tauri/
   src/lib.rs               plugin registration (opener, dialog, fs, http, os) + offline_* commands
   src/offline.rs           offline translation packages: download, verify, query (rusqlite + FTS5)
+  src/install.rs           the per-installation BibleQL token, in the OS credential store
   plugins/tauri-plugin-quicklook/  local plugin: Quick Look (Swift) for the study PDF on iOS
   gen/apple/               the Xcode project (iPad-only; settings live in project.yml, see docs/ios.md)
   tauri.conf.json          window geometry, macOS title bar style, bundle config
@@ -92,17 +93,18 @@ Every component has a colocated `.module.scss`.
 - **All user-facing strings live in `data/strings.ts`** (`STR[locale]`, `Locale = "en" | "es"`).
   Adding a key to `StringsShape` without both `en` and `es` entries fails `yarn typecheck`.
 - Imports are relative. There is no path alias.
-- **Shell access goes through one of four places, never a plugin import at a call site**:
+- **Shell access goes through one of five places, never a plugin import at a call site**:
   `platform/index.ts` (`getPlatform()`) for Image Creator capabilities, `platform/host.ts` for
   `IS_MAC`, `lib/externalLinks.ts` for outbound links, `platform/offline.ts` for the
-  `offline_*` commands. `features/image-creator/**` in
+  `offline_*` commands, `platform/install.ts` for the installation token commands (both use
+  `platform/shell.ts`'s `hasShell`/`call`). `features/image-creator/**` in
   particular must stay platform-neutral — see docs/platform-abstraction.md. Most capabilities
   (file picker, clipboard) are plain web-platform APIs and need no shell call at all; only
   `saveImage` is Tauri-backed.
 - **Every new Tauri plugin command needs a permission** in `src-tauri/capabilities/default.json`,
   and path/URL-scoped ones need their scope too. A missing permission fails at runtime, not at
   build time, with a "not allowed" error from `invoke`. App commands defined in `src-tauri/src`
-  (the `offline_*` ones) need no entry: Tauri allows an app's own commands by default.
+  (the `offline_*` and `*_install_token` ones) need no entry: Tauri allows an app's own commands by default.
 - **Downloaded translations: chapters are always local; search and concordance are
   remote-first** (`remoteFirst()` — BibleQL when reachable, the local index offline or on
   failure; local concordance cursors carry a `local:` prefix so "Load more" stays on one
@@ -130,10 +132,13 @@ Two layers, deliberately different in kind:
   context gives each test its own empty `localStorage`, so no profile-dir juggling is needed.
   Nothing in this suite hits a live API. `launchApp` answers every BibleQL request from
   `e2e/fixtures/bibleql.json` (add a passage there when a spec needs a new chapter; an unknown
-  one comes back as a GraphQL error), and Unsplash is mocked per spec via `page.route()`
-  (50/hour shared quota — see docs/unsplash.md). Both keys still have to be *some* non-empty
-  value at build time, since the app only fetches passages / renders the search tab when one
-  is configured — `playwright.config.ts` supplies placeholders.
+  one comes back as a GraphQL error), along with `registerInstallation`, `backgroundImages`
+  (from `e2e/fixtures/background-images.json`) and `trackImageDownload`, recording each request
+  and its `Authorization` header (`bibleqlRequests`). The stub shell hands out a stored token
+  (`get_install_token`); override it with `token: null` to exercise first-launch registration.
+  To override a BibleQL answer *before* the first request, use `prepareApp` + your own
+  `page.route` + `page.goto` instead of `launchApp`. The app must never call api.unsplash.com
+  directly — `image-search.spec.ts` asserts it.
 
 ## Gotchas
 
@@ -156,16 +161,24 @@ Two layers, deliberately different in kind:
   2.7.0). Bump both sides together.
 - `noUnusedLocals: true` in **all three** tsconfig projects — leftover scaffolding breaks
   `yarn typecheck`.
-- `BIBLEQL_API_KEY` and `UNSPLASH_ACCESS_KEY` are compile-time inlined into the frontend bundle
-  via `define:` in `vite.config.ts` (from `.env` / `.env.local`, dotenv, `.env.local` overrides)
-  — see `docs/unsplash.md` for why the Unsplash key is safe to embed this way. The Anthropic key
-  is deliberately **not** bundled — it's read from `localStorage` and passed per-call into
-  `lib/ai.ts`. Follow the un-bundled pattern for any future secret; only ship a key at build
-  time if it's meant to be public (as those two already are).
+- **No API key is compiled into the bundle.** Each installation registers its own BibleQL token
+  on first launch (`registerInstallation`) and keeps it in the OS credential store via
+  `src-tauri/src/install.rs` (keyring-core + a per-OS store crate; a 0600 file fallback) — see
+  docs/installation-keys.md. Unsplash goes through BibleQL (`backgroundImages`,
+  `trackImageDownload`), which holds that key server-side. The Anthropic key is read from
+  `localStorage` and passed per-call into `lib/ai.ts`. Never ship a secret at build time;
+  `yarn build` runs `scripts/check-bundle-secrets.mjs`, which fails on anything key-shaped in
+  `dist/`. Never put the installation token in `localStorage` or the query cache.
+- **`registerInstallation` must go out with no `Authorization` header and as the only root
+  field** (the server rejects anything else), and is limited to 10/hour per IP. Re-registering
+  revokes the installation's old token, which is why a 401 retries exactly once
+  (`lib/graphqlClient.ts`) and concurrent 401s share one registration (`lib/installation.ts`).
+  `backgroundImages` exists only for installation keys — a developer key gets "Field doesn't
+  exist". The relay mutations take a single `input:` argument.
 - **Only `api.anthropic.com` goes through Tauri's HTTP plugin**, because it refuses
-  cross-origin requests. BibleQL and Unsplash both send `access-control-allow-origin: *` and
-  must keep using plain `fetch` — routing them through the plugin would break the E2E suite,
-  which mocks them at the network layer. (Offline packages are downloaded by `offline.rs` in
+  cross-origin requests. BibleQL sends `access-control-allow-origin: *` and must keep using
+  plain `fetch` — routing it through the plugin would break the E2E suite, which mocks it at the
+  network layer. (Offline packages are downloaded by `offline.rs` in
   Rust, using the plugin's re-exported `reqwest` directly — the package host sends no CORS
   headers at all.)
 - **The HTTP plugin always sends an `Origin` header** — it strips the caller's as a forbidden
