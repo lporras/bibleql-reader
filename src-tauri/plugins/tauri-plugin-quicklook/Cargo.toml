@@ -1,0 +1,15 @@
+[package]
+name = "tauri-plugin-quicklook"
+version = "0.1.0"
+description = "Shows a file in Apple's Quick Look viewer (iOS). Used to open an exported study PDF."
+edition = "2021"
+publish = false
+# Required by tauri-plugin's build script, which links the Swift package in ios/.
+links = "tauri-plugin-quicklook"
+
+[dependencies]
+tauri = "2"
+serde = { version = "1", features = ["derive"] }
+
+[build-dependencies]
+tauri-plugin = { version = "2", features = ["build"] }

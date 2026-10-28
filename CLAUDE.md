@@ -60,6 +60,8 @@ src/
 src-tauri/
   src/lib.rs               plugin registration (opener, dialog, fs, http, os) + offline_* commands
   src/offline.rs           offline translation packages: download, verify, query (rusqlite + FTS5)
+  plugins/tauri-plugin-quicklook/  local plugin: Quick Look (Swift) for the study PDF on iOS
+  gen/apple/               the Xcode project (iPad-only; settings live in project.yml, see docs/ios.md)
   tauri.conf.json          window geometry, macOS title bar style, bundle config
   capabilities/default.json  which plugin commands the window may call, and with what scopes
 e2e/                       Playwright specs driving the app in a browser (see Testing below)

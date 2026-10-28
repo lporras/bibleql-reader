@@ -1,4 +1,4 @@
-import { useImperativeHandle, useRef, useState, type FormEvent, type JSX, type ReactNode, type Ref } from "react";
+import { useEffect, useImperativeHandle, useRef, useState, type FormEvent, type JSX, type ReactNode, type Ref } from "react";
 import { EditorContent, useEditor, useEditorState, type Editor } from "@tiptap/react";
 import { NodeSelection } from "@tiptap/pm/state";
 import StarterKit from "@tiptap/starter-kit";
@@ -90,17 +90,74 @@ const EXTENSIONS = [
     link: { openOnClick: false, autolink: true, defaultProtocol: "https", HTMLAttributes: { target: null } }
   }),
   TextAlign.configure({ types: ["heading", "paragraph"] }),
-  StudyImage,
-  Youtube.configure({
-    nocookie: true,
-    modestBranding: true,
-    rel: 0,
-    // `allowfullscreen` alone isn't enough for every webview: the iframe's
-    // permissions policy has to grant fullscreen too. (On macOS the webview
-    // itself also needs it enabled — see src-tauri/Cargo.toml.)
-    HTMLAttributes: { allow: "fullscreen; picture-in-picture; encrypted-media; clipboard-write" }
-  })
+  StudyImage
 ];
+
+const YOUTUBE_OPTIONS = {
+  nocookie: true,
+  modestBranding: true,
+  rel: 0,
+  // `allowfullscreen` alone isn't enough for every webview: the iframe's
+  // permissions policy has to grant fullscreen too. (On macOS the webview
+  // itself also needs it enabled — see src-tauri/Cargo.toml.)
+  HTMLAttributes: { allow: "fullscreen; picture-in-picture; encrypted-media; clipboard-write" }
+};
+
+// YouTube refuses to play an embed whose request carries no Referer ("Error
+// 153"), and a page served from a custom scheme — tauri://localhost, on iOS
+// and in the bundled macOS app — sends none. The player's origin /
+// widget_referrer parameters don't make up for it (checked against the live
+// player). There the editor shows the video as its thumbnail instead, with a
+// button that opens it on YouTube. Display only: the node, getHTML() and the
+// PDF (which prints the link) are the same everywhere.
+const EMBEDS_PLAY = /^https?:$/.test(window.location.protocol);
+
+/** The 11-character id from a watch, youtu.be, embed, shorts or live URL. */
+function youtubeVideoId(src: string): string | null {
+  return src.match(/(?:youtu\.be\/|[?&]v=|\/(?:embed|shorts|live)\/)([\w-]{11})/)?.[1] ?? null;
+}
+
+function studyYoutube(watchLabel: string) {
+  if (EMBEDS_PLAY) return Youtube.configure(YOUTUBE_OPTIONS);
+  return Youtube.extend({
+    addNodeView() {
+      return ({ node }) => {
+        const dom = document.createElement("div");
+        dom.dataset.youtubeVideo = "";
+        dom.dataset.card = "";
+        const thumb = document.createElement("img");
+        thumb.alt = "";
+        const open = document.createElement("button");
+        open.type = "button";
+        open.textContent = `▶ ${watchLabel}`;
+        dom.append(thumb, open);
+
+        let watchUrl = "";
+        const show = (attrs: Record<string, unknown>): void => {
+          const id = youtubeVideoId(typeof attrs.src === "string" ? attrs.src : "");
+          watchUrl = id ? `https://www.youtube.com/watch?v=${id}` : "";
+          if (id) thumb.src = `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
+          else thumb.removeAttribute("src");
+        };
+        show(node.attrs);
+        open.addEventListener("click", () => {
+          if (watchUrl) openExternal(watchUrl);
+        });
+
+        return {
+          dom,
+          update: (next) => {
+            if (next.type !== node.type) return false;
+            show(next.attrs);
+            return true;
+          },
+          // The button is ours; a tap anywhere else selects the node, as the iframe did.
+          stopEvent: (event) => event.target === open
+        };
+      };
+    }
+  }).configure(YOUTUBE_OPTIONS);
+}
 
 /** What the preacher typed into the link field, as an href — "bibleql.org" gets https://. */
 function normalizeHref(raw: string): string {
@@ -164,8 +221,32 @@ export function StudyEditor({ initialHtml, placeholder, labels: t, onChange, ref
   const insertImagesRef = useRef(insertImages);
   insertImagesRef.current = insertImages;
 
+  // On touch the toolbar is one sideways-scrolling row (see the module), so
+  // mark which edges have tools hidden past them; the stylesheet fades those
+  // edges out as the "there's more" cue. Written straight to the DOM — a
+  // re-render per scroll frame would buy nothing.
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const bar = toolbarRef.current;
+    if (!bar) return;
+    function update(): void {
+      if (!bar) return;
+      bar.dataset.moreLeft = bar.scrollLeft > 1 ? "yes" : "no";
+      bar.dataset.moreRight = bar.scrollLeft + bar.clientWidth < bar.scrollWidth - 1 ? "yes" : "no";
+    }
+    update();
+    bar.addEventListener("scroll", update, { passive: true });
+    // Rotating the iPad or resizing the panels changes what fits.
+    const resize = new ResizeObserver(update);
+    resize.observe(bar);
+    return () => {
+      bar.removeEventListener("scroll", update);
+      resize.disconnect();
+    };
+  }, []);
+
   const editor = useEditor({
-    extensions: [...EXTENSIONS, Placeholder.configure({ placeholder })],
+    extensions: [...EXTENSIONS, studyYoutube(t.watchOnYoutube), Placeholder.configure({ placeholder })],
     content: initialHtml,
     editorProps: {
       attributes: { class: styles.editor, "aria-label": placeholder, "aria-multiline": "true", role: "textbox" },
@@ -317,7 +398,7 @@ export function StudyEditor({ initialHtml, placeholder, labels: t, onChange, ref
   return (
     <div className={styles.wrap}>
       <div className={styles.bar}>
-        <div className={styles.toolbar} role="toolbar">
+        <div ref={toolbarRef} className={styles.toolbar} role="toolbar">
           {groups.map((group, i) => (
             <div key={i} className={styles.group}>
               {group.map((tool) => (

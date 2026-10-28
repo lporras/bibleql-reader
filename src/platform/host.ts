@@ -9,19 +9,24 @@ import { platform } from "@tauri-apps/plugin-os";
 //
 // `platform()` is a synchronous read of `window.__TAURI_OS_PLUGIN_INTERNALS__`,
 // which only the Tauri shell injects, so it throws outside one. This is
-// evaluated at module scope and gates nothing but cosmetic macOS window
-// chrome, so a failure must not take the whole app down with it — the
-// E2E suite drives this same bundle in a plain browser. Fall back to
-// "not macOS", which is the layout that assumes ordinary OS decorations.
-function detectIsMac(): boolean {
+// evaluated at module scope, so a failure must not take the whole app down
+// with it — the E2E suite drives this same bundle in a plain browser. Fall
+// back to "neither", which is the desktop layout with ordinary OS decorations
+// and the desktop save dialog.
+function detectPlatform(): string | null {
   try {
-    return platform() === "macos";
+    return platform();
   } catch {
-    return false;
+    return null;
   }
 }
 
-export const IS_MAC = detectIsMac();
+const PLATFORM = detectPlatform();
+
+export const IS_MAC = PLATFORM === "macos";
+
+// iPadOS reports "ios" too. Gates the share-sheet export in platform/tauri.ts.
+export const IS_IOS = PLATFORM === "ios";
 
 declare global {
   interface Window {

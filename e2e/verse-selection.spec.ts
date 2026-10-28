@@ -106,6 +106,27 @@ test.describe("Reader verse selection", () => {
     expect(nativeSelection).toBe("");
   });
 
+  // A selected verse scrolled up to the top of the pane has plenty of chapter
+  // above it but no room on screen; the toolbar must flip below it rather
+  // than hide under the chapter header (the bug this guards against).
+  test("the verse toolbar flips below a selection scrolled to the top of the pane", async ({ page }) => {
+    const verse16 = page.locator('p[data-verse="16"]').first();
+    await verse16.click({ position: { x: 20, y: 10 } });
+    const toolbar = page.locator("[data-verse-actions]");
+    await expect(toolbar).toBeVisible();
+
+    await verse16.evaluate((el) => el.scrollIntoView({ block: "start", behavior: "instant" }));
+
+    await expect(toolbar).toHaveAttribute("data-above", "no");
+    const scrollArea = await verse16.evaluate((el) => {
+      let node = el.parentElement;
+      while (node && !/(auto|scroll)/.test(getComputedStyle(node).overflowY)) node = node.parentElement;
+      return node!.getBoundingClientRect().top;
+    });
+    const box = await toolbar.boundingBox();
+    expect(box!.y).toBeGreaterThanOrEqual(scrollArea);
+  });
+
   test("Clear empties the selection and hides the selection bar", async ({ page }) => {
     await page.locator('p[data-verse="16"]').first().click({ position: { x: 20, y: 10 } });
     await expect(page.getByText(/1 selected|1 seleccionado/i)).toBeVisible();

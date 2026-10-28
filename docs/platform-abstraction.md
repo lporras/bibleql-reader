@@ -45,6 +45,22 @@ filesystem access of its own:
   though the dialog happily returned the path. The scope lists the user directories a save
   dialog can realistically land in.
 
+On iOS (`IS_IOS` from `platform/host.ts`), two of these behave differently, because a file in
+Files is not what an iPad user expects:
+
+- **`saveImage` opens the share sheet** (`navigator.share({ files })`). Its "Save Image" action
+  puts the image in Photos, and the sheet also offers Messages, AirDrop and so on. iOS only
+  offers "Save Image" when Info.plist has `NSPhotoLibraryAddUsageDescription` (set in
+  `src-tauri/gen/apple/project.yml`). An already-installed app only gets a change to that key
+  after a native rebuild; hot reload isn't enough. If WebKit refuses the share because the user
+  gesture expired while rendering (`NotAllowedError`), `saveImage` falls back to the Files save
+  dialog.
+- **`openFile` shows the file in Quick Look** through the local plugin in
+  `src-tauri/plugins/tauri-plugin-quicklook` (Swift `QLPreviewController`; command
+  `plugin:quicklook|preview`, permission `quicklook:allow-preview`). The opener's `open_path` on
+  iOS is a `UIApplication.open`, which can't open a file in another app. Quick Look's share
+  button offers "Open in Preview" (Vista Previa).
+
 `getPlatform()` returns `{ ...webPlatform, ...tauriPlatform }`.
 
 ## Outside the interface
