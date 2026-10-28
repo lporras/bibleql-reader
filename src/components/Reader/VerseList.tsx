@@ -36,8 +36,18 @@ interface Anchor {
   above: boolean;
 }
 
-// Below this the toolbar wouldn't fit over the verse, so it flips underneath.
+// With less visible room than this above the selection, the toolbar wouldn't
+// fit over the verse, so it flips underneath.
 const TOOLBAR_CLEARANCE = 76;
+
+/** The nearest ancestor that scrolls vertically (the reader's .scrollArea), if any. */
+function scrollParent(el: HTMLElement): HTMLElement | null {
+  for (let node = el.parentElement; node; node = node.parentElement) {
+    const { overflowY } = getComputedStyle(node);
+    if (overflowY === "auto" || overflowY === "scroll") return node;
+  }
+  return null;
+}
 
 export function VerseList({
   verses,
@@ -66,6 +76,10 @@ export function VerseList({
   // Park the floating toolbar against the selection. Measured from the DOM
   // rather than guessed, so it lands correctly however the verses wrapped —
   // `.wrap` is the positioned ancestor, so offsetTop is already relative to it.
+  // Whether it goes above depends on the room *visible* above the selection in
+  // the scroll area, not its offset in the chapter: a verse scrolled up to the
+  // top of the pane has plenty of chapter above it but none on screen, and the
+  // toolbar would sit under the header, out of reach. Re-checked on scroll.
   useLayoutEffect(() => {
     const wrap = wrapRef.current;
     const numbers = selectedKey ? selectedKey.split(",") : [];
@@ -79,13 +93,22 @@ export function VerseList({
       setAnchor(null);
       return;
     }
-    const next: Anchor =
-      first.offsetTop >= TOOLBAR_CLEARANCE
-        ? { top: first.offsetTop, above: true }
-        : { top: last.offsetTop + last.offsetHeight, above: false };
-    // Reuse the previous object when nothing moved, so re-renders that don't
-    // move the selection don't re-render the toolbar.
-    setAnchor((prev) => (prev && prev.top === next.top && prev.above === next.above ? prev : next));
+    const scroller = scrollParent(wrap);
+    function place(): void {
+      if (!first || !last) return;
+      const viewTop = scroller ? scroller.getBoundingClientRect().top : 0;
+      const room = first.getBoundingClientRect().top - viewTop;
+      const next: Anchor =
+        room >= TOOLBAR_CLEARANCE
+          ? { top: first.offsetTop, above: true }
+          : { top: last.offsetTop + last.offsetHeight, above: false };
+      // Reuse the previous object when nothing moved, so re-renders that don't
+      // move the selection (and scrolls that don't flip it) don't re-render the toolbar.
+      setAnchor((prev) => (prev && prev.top === next.top && prev.above === next.above ? prev : next));
+    }
+    place();
+    scroller?.addEventListener("scroll", place, { passive: true });
+    return () => scroller?.removeEventListener("scroll", place);
   }, [selectedKey, verses, marking]);
 
   // Clicking anywhere on the verse toggles it — no separate checkbox. A

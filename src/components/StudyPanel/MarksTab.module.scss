@@ -97,6 +97,20 @@
     background: var(--sel);
     color: var(--ink);
   }
+
+  // Touch has no hover to reveal it — and WebKit spends a tap that reveals
+  // hidden content on the hover alone, so it took two taps to delete. Always
+  // show it there (as StudyList and PassageCard do), a little larger.
+  @media (pointer: coarse) {
+    opacity: 1;
+    width: 32px;
+    height: 32px;
+
+    svg {
+      width: 15px;
+      height: 15px;
+    }
+  }
 }
 
 .mark:hover .remove {
