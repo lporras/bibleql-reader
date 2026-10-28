@@ -30,7 +30,10 @@ targets:
     sources:
       - path: Sources
       - path: Assets.xcassets
+      # libapp.a is linked via the libapp.a dependency below, never copied into the bundle:
+      # App Store Connect rejects a standalone library in the .app (ITMS-90171).
       - path: Externals
+        buildPhase: none
       - path: bibleql-reader_iOS
       - path: assets
         buildPhase: resources
@@ -57,8 +60,8 @@ targets:
         # The app only uses HTTPS (exempt encryption). Declaring it here skips App Store Connect's
         # export-compliance question on every TestFlight upload.
         ITSAppUsesNonExemptEncryption: false
-        CFBundleShortVersionString: 0.3.1
-        CFBundleVersion: "0.3.1"
+        CFBundleShortVersionString: 0.4.0
+        CFBundleVersion: "0.4.0"
     entitlements:
       path: bibleql-reader_iOS/bibleql-reader_iOS.entitlements
     scheme:
