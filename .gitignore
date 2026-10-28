@@ -16,7 +16,7 @@ dist-ssr
 # Rust / Tauri build output
 src-tauri/target/
 
-# Secrets — see .env.example
+# Local env files (the app compiles no keys in; see docs/installation-keys.md)
 .env
 .env.local
 

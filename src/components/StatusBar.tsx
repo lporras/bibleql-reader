@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { useAppState } from "../state/AppStateContext";
 import { usePassage } from "../queries/usePassage";
 import { useOfflineInstalled } from "../queries/useOfflineInstalled";
-import { HAS_BIBLEQL_KEY } from "../lib/graphql";
+import { useInstallation } from "../queries/useInstallation";
 import { STR } from "../data/strings";
 import styles from "./StatusBar.module.scss";
 
@@ -17,9 +17,10 @@ export function StatusBar(): JSX.Element {
   const passageA = usePassage("a", state.transA, bookId, chapter);
 
   const offline = useOfflineInstalled();
-  const sample = !HAS_BIBLEQL_KEY && !offline.byId.has(state.transA);
+  const installation = useInstallation();
+  const sample = installation.failed && !offline.byId.has(state.transA);
   const statusLeft = sample ? t.sample : passageA.data?.translationNote || passageA.data?.translationName || "";
-  const statusRight = `${HAS_BIBLEQL_KEY ? t.keySet : t.apiKey} · ${state.transA}${
+  const statusRight = `${installation.ready ? t.connected : installation.pending ? t.connecting : t.notConnected} · ${state.transA}${
     state.compare ? ` / ${state.transB}` : ""
   }`;
 

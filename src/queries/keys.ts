@@ -1,4 +1,5 @@
 export const queryKeys = {
+  installation: () => ["installation"] as const,
   translations: () => ["translations"] as const,
   passage: (translationId: string, bookId: string, chapter: number) =>
     ["passage", translationId, bookId, chapter] as const,

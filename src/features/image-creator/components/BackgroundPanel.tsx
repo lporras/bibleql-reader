@@ -4,7 +4,7 @@ import { ImageIcon } from "../../../components/icons";
 import { CURATED_IMAGES } from "../data/curatedImages";
 import { pickLocalBackground } from "../providers/localImage";
 import { selectCuratedBackground } from "../providers/curatedImages";
-import { HAS_UNSPLASH_KEY } from "../providers/UnsplashProvider";
+import { useInstallation } from "../../../queries/useInstallation";
 import { UnsplashSearch } from "./UnsplashSearch";
 import { PhotoCredit } from "./PhotoCredit";
 import type { Background } from "../model/types";
@@ -24,6 +24,8 @@ export function BackgroundPanel({ locale, background, onChangeBackground, onChan
   const t = STR[locale];
   const [tab, setTab] = useState<BackgroundTab>("curated");
   const [busy, setBusy] = useState(false);
+  // Search goes through BibleQL, so it needs this installation's token.
+  const installation = useInstallation();
 
   async function handleChoose(): Promise<void> {
     setBusy(true);
@@ -54,7 +56,7 @@ export function BackgroundPanel({ locale, background, onChangeBackground, onChan
       </div>
 
       {tab === "unsplash" &&
-        (HAS_UNSPLASH_KEY ? (
+        (installation.ready ? (
           <UnsplashSearch locale={locale} onChangeBackground={onChangeBackground} />
         ) : (
           <p className={styles.help}>{t.unsplashOffline}</p>

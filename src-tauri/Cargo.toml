@@ -1,6 +1,6 @@
 [package]
 name = "bibleql-reader"
-version = "0.3.1"
+version = "0.4.0"
 description = "Desktop Bible reader on the BibleQL GraphQL API"
 authors = ["Luis Porras <lporras16@gmail.com>"]
 license = "MIT"
@@ -43,6 +43,27 @@ rusqlite = { version = "0.40", features = ["bundled"] }
 sha2 = "0.10"
 flate2 = "1"
 unicode-normalization = "0.1"
+# Per-installation BibleQL token (src/install.rs): keyring-core plus the OS
+# credential store for each target, linked directly rather than through the
+# `keyring` umbrella crate, whose v1 mode has no iOS or Android store.
+keyring-core = "1"
+uuid = { version = "1", features = ["v4"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+apple-native-keyring-store = { version = "1", features = ["keychain"] }
+
+[target.'cfg(target_os = "ios")'.dependencies]
+apple-native-keyring-store = { version = "1", features = ["protected"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-native-keyring-store = "1"
+
+# zbus, not libdbus: pure Rust, so the Linux build needs no extra apt package.
+[target.'cfg(target_os = "linux")'.dependencies]
+zbus-secret-service-keyring-store = { version = "1", features = ["crypto-rust"] }
+
+[target.'cfg(target_os = "android")'.dependencies]
+android-native-keyring-store = "1"
 
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration

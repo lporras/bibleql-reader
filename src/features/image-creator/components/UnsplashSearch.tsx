@@ -3,8 +3,9 @@ import { STR, type Locale } from "../../../data/strings";
 import { Spinner } from "../../../components/Spinner";
 import { PhotoCredit } from "./PhotoCredit";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
-import { useUnsplashSearch } from "../queries/useUnsplashSearch";
-import { selectUnsplashBackground } from "../providers/UnsplashProvider";
+import { useBackgroundImageSearch } from "../queries/useBackgroundImageSearch";
+import { selectUnsplashBackground } from "../providers/BibleQLImageProvider";
+import { ImageSearchError } from "../providers/ImageProvider";
 import type { Background } from "../model/types";
 import styles from "./UnsplashSearch.module.scss";
 
@@ -18,8 +19,14 @@ export function UnsplashSearch({ locale, onChangeBackground }: UnsplashSearchPro
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebouncedValue(query, 400);
 
-  const { data: pages, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage, error } = useUnsplashSearch(debouncedQuery);
+  const { data: pages, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage, error } = useBackgroundImageSearch(debouncedQuery);
   const results = pages?.flatMap((page) => page.results) ?? [];
+  const errorText =
+    error instanceof ImageSearchError
+      ? error.code === "RATE_LIMITED"
+        ? t.imagesRateLimited
+        : t.imagesUnavailable
+      : t.searchError;
 
   return (
     <div className={styles.wrap}>
@@ -38,7 +45,7 @@ export function UnsplashSearch({ locale, onChangeBackground }: UnsplashSearchPro
         </div>
       )}
 
-      {error && <p className={styles.notice}>{t.searchError}</p>}
+      {error && <p className={styles.notice}>{errorText}</p>}
 
       {!isLoading && !error && debouncedQuery && results.length === 0 && <p className={styles.notice}>{t.searchEmpty}</p>}
 

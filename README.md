@@ -46,7 +46,6 @@ WebView2 on Windows, `libwebkit2gtk` on Linux).
 
 ```bash
 yarn install
-cp .env.example .env   # set BIBLEQL_API_KEY
 yarn tauri dev         # Rust shell + Vite dev server, with HMR
 yarn tauri build       # type-checks, runs unit tests, then bundles installers
 ```
@@ -54,22 +53,23 @@ yarn tauri build       # type-checks, runs unit tests, then bundles installers
 `yarn dev` on its own serves just the frontend in a browser at http://localhost:1420 — useful for
 UI work, though the native Save-As dialog and the AI assistant need the real shell.
 
-Requests go to `https://bibleql.org/graphql` with an `Authorization: Bearer` header. The BibleQL
-key comes from `BIBLEQL_API_KEY` in `.env` (loaded via `dotenv`) and is compiled into the app at
-build time — it's never entered by end users and never committed. Release builds get their key the
-same way, from a `BIBLEQL_API_KEY` GitHub Actions secret set on the workflow. Without a key, the
-reader shows a bundled public-domain sample chapter (Psalm 23).
+Requests go to `https://bibleql.org/graphql` with an `Authorization: Bearer` header. No key is
+compiled into the app: on first launch each installation registers itself with BibleQL and gets
+its own token, kept in the OS credential store (Keychain, Credential Manager, Secret Service,
+Android Keystore) — see [docs/installation-keys.md](docs/installation-keys.md). Until that
+succeeds (offline on first launch, say), the reader shows a bundled public-domain sample chapter
+(Psalm 23). The Image Creator's Unsplash search goes through BibleQL too, which keeps the
+Unsplash key on the server.
 
 The AI assistant calls Claude via the [Vercel AI SDK](https://ai-sdk.dev) (`src/lib/ai.ts`), with
 the request itself issued by the Rust side through Tauri's HTTP plugin — `api.anthropic.com`
 refuses cross-origin requests. (The plugin still attaches its own `Origin`, so the call also
 opts in via `anthropic-dangerous-direct-browser-access`; the key is the user's own and the
-request is made by the Rust process, not by a page anyone else can script.) Unlike the two keys above, the Anthropic key is never compiled in:
+request is made by the Rust process, not by a page anyone else can script.) Like the BibleQL token, the Anthropic key is never compiled in:
 it's entered per-user from the key dialog (key icon in the title bar) and stored locally — never
 committed or sent anywhere else.
 
-Get a BibleQL key at https://bibleql.org/api-keys/request/new (docs: https://docs.bibleql.org) and
-an Anthropic key at https://console.anthropic.com.
+Get an Anthropic key at https://console.anthropic.com. (BibleQL's own docs: https://docs.bibleql.org.)
 
 ## Running on an Android device
 
@@ -173,8 +173,8 @@ phone and builds much faster. The APK file name then includes `arm64` instead of
 [Android code signing](https://tauri.app/distribute/sign/android/) guide). For testing on your own
 phone, use the debug build.
 
-As on desktop, the BibleQL key is compiled in from `.env` at build time, so set it before you
-build.
+As on desktop, no API key is needed to build: the app registers its own BibleQL token on first
+launch.
 
 ## Running on an iPad
 
@@ -204,7 +204,7 @@ like a user would: selecting verses, handing off to the Verse Image Creator, pic
 editing text, exporting. It runs the same bundle in headless Chromium rather than in the Tauri
 window, because Tauri's own WebDriver harness (`tauri-driver`) has no macOS support at all; the
 handful of genuine shell calls are stubbed and recorded (see `e2e/helpers.ts`). It builds the app
-and serves it with `vite preview`. BibleQL and Unsplash are mocked, so it needs no API keys. CI (`.github/workflows/ci.yml`) runs both suites plus
+and serves it with `vite preview`. BibleQL (image search included) is mocked, so it needs no API keys. CI (`.github/workflows/ci.yml`) runs both suites plus
 a `cargo check` of the Rust shell on every pull request.
 
 ## macOS: "is damaged and can't be opened"

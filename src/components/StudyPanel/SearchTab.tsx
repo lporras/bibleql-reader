@@ -3,7 +3,7 @@ import { useAppState } from "../../state/AppStateContext";
 import { useSearch } from "../../queries/useSearch";
 import { useOfflineInstalled } from "../../queries/useOfflineInstalled";
 import { useOpenRef } from "../../hooks/useOpenRef";
-import { HAS_BIBLEQL_KEY } from "../../lib/graphql";
+import { useInstallation } from "../../queries/useInstallation";
 import { highlightWords } from "../../lib/format";
 import { STR } from "../../data/strings";
 import styles from "./SearchTab.module.scss";
@@ -30,11 +30,12 @@ export function SearchTab({ active }: SearchTabProps): JSX.Element {
   }
 
   const offline = useOfflineInstalled();
-  const hasKey = HAS_BIBLEQL_KEY || offline.byId.has(state.transA);
+  const installation = useInstallation();
+  const hasKey = !installation.failed || offline.byId.has(state.transA);
   let notice = "";
   if (!hasKey) notice = t.noKey;
   else if (!query) notice = t.searchIdle;
-  else if (search.isLoading) notice = t.loading;
+  else if (search.isLoading || installation.pending) notice = t.loading;
   else if (search.error) notice = search.error.message;
   else if ((search.data ?? []).length === 0) notice = "—";
 

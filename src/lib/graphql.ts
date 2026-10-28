@@ -1,55 +1,66 @@
+import { createGraphQLClient, GraphQLRequestError, type UpdateNotice } from "./graphqlClient";
+import { createInstallationAuth } from "./installation";
+import { installStore } from "../platform/install";
+import { REGISTRATION_PLATFORM } from "../platform/host";
+
+export { GraphQLRequestError, type UpdateNotice };
+
 export const DEFAULT_ENDPOINT = "https://bibleql.org/graphql";
-
-export class GraphQLRequestError extends Error {}
-
-interface GraphQLResponse<T> {
-  data?: T;
-  errors?: { message: string }[];
-}
-
-export const HAS_BIBLEQL_KEY = Boolean(__BIBLEQL_API_KEY__);
 
 const REQUEST_TIMEOUT_MS = 15_000;
 
-export async function gqlRequest<T>(
-  query: string,
-  variables?: Record<string, unknown>,
-  endpoint: string = DEFAULT_ENDPOINT
-): Promise<T> {
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (__BIBLEQL_API_KEY__) headers.Authorization = `Bearer ${__BIBLEQL_API_KEY__}`;
+// Shown once, app-wide, when BibleQL says this build's key is deprecated
+// (components/UpdateBanner.tsx). Outside React because every request can
+// carry it, not just the ones made from components.
+let updateNotice: UpdateNotice | null = null;
+const updateListeners = new Set<() => void>();
 
-  // A stalled request would otherwise leave its query pending forever (fetch
-  // has no timeout of its own), and TanStack Query only retries on failure.
-  // Aborting turns the stall into an error it can retry. AbortController +
-  // setTimeout rather than AbortSignal.timeout(), which older WKWebView lacks.
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+export function subscribeUpdateNotice(listener: () => void): () => void {
+  updateListeners.add(listener);
+  return () => updateListeners.delete(listener);
+}
 
-  let res: Response;
-  try {
-    res = await fetch(endpoint, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ query, variables: variables ?? {} }),
-      signal: controller.signal
-    });
-  } catch {
-    throw new GraphQLRequestError(
-      controller.signal.aborted
-        ? `The request to ${endpoint} got no reply within ${REQUEST_TIMEOUT_MS / 1000}s. Try again in a moment.`
-        : `The request to ${endpoint} failed before a reply came back — a server error, a rate limit, or a blocked cross-origin request. Try again in a moment.`
-    );
-  } finally {
-    clearTimeout(timer);
+export function getUpdateNotice(): UpdateNotice | null {
+  return updateNotice;
+}
+
+const client = createGraphQLClient({
+  endpoint: DEFAULT_ENDPOINT,
+  // Looked up per call, so a test or the E2E suite's page.route sees it.
+  fetch: (input, init) => fetch(input, init),
+  appVersion: __APP_VERSION__,
+  timeoutMs: REQUEST_TIMEOUT_MS,
+  onUpdateRequired(notice) {
+    if (updateNotice?.message === notice.message && updateNotice.updateUrl === notice.updateUrl) return;
+    updateNotice = notice;
+    updateListeners.forEach((listener) => listener());
   }
+});
 
-  if (res.status === 401 || res.status === 403) {
-    throw new GraphQLRequestError("The API key was rejected (401/403).");
-  }
+interface RegisterResponse {
+  registerInstallation: { token: string };
+}
 
-  const json: GraphQLResponse<T> | null = await res.json().catch(() => null);
-  if (!json) throw new GraphQLRequestError("The API returned a response that was not JSON.");
-  if (json.errors?.length) throw new GraphQLRequestError(json.errors[0].message);
-  return json.data as T;
+// The server only accepts this unauthenticated, and only as the sole root
+// field of the operation. The enum's GraphQL name is `PlatformEnum`; a wrong
+// variable type fails validation before the resolver runs.
+const REGISTER =
+  "mutation($id:ID!,$p:PlatformEnum!,$v:String!){ registerInstallation(input:{installationId:$id, platform:$p, appVersion:$v}){ token } }";
+
+const auth = createInstallationAuth(installStore, async (installationId) => {
+  const data = await client.anonymous<RegisterResponse>(REGISTER, {
+    id: installationId,
+    p: REGISTRATION_PLATFORM,
+    v: __APP_VERSION__
+  });
+  return data.registerInstallation.token;
+});
+
+/** Resolves once this installation has a token, registering if needed. */
+export function ensureInstallToken(): Promise<unknown> {
+  return auth.getToken();
+}
+
+export function gqlRequest<T>(query: string, variables?: Record<string, unknown>): Promise<T> {
+  return client.authenticated<T>(auth, query, variables);
 }

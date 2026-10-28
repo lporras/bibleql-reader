@@ -1,6 +1,7 @@
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
-import { gqlRequest, HAS_BIBLEQL_KEY } from "../lib/graphql";
+import { gqlRequest } from "../lib/graphql";
 import { queryKeys } from "./keys";
+import { useInstallation } from "./useInstallation";
 import { useOfflineInstalled, useOfflineSource } from "./useOfflineInstalled";
 
 interface ConcordanceSupportResponse {
@@ -21,13 +22,14 @@ async function fetchConcordanceIndexedAt(translationId: string): Promise<string 
 // package's own full-text index.
 export function useConcordanceSupport(translationId: string): UseQueryResult<string | null> {
   const offline = useOfflineSource(translationId);
+  const installation = useInstallation();
   const installed = useOfflineInstalled().byId.get(translationId);
   return useQuery({
     queryKey: queryKeys.concordanceSupport(translationId),
     queryFn: () =>
       offline.isLocalNow() ? installed?.exportedAt || "offline" : fetchConcordanceIndexedAt(translationId),
     networkMode: offline.networkMode,
-    enabled: offline.ready && (offline.local || HAS_BIBLEQL_KEY) && !!translationId,
+    enabled: offline.ready && (offline.local || installation.ready) && !!translationId,
     staleTime: 10 * 60_000
   });
 }

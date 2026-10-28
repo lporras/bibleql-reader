@@ -5,7 +5,6 @@ export interface StringsShape {
   compare: string;
   panel: string;
   theme: string;
-  apiKey: string;
   aiApiKey: string;
   translation: string;
   findBook: string;
@@ -27,7 +26,9 @@ export interface StringsShape {
   cancel: string;
   save: string;
   noKey: string;
-  keySet: string;
+  connected: string;
+  connecting: string;
+  notConnected: string;
   loading: string;
   concIdle: string;
   searchIdle: string;
@@ -91,6 +92,9 @@ export interface StringsShape {
   searchEmpty: string;
   searchError: string;
   unsplashOffline: string;
+  imagesRateLimited: string;
+  imagesUnavailable: string;
+  updateGet: string;
   marks: string;
   addNote: string;
   editNote: string;
@@ -191,7 +195,6 @@ export const STR: Record<Locale, StringsShape> = {
     compare: "Compare",
     panel: "Tools",
     theme: "Theme",
-    apiKey: "BibleQL API key",
     aiApiKey: "Anthropic API key",
     translation: "Translation",
     findBook: "Filter books",
@@ -212,8 +215,10 @@ export const STR: Record<Locale, StringsShape> = {
     aiKeyHelp: "Used only for the Assistant tab. Sent straight to Anthropic from this machine, never stored elsewhere.",
     cancel: "Cancel",
     save: "Save",
-    noKey: "No API key — showing a bundled sample chapter.",
-    keySet: "Key saved",
+    noKey: "Couldn't connect to BibleQL — showing a bundled sample chapter. Retrying in the background.",
+    connected: "Connected",
+    connecting: "Connecting…",
+    notConnected: "Not connected",
     loading: "Loading…",
     concIdle: "Every occurrence of a word, in canonical order, with context.",
     searchIdle: "Substring search across the current translation.",
@@ -277,6 +282,9 @@ export const STR: Record<Locale, StringsShape> = {
     searchEmpty: "No photos found.",
     searchError: "Unable to load images from Unsplash. Check your internet connection and try again.",
     unsplashOffline: "Unsplash is unavailable offline. You can use a local image instead.",
+    imagesRateLimited: "Too many image searches right now. Try again in a few minutes.",
+    imagesUnavailable: "Image search is unavailable right now. Try again later, or use a local image.",
+    updateGet: "Get the update",
     marks: "Marks",
     addNote: "Add note",
     editNote: "Edit note",
@@ -375,7 +383,6 @@ export const STR: Record<Locale, StringsShape> = {
     compare: "Comparar",
     panel: "Herramientas",
     theme: "Tema",
-    apiKey: "Clave de API de BibleQL",
     aiApiKey: "Clave de API de Anthropic",
     translation: "Traducción",
     findBook: "Filtrar libros",
@@ -396,8 +403,10 @@ export const STR: Record<Locale, StringsShape> = {
     aiKeyHelp: "Se usa solo en la pestaña Asistente. Se envía directo a Anthropic desde este equipo, nunca se guarda en otro lugar.",
     cancel: "Cancelar",
     save: "Guardar",
-    noKey: "Sin clave de API — mostrando un capítulo de muestra.",
-    keySet: "Clave guardada",
+    noKey: "No se pudo conectar con BibleQL — mostrando un capítulo de muestra. Reintentando en segundo plano.",
+    connected: "Conectado",
+    connecting: "Conectando…",
+    notConnected: "Sin conexión",
     loading: "Cargando…",
     concIdle: "Cada aparición de una palabra, en orden canónico, con su contexto.",
     searchIdle: "Búsqueda de texto en la traducción actual.",
@@ -461,6 +470,9 @@ export const STR: Record<Locale, StringsShape> = {
     searchEmpty: "No se encontraron fotos.",
     searchError: "No se pudieron cargar imágenes de Unsplash. Revisa tu conexión e intenta de nuevo.",
     unsplashOffline: "Unsplash no está disponible sin conexión. Puedes usar una imagen local.",
+    imagesRateLimited: "Demasiadas búsquedas de imágenes por ahora. Intenta de nuevo en unos minutos.",
+    imagesUnavailable: "La búsqueda de imágenes no está disponible ahora. Intenta más tarde o usa una imagen local.",
+    updateGet: "Obtener la actualización",
     marks: "Marcas",
     addNote: "Añadir nota",
     editNote: "Editar nota",

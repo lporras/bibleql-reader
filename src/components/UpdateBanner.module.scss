@@ -1,0 +1,51 @@
+@use "../styles/tokens" as t;
+
+.banner {
+  position: fixed;
+  left: 50%;
+  bottom: 36px;
+  transform: translateX(-50%);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100vw - 32px);
+  padding: 8px 10px 8px 14px;
+  background: var(--raise);
+  border: 1px solid var(--divider);
+  border-radius: t.$radius-md;
+  box-shadow: var(--shadow-lg);
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.message {
+  line-height: 1.4;
+}
+
+.link {
+  flex-shrink: 0;
+  color: var(--accent-deep);
+  font-weight: 600;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.close {
+  flex-shrink: 0;
+  display: flex;
+  padding: 4px;
+  border: 0;
+  border-radius: t.$radius-sm;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--hair);
+    color: var(--ink);
+  }
+}

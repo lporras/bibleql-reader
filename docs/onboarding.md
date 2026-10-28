@@ -14,17 +14,16 @@ in this folder: [platform-abstraction.md](platform-abstraction.md),
 
 ```bash
 yarn                    # install (Yarn, not npm)
-cp .env.example .env    # then fill in the keys below
 yarn tauri dev          # desktop app: Rust shell + Vite dev server with HMR
 yarn dev                # frontend only, in a browser at http://localhost:1420
 ```
 
-Build-time keys (in `.env` / `.env.local`, inlined by `vite.config.ts`):
-
-| Variable | Used by | Without it |
-|---|---|---|
-| `BIBLEQL_API_KEY` | `lib/graphql.ts` | Only downloaded (offline) translations can be read |
-| `UNSPLASH_ACCESS_KEY` | Image Creator background search | The Unsplash search tab is hidden |
+There are **no build-time keys.** On first launch each installation registers with BibleQL
+(`registerInstallation`) and keeps its own token in the OS credential store; every request sends
+it as `Authorization: Bearer`. Until registration succeeds, only downloaded (offline)
+translations can be read and the reader shows its bundled sample. Unsplash search goes through
+BibleQL (`backgroundImages`), which holds the Unsplash key server-side. See
+[installation-keys.md](installation-keys.md).
 
 The **Anthropic key is not a build-time key.** Each user types their own into the key dialog
 (`components/KeyDialog.tsx`); it is stored in `localStorage` (`biblereader.aikey`) and passed
@@ -403,7 +402,7 @@ JPEG at a social-media size. It lives in `src/features/image-creator/` and must 
 | `model/` | `types.ts` (the serializable project), `defaults.ts`, `presets.ts` (canvas sizes), `fonts.ts`, `crop.ts` (cover-fit math), `coords.ts`, `serialize.ts` |
 | `state/reducer.ts` | `imageCreatorReducer`: `REPLACE_PROJECT`, `SET_BACKGROUND`, `SET_CROP`, `SET_OVERLAY`, `SET_CANVAS`, `SELECT_ELEMENT`, `MOVE_ELEMENT`, `RESIZE_ELEMENT`, `UPDATE_ELEMENT` |
 | `components/` | `CreatorTopBar` (preset + export), `BackgroundPanel`, `UnsplashSearch`, `ScripturePanel`, `EditorCanvas`, `TextBox`, `PropertiesPanel`, `FontPicker`, `ExportControls`, `PhotoCredit` |
-| `providers/` | Background sources: `ImageProvider` interface, `UnsplashProvider`, curated images, local file picker |
+| `providers/` | Background sources: `ImageProvider` interface, `BibleQLImageProvider` (Unsplash via BibleQL), curated images, local file picker |
 | `assets/imageAssets.ts` | In-memory cache of decoded images keyed by `assetId` |
 | `rendering/` | `renderProject.ts` (canvas export), `textLayout.ts` (line wrapping) |
 | `lib/` | `scriptureText.ts`, `attribution.ts`, `filename.ts` |
@@ -437,11 +436,11 @@ decoded image lives in `assets/imageAssets.ts` under `assetId`:
 
 - **Curated:** bundled images under `public/bible-images/{thumb,full}/`.
 - **Local file:** `getPlatform().pickImageFile()` returns an object URL (not base64).
-- **Unsplash:** `UnsplashProvider` uses `unsplash-js` with the public Client-ID key. Components
-  only talk to the `ImageProvider` interface. Unsplash rules we must honour (see
-  [unsplash.md](unsplash.md)): fire `triggerDownload` with the API's own `download_location`
-  when a photo is *used*, keep attribution on the background, and mind the 50 req/hour shared
-  demo quota.
+- **Unsplash:** `BibleQLImageProvider` searches through BibleQL's `backgroundImages` query (the
+  server holds the Unsplash key and caches results). Components only talk to the `ImageProvider`
+  interface. Unsplash rules we must honour (see [unsplash.md](unsplash.md)): fire
+  `triggerDownload` (the `trackImageDownload` mutation; the server pings Unsplash) when a photo
+  is *used*, hotlink the CDN URLs, and keep attribution on the background.
 
 `crop` (`x`, `y`, `scale ≥ 1`) and the optional color `overlay` are applied with the same
 `coverRect` math in preview and export.

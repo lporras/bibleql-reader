@@ -1,8 +1,8 @@
 import type { Attribution } from "../model/types";
 
 // Provider abstraction (spec §8) so components never call an image source
-// directly — UnsplashProvider.ts is the only thing that knows about
-// Unsplash specifically.
+// directly — BibleQLImageProvider.ts is the only thing that knows where
+// search results come from (Unsplash, through BibleQL's proxy).
 export interface ImageSearchResult {
   id: string;
   thumbnailUrl: string;
@@ -10,20 +10,22 @@ export interface ImageSearchResult {
   width: number;
   height: number;
   attribution: Attribution;
-  /**
-   * The tracking URL the API itself returned for this photo
-   * (`links.download_location`) — carries a signed `ixid` that ties the
-   * download event back to the search it came from. Always pass this
-   * through verbatim; a hand-built `/photos/:id/download` path is not
-   * compliant with the guideline (see docs/unsplash.md).
-   */
-  downloadLocation: string;
 }
 
 export interface ImageSearchPage {
   results: ImageSearchResult[];
   page: number;
   hasMore: boolean;
+}
+
+/** Why a search came back empty-handed — reported by the server as data. */
+export type ImageSearchErrorCode = "RATE_LIMITED" | "UNAVAILABLE" | "NOT_CONFIGURED";
+
+export class ImageSearchError extends Error {
+  constructor(readonly code: ImageSearchErrorCode) {
+    super(`Image search failed: ${code}`);
+    this.name = "ImageSearchError";
+  }
 }
 
 export interface ImageProvider {

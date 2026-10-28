@@ -11,7 +11,7 @@ This codebase has several unique conventions and gotchas due to its mixed Tauri/
 - **Source of Truth:** The URL query parameters (`?from=&to=`) dictate the active location and selection, not component state.
 - **Styling:** Styling uses Sass Modules and a token system; avoid using general CSS utility libraries like Tailwind or generic component libraries.
 - **API Keys & Secrets:**
-    - `BIBLEQL_API_KEY` and `UNSPLASH_ACCESS_KEY` are compiled into the bundle (`vite.config.ts`).
+    - **No API key is compiled in.** Each installation registers its own BibleQL token at first launch and keeps it in the OS credential store (`src-tauri/src/install.rs`, `docs/installation-keys.md`). Unsplash goes through BibleQL (`backgroundImages`). `scripts/check-bundle-secrets.mjs` fails the build if a key shows up in `dist/`.
     - **Anthropic key is NEVER bundled;** it must be read from `localStorage` and passed per-call to `lib/ai.ts`.
 
 ## ⚠️ Common Mistakes & Gotchas

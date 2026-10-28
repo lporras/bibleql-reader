@@ -1,7 +1,8 @@
 import { useInfiniteQuery, type InfiniteData, type UseInfiniteQueryResult } from "@tanstack/react-query";
-import { gqlRequest, HAS_BIBLEQL_KEY } from "../lib/graphql";
+import { gqlRequest } from "../lib/graphql";
 import { offlineBible } from "../platform/offline";
 import { queryKeys } from "./keys";
+import { useInstallation } from "./useInstallation";
 import { remoteFirst, useOfflineSource } from "./useOfflineInstalled";
 import type { ConcordanceEntry, ConcordanceHitNode, ConcordancePageResult } from "../types/bible";
 
@@ -51,6 +52,7 @@ export function useConcordance(
   enabled: boolean
 ): UseInfiniteQueryResult<InfiniteData<ConcordancePageResult>> {
   const offline = useOfflineSource(translationId);
+  const installation = useInstallation();
   return useInfiniteQuery({
     queryKey: queryKeys.concordance(translationId, word),
     queryFn: ({ pageParam }) => {
@@ -67,7 +69,7 @@ export function useConcordance(
     initialPageParam: null as string | null,
     getNextPageParam: (last) => (last.pageInfo.hasNextPage ? last.pageInfo.endCursor : undefined),
     networkMode: offline.networkMode,
-    enabled: enabled && offline.ready && (offline.local || HAS_BIBLEQL_KEY) && !!word,
+    enabled: enabled && offline.ready && (offline.local || installation.ready) && !!word,
     retry: false
   });
 }

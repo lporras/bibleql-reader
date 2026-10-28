@@ -16,20 +16,20 @@ macOS, WebView2 on Windows, `libwebkit2gtk` on Linux.
 git clone git@github.com:<you>/bibleql-reader.git
 cd bibleql-reader
 yarn install
-cp .env.example .env
 yarn tauri dev        # desktop app with HMR
 ```
 
-API keys are optional for most work:
+No API keys are needed to build or run:
 
-- **`BIBLEQL_API_KEY`**: without it, the reader shows a bundled sample chapter (Psalm 23). You can
-  get a free key at https://bibleql.org/api-keys/request/new.
-- **`UNSPLASH_ACCESS_KEY`**: only needed for the Image Creator's Unsplash search tab. See
-  [docs/unsplash.md](docs/unsplash.md).
-- **Anthropic key**: entered at runtime from the key dialog in the title bar. It is never read
-  from `.env`.
+- **BibleQL**: on first launch the app registers itself and stores its own token in the OS
+  credential store (see [docs/installation-keys.md](docs/installation-keys.md)). Offline on first
+  launch, the reader shows a bundled sample chapter (Psalm 23) and retries.
+- **Unsplash**: background search goes through BibleQL, which holds the Unsplash key on the
+  server. See [docs/unsplash.md](docs/unsplash.md).
+- **Anthropic key**: entered at runtime from the key dialog in the title bar.
 
-Never commit `.env` or `.env.local`.
+`yarn build` fails if anything that looks like an API key ends up in the bundle
+(`scripts/check-bundle-secrets.mjs`).
 
 For UI-only work, `yarn dev` serves the frontend in a regular browser at http://localhost:1420.
 It's faster to iterate in, but native features (the Save As dialog, the AI assistant) need

@@ -28,6 +28,28 @@ export const IS_MAC = PLATFORM === "macos";
 // iPadOS reports "ios" too. Gates the share-sheet export in platform/tauri.ts.
 export const IS_IOS = PLATFORM === "ios";
 
+export type RegistrationPlatform = "MACOS" | "WINDOWS" | "LINUX" | "IOS" | "ANDROID";
+
+const REGISTRATION_PLATFORMS: Record<string, RegistrationPlatform> = {
+  macos: "MACOS",
+  windows: "WINDOWS",
+  linux: "LINUX",
+  ios: "IOS",
+  android: "ANDROID"
+};
+
+// BibleQL's `Platform` enum, for `registerInstallation`. In a browser there
+// is no os plugin to ask, so the user agent's best guess stands in.
+function guessFromUserAgent(): RegistrationPlatform {
+  const ua = typeof navigator === "undefined" ? "" : navigator.userAgent;
+  if (/Mac/i.test(ua)) return "MACOS";
+  if (/Win/i.test(ua)) return "WINDOWS";
+  return "LINUX";
+}
+
+export const REGISTRATION_PLATFORM: RegistrationPlatform =
+  (PLATFORM && REGISTRATION_PLATFORMS[PLATFORM]) || guessFromUserAgent();
+
 declare global {
   interface Window {
     // Injected by the Android shell (MainActivity.kt, SystemBars). Absent on

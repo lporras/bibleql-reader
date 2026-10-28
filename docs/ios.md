@@ -182,8 +182,8 @@ yarn tauri ios build                                 # a signed .ipa for devices
 ```
 
 The `.ipa` ends up under `src-tauri/gen/apple/build/`. `ExportOptions.plist` controls how it's
-exported (development, ad-hoc, or App Store). As on desktop, `BIBLEQL_API_KEY` and
-`UNSPLASH_ACCESS_KEY` are compiled in from `.env` at build time, so set them before you build.
+exported (development, ad-hoc, or App Store). As on desktop, no API key goes into the build: the
+app registers its own BibleQL token on first launch and keeps it in the iOS keychain.
 
 App Store distribution has one more blocker: the `macos-private-api` feature in `Cargo.toml`. It's
 macOS-only and inert on iOS, but Apple's review is a separate question (see the CLAUDE.md

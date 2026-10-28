@@ -45,9 +45,9 @@ jobs:
       # Browser E2E against a production build that playwright.config.ts
       # builds and serves itself. No Xvfb: unlike Electron, which always
       # opened a real native window, headless Chromium needs no display.
-      # No secrets: BibleQL and Unsplash are both mocked, and the build gets
-      # placeholder keys (see playwright.config.ts), so fork PRs run the full
-      # suite too.
+      # No secrets: BibleQL (image search included) is mocked, and the app
+      # has no compiled-in keys to begin with, so fork PRs run the full suite
+      # too.
       - name: E2E tests (Playwright)
         run: yarn test:e2e
 
