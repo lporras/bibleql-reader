@@ -1,0 +1,3 @@
+# Written by tauri-plugin's build script on iOS builds (a copy of the Tauri
+# Swift API that ios/Package.swift depends on), regenerated every build.
+.tauri

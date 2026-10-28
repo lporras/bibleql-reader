@@ -1,3 +1,2 @@
-# Written by tauri-plugin's build script / SwiftPM.
-.tauri
+# SwiftPM build output.
 .build
