@@ -3,13 +3,13 @@
 //! Each install registers itself with BibleQL (`registerInstallation`, done
 //! by the frontend in src/lib/installation.ts) and gets its own token. This
 //! module only keeps the installation id and that token, in the OS
-//! credential store: Keychain on macOS/iOS, Credential Manager on Windows,
-//! the Secret Service on Linux, and Keystore-encrypted SharedPreferences on
+//! credential store: Keychain on iOS, Credential Manager on Windows, the
+//! Secret Service on Linux, and Keystore-encrypted SharedPreferences on
 //! Android.
 //!
-//! When the credential store can't be reached (a Linux desktop with no
-//! Secret Service daemon, say), it falls back to a 0600 JSON file in the
-//! app data dir. Failing instead would make the app register again on every
+//! macOS, and any credential store that can't be reached (a Linux desktop
+//! with no Secret Service daemon, say), use a 0600 JSON file in the app
+//! data dir instead. Failing instead would make the app register again on every
 //! launch, revoking the previous token each time and burning the server's
 //! 10-per-hour registration limit.
 
@@ -63,10 +63,20 @@ impl SecretStore for KeyringStore {
     }
 }
 
-/// Installs this platform's credential store as keyring-core's default.
+/// macOS gets no store, so it always uses the fallback file. The login
+/// keychain ties an item's access to the code signature of the app that
+/// created it, and an ad-hoc signed build (no Developer ID) has no stable
+/// signature: after every update, macOS would ask for the login password
+/// before handing the token back. Revisit once releases are Developer ID
+/// signed.
+#[cfg(target_os = "macos")]
 fn init_native_store() -> keyring_core::Result<()> {
-    #[cfg(target_os = "macos")]
-    keyring_core::set_default_store(apple_native_keyring_store::keychain::Store::new()?);
+    Err(keyring_core::Error::NotSupportedByStore("macOS keychain".into()))
+}
+
+/// Installs this platform's credential store as keyring-core's default.
+#[cfg(not(target_os = "macos"))]
+fn init_native_store() -> keyring_core::Result<()> {
     #[cfg(target_os = "ios")]
     keyring_core::set_default_store(apple_native_keyring_store::protected::Store::new()?);
     #[cfg(target_os = "windows")]

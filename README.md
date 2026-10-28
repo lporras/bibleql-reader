@@ -55,7 +55,7 @@ UI work, though the native Save-As dialog and the AI assistant need the real she
 
 Requests go to `https://bibleql.org/graphql` with an `Authorization: Bearer` header. No key is
 compiled into the app: on first launch each installation registers itself with BibleQL and gets
-its own token, kept in the OS credential store (Keychain, Credential Manager, Secret Service,
+its own token, kept in the OS credential store (Credential Manager, Secret Service, iOS Keychain,
 Android Keystore) — see [docs/installation-keys.md](docs/installation-keys.md). Until that
 succeeds (offline on first launch, say), the reader shows a bundled public-domain sample chapter
 (Psalm 23). The Image Creator's Unsplash search goes through BibleQL too, which keeps the

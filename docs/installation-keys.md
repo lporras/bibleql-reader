@@ -46,7 +46,7 @@ created once and never changes, so a reinstall that keeps the credential store r
 
 | Platform | Store | Crate |
 |---|---|---|
-| macOS | Keychain (login keychain), service `org.bibleql.reader` | `apple-native-keyring-store` (`keychain`) |
+| macOS | The fallback file (see below) | — |
 | iOS / iPadOS | Data-protection keychain | `apple-native-keyring-store` (`protected`) |
 | Windows | Credential Manager | `windows-native-keyring-store` |
 | Linux | Secret Service (GNOME Keyring, KWallet…) over D-Bus | `zbus-secret-service-keyring-store` (pure Rust, no libdbus) |
@@ -63,6 +63,14 @@ running. This fallback is weaker than a keychain, because any process running as
 can read the file. It exists because the alternative is worse: if storage failed, the app would
 register again on every launch, revoking the previous token each time and using up the
 per-IP registration limit.
+
+**Why macOS doesn't use the Keychain.** The login keychain lets an item be read without a
+prompt only by the app that created it, identified by its code signature. Release builds are
+ad-hoc signed (there is no Developer ID), and an ad-hoc signature changes with every build. So
+after each update, macOS would ask for the login keychain password before giving the token back.
+Once releases are signed with a Developer ID, the signature stays stable across updates and the
+Keychain store can come back. To do that, re-add `apple-native-keyring-store` (`keychain`) for
+macOS and restore its line in `init_native_store`.
 
 The token is never written to `localStorage`.
 
