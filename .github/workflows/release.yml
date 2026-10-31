@@ -71,10 +71,20 @@ jobs:
       # No API keys: each installation registers its own BibleQL token at
       # first launch, and Unsplash is reached through BibleQL. The secret
       # check fails this step if a key ever ends up in the bundle again.
+      #
+      # The APPLE_* secrets Developer ID sign and notarize the macOS builds, so
+      # Gatekeeper opens the DMG without a warning; the other platforms ignore
+      # them. See docs/macos-signing.md.
       - name: Build and release
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "BibleQL Reader ${{ github.ref_name }}"
