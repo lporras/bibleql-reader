@@ -3,10 +3,13 @@ import { useAppState } from "../../state/AppStateContext";
 import { useAiChat } from "../../state/AiChatContext";
 import { useOpenRef } from "../../hooks/useOpenRef";
 import { useAddToStudy } from "../../hooks/useAddToStudy";
+import { useChatgptAccount } from "../../queries/useChatgptAccount";
+import { CHATGPT_SUPPORTED } from "../../platform/host";
 import { translationAbbrev } from "../../state/study";
 import { STR } from "../../data/strings";
 import type { AiReference } from "../../types/ai";
 import { CheckIcon, PlusIcon } from "../icons";
+import { ChatgptSection } from "../ChatgptSection";
 import { AiText } from "./AiText";
 import styles from "./AIAssistant.module.scss";
 
@@ -18,8 +21,9 @@ interface AIAssistantProps {
 }
 
 export function AIAssistant({ active, studyTitle, suggestions }: AIAssistantProps): JSX.Element {
-  const { state } = useAppState();
+  const { state, actions } = useAppState();
   const t = STR[state.locale];
+  const chatgptStatus = useChatgptAccount();
   const openRef = useOpenRef();
   const chat = useAiChat();
   const study = useAddToStudy();
@@ -97,10 +101,25 @@ export function AIAssistant({ active, studyTitle, suggestions }: AIAssistantProp
 
   const prompts = suggestions ?? [t.s1, t.s2, t.s3];
 
+  // Nothing can answer yet, so show how to fix that rather than a box whose
+  // every question would fail. Not while the account is still loading: that
+  // would flash the prompt at someone already signed in.
+  const needsSetup = !state.aiApiKey.trim() && !chatgptStatus.isLoading && !chatgptStatus.data?.account?.planEnabled;
+
   return (
     <div className={styles.body} hidden={!active}>
       <div ref={messagesRef} className={styles.messages} onScroll={handleScroll}>
-        {chat.messages.length === 0 && (
+        {needsSetup && (
+          <div className={styles.setup}>
+            <h3 className={styles.setupTitle}>{t.aiSetupTitle}</h3>
+            <p className={styles.setupHelp}>{t.aiSetupHelp}</p>
+            {CHATGPT_SUPPORTED && <ChatgptSection embedded />}
+            <button type="button" className={styles.setupKey} onClick={actions.openKeyDialog}>
+              {t.aiSetupKey}
+            </button>
+          </div>
+        )}
+        {!needsSetup && chat.messages.length === 0 && (
           <div className={styles.empty}>
             <p className={styles.introText}>{t.aiIntro}</p>
             <div className={styles.suggestions}>
@@ -121,19 +140,21 @@ export function AIAssistant({ active, studyTitle, suggestions }: AIAssistantProp
         ))}
         {chat.thinking && <div className={styles.thinking}>{t.thinking}</div>}
       </div>
-      <form className={styles.form} onSubmit={handleSubmit}>
-        <textarea
-          className={styles.textarea}
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={t.aiPlaceholder}
-          rows={3}
-        />
-        <button type="submit" className={styles.askButton}>
-          {t.ask}
-        </button>
-      </form>
+      {!needsSetup && (
+        <form className={styles.form} onSubmit={handleSubmit}>
+          <textarea
+            className={styles.textarea}
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={t.aiPlaceholder}
+            rows={3}
+          />
+          <button type="submit" className={styles.askButton}>
+            {t.ask}
+          </button>
+        </form>
+      )}
     </div>
   );
 }

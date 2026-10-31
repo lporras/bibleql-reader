@@ -28,6 +28,11 @@ export const IS_MAC = PLATFORM === "macos";
 // iPadOS reports "ios" too. Gates the share-sheet export in platform/tauri.ts.
 export const IS_IOS = PLATFORM === "ios";
 
+// Sign in with ChatGPT documents only a loopback redirect, which isn't reliable
+// while a mobile browser has the app suspended. Off without a shell, too: the
+// sign-in lives in Rust. See docs/chatgpt-sign-in.md.
+export const CHATGPT_SUPPORTED = PLATFORM === "macos" || PLATFORM === "windows" || PLATFORM === "linux";
+
 export type RegistrationPlatform = "MACOS" | "WINDOWS" | "LINUX" | "IOS" | "ANDROID";
 
 const REGISTRATION_PLATFORMS: Record<string, RegistrationPlatform> = {

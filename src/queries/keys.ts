@@ -7,5 +7,6 @@ export const queryKeys = {
   concordance: (translationId: string, word: string) => ["concordance", translationId, word] as const,
   search: (translationId: string, query: string) => ["search", translationId, query] as const,
   offlineInstalled: () => ["offline", "installed"] as const,
-  offlineAvailability: () => ["offline", "availability"] as const
+  offlineAvailability: () => ["offline", "availability"] as const,
+  chatgptAccount: () => ["chatgpt", "account"] as const
 };

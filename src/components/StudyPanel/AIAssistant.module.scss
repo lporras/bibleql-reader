@@ -23,6 +23,31 @@
   margin: 0 0 10px;
 }
 
+.setup {
+  margin-bottom: 18px;
+}
+
+.setupTitle {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.setupHelp {
+  margin: 0 0 16px;
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--muted);
+}
+
+.setupKey {
+  margin-top: 16px;
+  padding: 0;
+  font-size: 13px;
+  color: var(--accent-deep);
+  text-decoration: underline;
+}
+
 .suggestions {
   display: flex;
   flex-direction: column;

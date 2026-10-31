@@ -3,7 +3,7 @@
 //! OpenAI's open-source flow: OAuth 2 + OIDC with PKCE, a public client, and a
 //! loopback redirect. Everything that touches a token happens here, and none of
 //! them is ever returned to the webview. Commands fail with a stable code from
-//! the list in src/platform/chatgpt.ts, never with a provider's response.
+//! `ChatgptErrorCode` in src/types/ai.ts, never with a provider's response.
 
 use std::collections::BTreeMap;
 use std::io::{Read, Write};
@@ -730,6 +730,15 @@ pub async fn chatgpt_account(app: AppHandle, state: State<'_, ChatgptState>) -> 
     let store = state.store(&app)?;
     let _guard = state.record_lock.lock().await;
     Ok(load_record(&store).await?.session.as_ref().map(account_of))
+}
+
+/// Whether anyone has signed in on this install, so the UI only offers "Use a
+/// different account" when there is one to differ from.
+#[tauri::command]
+pub async fn chatgpt_has_registration(app: AppHandle, state: State<'_, ChatgptState>) -> CmdResult<bool> {
+    let store = state.store(&app)?;
+    let _guard = state.record_lock.lock().await;
+    Ok(load_record(&store).await?.last_client_id.is_some())
 }
 
 /// `true` once the server has confirmed the refresh token is gone. The docs treat

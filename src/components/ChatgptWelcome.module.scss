@@ -1,0 +1,56 @@
+@use "../styles/tokens" as t;
+@use "../styles/mixins" as *;
+
+// Above the AI settings dialog (z-index 40), which can be open behind it.
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 41;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(20, 19, 18, 0.42);
+}
+
+.welcome {
+  width: 100%;
+  max-width: 380px;
+  padding: 20px 22px;
+  background: var(--raise);
+  border: 1px solid var(--divider);
+  border-radius: t.$radius-md;
+  box-shadow: var(--shadow-lg);
+}
+
+.title {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.help {
+  margin: 0 0 12px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.link {
+  font-size: 13px;
+  color: var(--accent-deep);
+  text-decoration: underline;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.button {
+  padding: 6px 14px;
+  border: 1px solid var(--divider);
+  border-radius: t.$radius-md;
+  font-size: 13px;
+  @include hoverable-surface;
+}

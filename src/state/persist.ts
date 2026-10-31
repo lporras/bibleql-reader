@@ -17,6 +17,8 @@ export interface PersistedPrefs {
   aiProvider: AiProvider;
   /** The last model picked per provider. Claude has only one, so it isn't here. */
   aiModels: { chatgpt?: string };
+  /** OpenAI's guidelines show the plan-usage welcome only the first time. */
+  chatgptWelcomed: boolean;
 }
 
 const PREFS_KEY = "biblereader.prefs";

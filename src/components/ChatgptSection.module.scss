@@ -1,0 +1,91 @@
+@use "../styles/tokens" as t;
+@use "../styles/mixins" as *;
+
+.section {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--divider);
+}
+
+.title {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.help,
+.warning,
+.signedIn,
+.waiting,
+.notice {
+  margin: 0 0 12px;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+.help,
+.waiting {
+  color: var(--muted);
+}
+
+.signedIn {
+  margin-bottom: 4px;
+  overflow-wrap: anywhere;
+}
+
+.waiting {
+  margin-bottom: 0;
+  flex: 1;
+}
+
+.warning,
+.notice {
+  color: var(--accent-deep);
+}
+
+.notice {
+  margin: 12px 0 0;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.plainButton {
+  padding: 6px 14px;
+  border: 1px solid var(--divider);
+  border-radius: t.$radius-md;
+  font-size: 13px;
+  @include hoverable-surface;
+}
+
+// OpenAI's approved format: the white logo with this label, on black in both
+// themes, so it stays recognizable rather than following the app's palette.
+.continueButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border: 1px solid #000;
+  border-radius: t.$radius-md;
+  background: #000;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+
+  &:hover {
+    background: #2b2b2b;
+  }
+}
+
+.textButton,
+.link {
+  padding: 0;
+  font-size: 13px;
+  color: var(--accent-deep);
+  text-decoration: underline;
+}
+
