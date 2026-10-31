@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useReducer, type ReactNode } from "react";
 import type { Theme } from "../types/app";
 import type { Locale } from "../data/strings";
+import type { AiProvider } from "../types/ai";
 import { readAiKey, readPrefs, writeAiKey, writePrefs } from "./persist";
 import { syncSystemBars } from "../platform/host";
 
@@ -16,6 +17,8 @@ export interface AppState {
   transB: string;
   aiApiKey: string;
   keyDialogOpen: boolean;
+  aiProvider: AiProvider;
+  aiModels: { chatgpt?: string };
 }
 
 type Action =
@@ -27,7 +30,9 @@ type Action =
   | { type: "SET_TRANS_B"; id: string }
   | { type: "SAVE_KEYS"; aiApiKey: string }
   | { type: "OPEN_KEY_DIALOG" }
-  | { type: "CLOSE_KEY_DIALOG" };
+  | { type: "CLOSE_KEY_DIALOG" }
+  | { type: "SET_AI_PROVIDER"; provider: AiProvider }
+  | { type: "SET_CHATGPT_MODEL"; model: string };
 
 function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
@@ -49,6 +54,10 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, keyDialogOpen: true };
     case "CLOSE_KEY_DIALOG":
       return { ...state, keyDialogOpen: false };
+    case "SET_AI_PROVIDER":
+      return { ...state, aiProvider: action.provider };
+    case "SET_CHATGPT_MODEL":
+      return { ...state, aiModels: { ...state.aiModels, chatgpt: action.model } };
     default:
       return state;
   }
@@ -64,7 +73,9 @@ function init(): AppState {
     transA: prefs.transA ?? DEFAULT_TRANS_A,
     transB: prefs.transB ?? DEFAULT_TRANS_B,
     aiApiKey: readAiKey(),
-    keyDialogOpen: false
+    keyDialogOpen: false,
+    aiProvider: prefs.aiProvider ?? "anthropic",
+    aiModels: prefs.aiModels ?? {}
   };
 }
 
@@ -78,6 +89,8 @@ export interface AppStateActions {
   saveKeys(aiApiKey: string): void;
   openKeyDialog(): void;
   closeKeyDialog(): void;
+  setAiProvider(provider: AiProvider): void;
+  setChatgptModel(model: string): void;
 }
 
 interface AppStateContextValue {
@@ -97,9 +110,20 @@ export function AppStateProvider({ children }: { children: ReactNode }): React.J
       compare: state.compare,
       panelOpen: state.panelOpen,
       transA: state.transA,
-      transB: state.transB
+      transB: state.transB,
+      aiProvider: state.aiProvider,
+      aiModels: state.aiModels
     });
-  }, [state.theme, state.locale, state.compare, state.panelOpen, state.transA, state.transB]);
+  }, [
+    state.theme,
+    state.locale,
+    state.compare,
+    state.panelOpen,
+    state.transA,
+    state.transB,
+    state.aiProvider,
+    state.aiModels
+  ]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = state.theme;
@@ -119,7 +143,9 @@ export function AppStateProvider({ children }: { children: ReactNode }): React.J
         dispatch({ type: "SAVE_KEYS", aiApiKey });
       },
       openKeyDialog: () => dispatch({ type: "OPEN_KEY_DIALOG" }),
-      closeKeyDialog: () => dispatch({ type: "CLOSE_KEY_DIALOG" })
+      closeKeyDialog: () => dispatch({ type: "CLOSE_KEY_DIALOG" }),
+      setAiProvider: (provider: AiProvider) => dispatch({ type: "SET_AI_PROVIDER", provider }),
+      setChatgptModel: (model: string) => dispatch({ type: "SET_CHATGPT_MODEL", model })
     }),
     []
   );

@@ -251,11 +251,14 @@ pub async fn clear_install_token(app: AppHandle, state: State<'_, InstallState>)
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::time::{SystemTime, UNIX_EPOCH};
+    use std::sync::atomic::{AtomicU64, Ordering};
 
+    // A counter, not the clock: macOS timestamps tick in microseconds, so tests
+    // running in parallel could share a directory and delete it under each other.
     fn temp_path() -> PathBuf {
-        let nanos = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
-        std::env::temp_dir().join(format!("bibleql-install-{}-{nanos}", std::process::id())).join(FALLBACK_FILE)
+        static NEXT: AtomicU64 = AtomicU64::new(0);
+        let n = NEXT.fetch_add(1, Ordering::Relaxed);
+        std::env::temp_dir().join(format!("bibleql-install-{}-{n}", std::process::id())).join(FALLBACK_FILE)
     }
 
     #[test]

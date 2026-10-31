@@ -2,7 +2,7 @@ import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
 import { NoObjectGeneratedError, NoOutputGeneratedError, Output, streamText, type DeepPartial } from "ai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { z } from "zod";
-import type { AiAnswer, AiReference } from "../types/ai";
+import type { AiAnswer, AiReference, AskAiOptions } from "../types/ai";
 
 // Was the `ai:ask` Electron IPC handler (src/main/ipc/ai.ts), which ran
 // in the Node main process. Tauri has no Node side, so the whole thing
@@ -121,19 +121,16 @@ function partialAnswer(partial: DeepPartial<AiAnswer> | undefined): AiAnswer {
  * arrives, and the promise resolves with the complete, schema-validated
  * answer once the stream ends.
  */
-export async function askAi(
-  question: string,
-  locale: "en" | "es",
-  anthropicApiKey: string,
-  studyTitle?: string,
-  onPartial?: (answer: AiAnswer) => void
-): Promise<AiAnswer> {
-  if (!anthropicApiKey?.trim()) {
+export async function askAi({ question, locale, choice, credential, studyTitle, onPartial }: AskAiOptions): Promise<AiAnswer> {
+  if (choice.provider !== "anthropic") {
+    throw new Error(`Unsupported AI provider: ${choice.provider}`);
+  }
+  if (!credential?.trim()) {
     throw new Error("No Anthropic API key configured. Add one in the key dialog.");
   }
 
   const anthropic = createAnthropic({
-    apiKey: anthropicApiKey,
+    apiKey: credential,
     fetch: tauriFetch as unknown as typeof globalThis.fetch,
     headers: { "anthropic-dangerous-direct-browser-access": "true" }
   });
@@ -143,7 +140,7 @@ export async function askAi(
   // Anthropic's message that describeAiError digs out).
   let streamError: unknown;
   const result = streamText({
-    model: anthropic("claude-sonnet-5"),
+    model: anthropic(choice.model),
     output: Output.object({ schema: AiAnswerSchema }),
     system: buildSystemPrompt(locale, studyTitle),
     prompt: question,

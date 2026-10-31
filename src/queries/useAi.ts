@@ -1,6 +1,7 @@
 import { useMutation, type UseMutationResult } from "@tanstack/react-query";
 import { useAppState } from "../state/AppStateContext";
 import { askAi } from "../lib/ai";
+import { ANTHROPIC_CHOICE } from "../lib/aiModels";
 import type { AiAnswer } from "../types/ai";
 
 export interface AiQuestion {
@@ -15,6 +16,13 @@ export function useAi(): UseMutationResult<AiAnswer, Error, AiQuestion> {
   const { state } = useAppState();
   return useMutation({
     mutationFn: ({ question, studyTitle, onPartial }: AiQuestion) =>
-      askAi(question, state.locale, state.aiApiKey, studyTitle, onPartial)
+      askAi({
+        question,
+        locale: state.locale,
+        choice: ANTHROPIC_CHOICE,
+        credential: state.aiApiKey,
+        studyTitle,
+        onPartial
+      })
   });
 }
