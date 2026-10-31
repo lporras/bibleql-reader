@@ -49,7 +49,10 @@ unicode-normalization = "0.1"
 keyring-core = "1"
 uuid = { version = "1", features = ["v4"] }
 
-# No macOS store: see init_native_store in src/install.rs.
+# Release builds only: see init_native_store in src/secret_store.rs.
+[target.'cfg(target_os = "macos")'.dependencies]
+apple-native-keyring-store = { version = "1", features = ["keychain"] }
+
 [target.'cfg(target_os = "ios")'.dependencies]
 apple-native-keyring-store = { version = "1", features = ["protected"] }
 

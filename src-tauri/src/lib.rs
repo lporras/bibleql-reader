@@ -1,5 +1,6 @@
 mod install;
 mod offline;
+mod secret_store;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -22,7 +23,9 @@ pub fn run() {
         // Offline translation packages: download, verify, and query the
         // downloaded SQLite files. App commands need no capability entry.
         .manage(offline::OfflineState::default())
-        // Per-installation BibleQL token, kept in the OS credential store.
+        // The OS credential store, or a 0600 file where it can't be reached.
+        .manage(secret_store::SecretStores::default())
+        // Per-installation BibleQL token, kept in that store.
         .manage(install::InstallState::default())
         .invoke_handler(tauri::generate_handler![
             install::get_install_token,
