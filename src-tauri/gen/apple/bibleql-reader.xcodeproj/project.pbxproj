@@ -19,11 +19,12 @@
 		7F4F6684917EA291F13B8E4C /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E3B9B788893B14D5B3E78EA1 /* MetalKit.framework */; };
 		99CB91B8BB58678C105D8044 /* assets in Resources */ = {isa = PBXBuildFile; fileRef = FA063F445CC078897B6BBD7F /* assets */; };
 		A32DB9A38323B9940B945FC6 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3F47D971E8A8FF1BC4EB9C54 /* WebKit.framework */; };
-		E23C4D98921689A5FC1A2A34 /* libapp.a in Resources */ = {isa = PBXBuildFile; fileRef = ADF4B6DE2E699669CF960EFC /* libapp.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		042D9B1E23AC1F046255E1D1 /* libapp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libapp.a; sourceTree = "<group>"; };
 		0B2253D3F1BFADF2F038921A /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
+		1E7B31B19678FBE309E49F46 /* install.rs */ = {isa = PBXFileReference; path = install.rs; sourceTree = "<group>"; };
 		21B0221E2EF1984E9445CBB4 /* bibleql-reader_iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "bibleql-reader_iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		250F2F57AEBBFAC892F2D7D7 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		2B3C791B6E1B15F8D1732CD3 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -68,6 +69,7 @@
 			isa = PBXGroup;
 			children = (
 				42590D1A5153AF67C1B10462 /* debug */,
+				E9147436A9773714DB52D2B6 /* release */,
 			);
 			path = arm64;
 			sourceTree = "<group>";
@@ -131,6 +133,7 @@
 		A9E120EEBCD389AFEE001258 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				1E7B31B19678FBE309E49F46 /* install.rs */,
 				76F1D35C51DD73245B6FB942 /* lib.rs */,
 				D8A55C5F1E83B03EF0B15360 /* main.rs */,
 				2C125EC35877FFBB7B16F83C /* offline.rs */,
@@ -145,6 +148,14 @@
 				13DBF2EC709DA5B56A51A593 /* arm64 */,
 			);
 			path = Externals;
+			sourceTree = "<group>";
+		};
+		E9147436A9773714DB52D2B6 /* release */ = {
+			isa = PBXGroup;
+			children = (
+				042D9B1E23AC1F046255E1D1 /* libapp.a */,
+			);
+			path = release;
 			sourceTree = "<group>";
 		};
 		F5FCEB339B13A00921A9E44D /* bibleql-reader */ = {
@@ -171,7 +182,7 @@
 			);
 			sourceTree = "<group>";
 		};
-		"TEMP_35355BF3-DE4E-4B83-ABEC-CFBEE581BF95" /* x86_64 */ = {
+		"TEMP_D4EFB4FB-EA5C-4B5E-A00B-25CBD11F4E89" /* x86_64 */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -239,7 +250,6 @@
 				6065C842E18C88EF0CD7620A /* Assets.xcassets in Resources */,
 				0AC17BEB87387689577ABFB1 /* LaunchScreen.storyboard in Resources */,
 				99CB91B8BB58678C105D8044 /* assets in Resources */,
-				E23C4D98921689A5FC1A2A34 /* libapp.a in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -372,6 +382,7 @@
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = 2;
 				VALID_ARCHS = arm64;
+				DEVELOPMENT_TEAM = "B8MKX7D6E5";
 			};
 			name = release;
 		};
@@ -403,6 +414,7 @@
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = 2;
 				VALID_ARCHS = arm64;
+				DEVELOPMENT_TEAM = "B8MKX7D6E5";
 			};
 			name = debug;
 		};

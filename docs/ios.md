@@ -52,6 +52,9 @@ with `tool 'xcodebuild' requires Xcode, but active developer directory
    rustup target add aarch64-apple-ios aarch64-apple-ios-sim
    ```
 
+   You don't need to install `llvm-tools` yourself. `rust-toolchain.toml` lists it, and rustup
+   installs it on the first `cargo` run.
+
 5. Install **XcodeGen**. Tauri uses it to generate the `.xcodeproj` from `project.yml`:
 
    ```bash
@@ -189,6 +192,55 @@ App Store distribution has one more blocker: the `macos-private-api` feature in 
 macOS-only and inert on iOS, but Apple's review is a separate question (see the CLAUDE.md
 gotcha). It isn't needed for local or TestFlight testing.
 
+## Installing on someone else's iPad
+
+A `debugging` export (the default in `ExportOptions.plist`) is development-signed, so it only runs
+on iPads registered to your team, **and** with Developer Mode turned on. To skip Developer Mode,
+pick a different export method with `--export-method`. That flag overrides `ExportOptions.plist`,
+so you don't need to edit it. Both options below need a paid Apple Developer membership.
+
+### TestFlight (no UDID, nothing to plug in)
+
+1. In App Store Connect, go to *Apps → + → New App*. Choose iOS, and pick the bundle ID
+   `org.bibleql.reader`. If it isn't in the list, register it first at
+   <https://developer.apple.com/account/resources/identifiers>. The app name must be unique on the
+   App Store.
+2. Build an App Store export. Each upload needs a higher build number than the last:
+
+   ```bash
+   export APPLE_DEVELOPMENT_TEAM=<your team ID>
+   yarn tauri ios build --export-method app-store-connect --build-number 1
+   ```
+
+3. Upload the `.ipa` from `src-tauri/gen/apple/build/` with Apple's **Transporter** app (from the
+   Mac App Store; sign in, drag in the `.ipa`, click Deliver). Processing takes 5 to 30 minutes.
+   `Info.plist` declares `ITSAppUsesNonExemptEncryption = false` (the app only uses HTTPS), so
+   there's no export-compliance question.
+4. In App Store Connect, open the app's *TestFlight* tab and add a tester:
+   - **Internal testers** must be users on your App Store Connect team. Builds reach them right
+     away, with no review.
+   - **External testers** only need an email address. The first build of each version goes
+     through Beta App Review (usually within a day).
+5. The tester installs **TestFlight** from the App Store and accepts the invite. Builds expire
+   after 90 days, and new uploads appear as updates.
+
+### Ad hoc (direct install, no App Store Connect)
+
+1. Get the iPad's UDID. Plug it into the Mac and run `xcrun devicectl list devices`, or look in
+   Finder's device view. Add it at
+   <https://developer.apple.com/account/resources/devices>.
+2. Build, **after** registering the device, so it's in the provisioning profile:
+
+   ```bash
+   yarn tauri ios build --export-method release-testing
+   ```
+
+3. Install it. Plug the iPad in and use Xcode's *Window → Devices and Simulators* (drag the
+   `.ipa` onto *Installed Apps*), or run
+   `xcrun devicectl device install app --device <UDID> <path to .ipa>`.
+
+An iPad you register later needs a rebuild. Ad hoc profiles last a year.
+
 ## Troubleshooting
 
 - **`simctl list devices available` is empty.** No simulator runtime is installed. Run
@@ -225,6 +277,12 @@ gotcha). It isn't needed for local or TestFlight testing.
 - **The first boot of a new simulator takes 5 to 15 minutes**, and system apps such as Calendar
   may crash with `0x8BADF00D` (watchdog) while it settles. That's harmless and doesn't happen on
   later boots.
+- **`Undefined symbols for architecture arm64: "_init_plugin_dialog"`** (or `_init_plugin_opener`,
+  `_init_plugin_quicklook`), after a build warning `swift-rs: llvm-objcopy not found`. On Xcode 27,
+  swift-rs needs `llvm-objcopy` to export the Swift plugins' entry points. `rust-toolchain.toml`
+  installs it; if it's still missing, run `rustup component add llvm-tools`. Then clear the stale
+  builds with `cargo clean --release --target aarch64-apple-ios -p tauri -p tauri-plugin-dialog
+  -p tauri-plugin-opener -p tauri-plugin-quicklook` (run in `src-tauri`), and rebuild.
 - **`xcodegen: command not found` during `init`.** Run `brew install xcodegen`.
 - **"Signing for … requires a development team".** This only happens on device builds. Set
   `bundle.iOS.developmentTeam` or `APPLE_DEVELOPMENT_TEAM`.

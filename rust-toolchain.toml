@@ -1,0 +1,6 @@
+# rustup installs anything listed here on first use, so nobody has to remember a manual step.
+[toolchain]
+channel = "stable"
+# llvm-objcopy: swift-rs uses it to export the Swift plugins' @_cdecl symbols. Without it, Xcode 27
+# keeps them internal and the iOS link fails with "Undefined symbols: _init_plugin_dialog".
+components = ["llvm-tools"]
