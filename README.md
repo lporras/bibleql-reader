@@ -207,20 +207,6 @@ handful of genuine shell calls are stubbed and recorded (see `e2e/helpers.ts`). 
 and serves it with `vite preview`. BibleQL (image search included) is mocked, so it needs no API keys. CI (`.github/workflows/ci.yml`) runs both suites plus
 a `cargo check` of the Rust shell on every pull request.
 
-## macOS: "is damaged and can't be opened"
-
-Release builds aren't code-signed/notarized yet, so macOS Gatekeeper blocks them after download
-with `"BibleQL Reader" is damaged and can't be opened. You should move it to the Trash.` This is a
-Gatekeeper quarantine issue, not an actual corrupt download. Workaround:
-
-```bash
-xattr -cr "/Applications/BibleQL Reader.app"
-```
-
-(adjust the path if you didn't install it to `/Applications`). This only fixes it for the copy you
-run it on — every user hitting a release build hits the same dialog until the mac build is signed
-with an Apple Developer ID and notarized in CI.
-
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md), and [docs/onboarding.md](docs/onboarding.md) for an
