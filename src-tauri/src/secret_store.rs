@@ -217,6 +217,30 @@ pub fn select_store(native: Option<Arc<dyn SecretStore>>, file: Arc<FileStore>, 
     file
 }
 
+/// `select_store` for a record kept with `write_record`, whose chunk keys aren't
+/// known up front. The same rules apply: the file wins, and stays until the
+/// record has read back from the store.
+pub fn select_record_store(native: Option<Arc<dyn SecretStore>>, file: Arc<FileStore>, name: &str) -> Arc<dyn SecretStore> {
+    if let Some(native) = native {
+        let pointer = pointer_key(name);
+        if native.get(&pointer).is_ok() && migrate_record(native.as_ref(), &file, name).is_ok() {
+            return native;
+        }
+    }
+    file
+}
+
+fn migrate_record(store: &dyn SecretStore, file: &FileStore, name: &str) -> CmdResult<()> {
+    let Some(value) = read_record(file, name)? else {
+        return Ok(());
+    };
+    write_record(store, name, &value)?;
+    if read_record(store, name)?.as_deref() != Some(value.as_str()) {
+        return Err(format!("{name} didn't read back from the credential store"));
+    }
+    file.remove()
+}
+
 /// keyring-core's default store is process-wide, so it is set up once here and
 /// shared by everything that keeps secrets.
 #[derive(Default)]
@@ -293,7 +317,6 @@ fn delete_chunks(store: &dyn SecretStore, name: &str, generation: u64, count: us
 /// only the final pointer write commits them, so a failure part-way leaves the
 /// previous record intact. That matters for a refresh token, where the old one
 /// stops working the moment the server rotates it.
-#[allow(dead_code)] // Used by chatgpt.rs from the next phase on.
 pub fn write_record(store: &dyn SecretStore, name: &str, value: &str) -> CmdResult<()> {
     let previous = read_pointer(store, name)?;
     let generation = previous.map_or(0, |(generation, _)| generation + 1);
@@ -308,7 +331,6 @@ pub fn write_record(store: &dyn SecretStore, name: &str, value: &str) -> CmdResu
     Ok(())
 }
 
-#[allow(dead_code)] // Used by chatgpt.rs from the next phase on.
 pub fn read_record(store: &dyn SecretStore, name: &str) -> CmdResult<Option<String>> {
     let Some((generation, count)) = read_pointer(store, name)? else {
         return Ok(None);
@@ -319,16 +341,6 @@ pub fn read_record(store: &dyn SecretStore, name: &str) -> CmdResult<Option<Stri
         value.push_str(&part.ok_or_else(|| format!("{name}: missing chunk {index}"))?);
     }
     Ok(Some(value))
-}
-
-#[allow(dead_code)] // Used by chatgpt.rs from the next phase on.
-pub fn delete_record(store: &dyn SecretStore, name: &str) -> CmdResult<()> {
-    let previous = read_pointer(store, name)?;
-    store.delete(&pointer_key(name))?;
-    if let Some((generation, count)) = previous {
-        delete_chunks(store, name, generation, count);
-    }
-    Ok(())
 }
 
 #[cfg(test)]
@@ -639,20 +651,75 @@ mod tests {
     }
 
     #[test]
-    fn deleting_a_record_removes_everything() {
-        let store = MemoryStore::default();
-        write_record(&store, "chatgpt", &"a".repeat(CHUNK_BYTES * 2)).unwrap();
-        delete_record(&store, "chatgpt").unwrap();
-        assert_eq!(read_record(&store, "chatgpt").unwrap(), None);
-        assert_eq!(store.len(), 0);
-    }
-
-    #[test]
     fn records_do_not_disturb_other_keys() {
         let store = MemoryStore::default();
         store.seed(TOKEN, "bql_live_1");
         write_record(&store, "chatgpt", "value").unwrap();
-        delete_record(&store, "chatgpt").unwrap();
+        write_record(&store, "chatgpt", "value2").unwrap();
         assert_eq!(store.value(TOKEN).as_deref(), Some("bql_live_1"));
+    }
+
+    // -- Choosing a store for a record ---------------------------------------
+
+    fn select_record(native: &Arc<MemoryStore>, file: &Arc<FileStore>) -> Arc<dyn SecretStore> {
+        select_record_store(Some(native.clone() as Arc<dyn SecretStore>), file.clone(), "chatgpt")
+    }
+
+    fn file_with_record(value: &str) -> Arc<FileStore> {
+        let file = Arc::new(FileStore::new(temp_path()));
+        write_record(file.as_ref(), "chatgpt", value).unwrap();
+        file
+    }
+
+    #[test]
+    fn a_record_moves_from_the_file_to_the_store_whole() {
+        let value = "r".repeat(CHUNK_BYTES * 3);
+        let native = Arc::new(MemoryStore::default());
+        let file = file_with_record(&value);
+
+        let chosen = select_record(&native, &file);
+
+        assert_eq!(read_record(chosen.as_ref(), "chatgpt").unwrap().as_deref(), Some(value.as_str()));
+        assert_eq!(read_record(native.as_ref(), "chatgpt").unwrap().as_deref(), Some(value.as_str()));
+        assert!(!file.path.exists());
+        cleanup(&file);
+    }
+
+    #[test]
+    fn a_record_in_the_file_replaces_an_older_one_in_the_store() {
+        let native = Arc::new(MemoryStore::default());
+        write_record(native.as_ref(), "chatgpt", "older").unwrap();
+        let file = file_with_record("newer");
+
+        select_record(&native, &file);
+
+        assert_eq!(read_record(native.as_ref(), "chatgpt").unwrap().as_deref(), Some("newer"));
+        cleanup(&file);
+    }
+
+    #[test]
+    fn a_failed_record_move_keeps_using_the_file() {
+        let native = Arc::new(MemoryStore { sets_allowed: Some(1), ..Default::default() });
+        let file = file_with_record(&"r".repeat(CHUNK_BYTES * 3));
+
+        let chosen = select_record(&native, &file);
+
+        assert!(file.path.exists());
+        assert_eq!(read_record(chosen.as_ref(), "chatgpt").unwrap().map(|v| v.len()), Some(CHUNK_BYTES * 3));
+        assert_eq!(read_record(native.as_ref(), "chatgpt").unwrap(), None);
+        cleanup(&file);
+    }
+
+    #[test]
+    fn with_no_record_in_the_file_the_store_is_used_untouched() {
+        let native = Arc::new(MemoryStore::default());
+        write_record(native.as_ref(), "chatgpt", "kept").unwrap();
+        let sets = *native.sets.lock().unwrap();
+        let file = Arc::new(FileStore::new(temp_path()));
+
+        let chosen = select_record(&native, &file);
+
+        assert_eq!(read_record(chosen.as_ref(), "chatgpt").unwrap().as_deref(), Some("kept"));
+        assert_eq!(*native.sets.lock().unwrap(), sets);
     }
 }

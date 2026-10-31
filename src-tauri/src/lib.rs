@@ -1,3 +1,4 @@
+mod chatgpt;
 mod install;
 mod offline;
 mod secret_store;
@@ -27,7 +28,13 @@ pub fn run() {
         .manage(secret_store::SecretStores::default())
         // Per-installation BibleQL token, kept in that store.
         .manage(install::InstallState::default())
+        // Sign in with ChatGPT. Its tokens stay on this side of the IPC boundary.
+        .manage(chatgpt::ChatgptState::default())
         .invoke_handler(tauri::generate_handler![
+            chatgpt::chatgpt_sign_in,
+            chatgpt::chatgpt_cancel_sign_in,
+            chatgpt::chatgpt_account,
+            chatgpt::chatgpt_sign_out,
             install::get_install_token,
             install::set_install_token,
             install::clear_install_token,
