@@ -12,6 +12,32 @@ export interface StringsShape {
   aiSetupTitle: string;
   aiSetupHelp: string;
   aiSetupKey: string;
+  aiProvider: string;
+  aiModel: string;
+  aiClaudeNeedsKey: string;
+  aiChooseModel: string;
+  aiChooseFirst: string;
+  aiModelsLoading: string;
+  aiModelsError: string;
+  aiModelsEmpty: string;
+  aiModelGone: string;
+  aiModelsRefresh: string;
+  aiModelsRefreshing: string;
+  aiModelsRefreshed: string;
+  chatgptUsingPlan: string;
+  chatgptFailure: {
+    limit: string;
+    unavailable: string;
+    notEligible: string;
+    modelUnavailable: string;
+    unsupported: string;
+    credential: string;
+    restricted: string;
+    incomplete: string;
+    interrupted: string;
+    badFormat: string;
+    generic: string;
+  };
   chatgptPlanTitle: string;
   chatgptPlanHelp: string;
   chatgptPlanNote: string;
@@ -223,6 +249,32 @@ export const STR: Record<Locale, StringsShape> = {
     aiSetupTitle: "Set up the assistant",
     aiSetupHelp: "The assistant needs an AI account to answer your questions. Connect one to get started.",
     aiSetupKey: "Use an Anthropic API key",
+    aiProvider: "Answers from",
+    aiModel: "Model",
+    aiClaudeNeedsKey: "Claude (add a key)",
+    aiChooseModel: "Choose a model",
+    aiChooseFirst: "Choose who answers before asking.",
+    aiModelsLoading: "Loading your models…",
+    aiModelsError: "Couldn't load your ChatGPT models. Check your connection and refresh them in AI settings.",
+    aiModelsEmpty: "Your ChatGPT account has no models available for this app.",
+    aiModelGone: "The model you were using is no longer available. Choose another to keep asking.",
+    aiModelsRefresh: "Refresh models",
+    aiModelsRefreshing: "Refreshing…",
+    aiModelsRefreshed: "Models up to date",
+    chatgptUsingPlan: "Using ChatGPT plan",
+    chatgptFailure: {
+      limit: "You've reached your ChatGPT plan's limit for this app. See \"Manage usage\" in AI settings, or switch to Claude.",
+      unavailable: "ChatGPT plan usage is temporarily unavailable. Please try again in a moment.",
+      notEligible: "This ChatGPT account can't use its plan in this app. It needs a Plus or Pro plan.",
+      modelUnavailable: "That model isn't available for this app. Choose another one above.",
+      unsupported: "ChatGPT can't do this with your plan:",
+      credential: "ChatGPT didn't accept your account for this request.",
+      restricted: "ChatGPT blocked this request for your account or region.",
+      incomplete: "ChatGPT stopped before finishing that answer. Please try again.",
+      interrupted: "The connection dropped before the answer finished. Please try again.",
+      badFormat: "The assistant's reply didn't match the expected format. Try rephrasing.",
+      generic: "ChatGPT couldn't answer that. Please try again."
+    },
     chatgptPlanTitle: "Use your ChatGPT plan",
     chatgptPlanHelp:
       "Sign in so the assistant can answer using your ChatGPT account. You need a Plus or Pro plan. This app doesn't charge you anything.",
@@ -251,6 +303,8 @@ export const STR: Record<Locale, StringsShape> = {
       invalid_client: "OpenAI rejected this app's registration. Try \"Use a different account\".",
       invalid_grant: "That sign-in expired before it could finish. Please try again.",
       invalid_id_token: "OpenAI's sign-in response couldn't be verified. Please try again.",
+      models_failed: "Couldn't load your ChatGPT models.",
+      plan_disabled: "You haven't allowed this app to use your ChatGPT plan. Reconnect in AI settings.",
       network: "Couldn't reach OpenAI. Check your connection and try again.",
       oauth_error: "Sign-in with ChatGPT failed. Please try again.",
       random: "Sign-in with ChatGPT failed. Please try again.",
@@ -453,6 +507,32 @@ export const STR: Record<Locale, StringsShape> = {
     aiSetupTitle: "Configura el asistente",
     aiSetupHelp: "El asistente necesita una cuenta de IA para responder tus preguntas. Conecta una para empezar.",
     aiSetupKey: "Usar una clave de API de Anthropic",
+    aiProvider: "Responde",
+    aiModel: "Modelo",
+    aiClaudeNeedsKey: "Claude (agrega una clave)",
+    aiChooseModel: "Elige un modelo",
+    aiChooseFirst: "Elige quién responde antes de preguntar.",
+    aiModelsLoading: "Cargando tus modelos…",
+    aiModelsError: "No se pudieron cargar tus modelos de ChatGPT. Revisa tu conexión y actualízalos en Ajustes de IA.",
+    aiModelsEmpty: "Tu cuenta de ChatGPT no tiene modelos disponibles para esta aplicación.",
+    aiModelGone: "El modelo que usabas ya no está disponible. Elige otro para seguir preguntando.",
+    aiModelsRefresh: "Actualizar modelos",
+    aiModelsRefreshing: "Actualizando…",
+    aiModelsRefreshed: "Modelos al día",
+    chatgptUsingPlan: "Usando tu plan de ChatGPT",
+    chatgptFailure: {
+      limit: "Llegaste al límite de tu plan de ChatGPT para esta aplicación. Mira \"Administrar uso\" en Ajustes de IA o cambia a Claude.",
+      unavailable: "El uso de tu plan de ChatGPT no está disponible por ahora. Inténtalo de nuevo en un momento.",
+      notEligible: "Esta cuenta de ChatGPT no puede usar su plan en esta aplicación. Necesita un plan Plus o Pro.",
+      modelUnavailable: "Ese modelo no está disponible para esta aplicación. Elige otro arriba.",
+      unsupported: "ChatGPT no puede hacer esto con tu plan:",
+      credential: "ChatGPT no aceptó tu cuenta para esta solicitud.",
+      restricted: "ChatGPT bloqueó esta solicitud para tu cuenta o región.",
+      incomplete: "ChatGPT se detuvo antes de terminar la respuesta. Inténtalo de nuevo.",
+      interrupted: "La conexión se cortó antes de terminar la respuesta. Inténtalo de nuevo.",
+      badFormat: "La respuesta del asistente no tuvo el formato esperado. Intenta reformular la pregunta.",
+      generic: "ChatGPT no pudo responder. Inténtalo de nuevo."
+    },
     chatgptPlanTitle: "Usa tu plan de ChatGPT",
     chatgptPlanHelp:
       "Inicia sesión para que el asistente responda con tu cuenta de ChatGPT. Necesitas un plan Plus o Pro. Esta aplicación no te cobra nada.",
@@ -481,6 +561,8 @@ export const STR: Record<Locale, StringsShape> = {
       invalid_client: "OpenAI rechazó el registro de esta aplicación. Prueba \"Usar otra cuenta\".",
       invalid_grant: "Ese inicio de sesión caducó antes de terminar. Inténtalo de nuevo.",
       invalid_id_token: "No se pudo verificar la respuesta de inicio de sesión de OpenAI. Inténtalo de nuevo.",
+      models_failed: "No se pudieron cargar tus modelos de ChatGPT.",
+      plan_disabled: "No has permitido que esta aplicación use tu plan de ChatGPT. Vuelve a conectar en Ajustes de IA.",
       network: "No se pudo conectar con OpenAI. Revisa tu conexión e inténtalo de nuevo.",
       oauth_error: "Falló el inicio de sesión con ChatGPT. Inténtalo de nuevo.",
       random: "Falló el inicio de sesión con ChatGPT. Inténtalo de nuevo.",

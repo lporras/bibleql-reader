@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useAppState } from "../state/AppStateContext";
 import { STR } from "../data/strings";
 import { CHATGPT_SUPPORTED } from "../platform/host";
+import { useChatgptAccount } from "../queries/useChatgptAccount";
 import { ChatgptSection } from "./ChatgptSection";
 import styles from "./KeyDialog.module.scss";
 
@@ -10,6 +11,7 @@ export function KeyDialog(): JSX.Element {
   const { state, actions } = useAppState();
   const t = STR[state.locale];
   const queryClient = useQueryClient();
+  const chatgptReady = !!useChatgptAccount().data?.account?.planEnabled;
   const [aiKeyInput, setAiKeyInput] = useState(state.aiApiKey);
 
   useEffect(() => {
@@ -18,6 +20,8 @@ export function KeyDialog(): JSX.Element {
 
   function handleSave(): void {
     actions.saveKeys(aiKeyInput.trim());
+    // A key saved while ChatGPT can't answer is how someone picks Claude.
+    if (aiKeyInput.trim() && !chatgptReady) actions.setAiProvider("anthropic");
     // A changed key doesn't change any query's cache key, so nothing would
     // otherwise refetch — force everything to reload against the new key.
     void queryClient.invalidateQueries();

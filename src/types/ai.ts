@@ -34,8 +34,10 @@ export type ChatgptErrorCode =
   | "invalid_client"
   | "invalid_grant"
   | "invalid_id_token"
+  | "models_failed"
   | "network"
   | "oauth_error"
+  | "plan_disabled"
   | "random"
   | "reauth_required"
   | "refresh_failed"
@@ -43,6 +45,30 @@ export type ChatgptErrorCode =
   | "sign_out_first"
   | "storage"
   | "timeout";
+
+export interface ChatgptModel {
+  slug: string;
+  displayName: string;
+}
+
+export interface ChatgptRequest {
+  model: string;
+  instructions: string;
+  input: string;
+}
+
+/** A reply as it arrives from src-tauri/src/chatgpt.rs. Only `completed` is success. */
+export type ChatgptEvent =
+  | { type: "delta"; text: string }
+  | { type: "completed" }
+  | ({ type: "failed" } & ChatgptFailure);
+
+export interface ChatgptFailure {
+  status: number | null;
+  code: string | null;
+  param: string | null;
+  message: string | null;
+}
 
 export interface AskAiOptions {
   question: string;

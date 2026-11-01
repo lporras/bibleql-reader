@@ -8,5 +8,6 @@ export const queryKeys = {
   search: (translationId: string, query: string) => ["search", translationId, query] as const,
   offlineInstalled: () => ["offline", "installed"] as const,
   offlineAvailability: () => ["offline", "availability"] as const,
-  chatgptAccount: () => ["chatgpt", "account"] as const
+  chatgptAccount: () => ["chatgpt", "account"] as const,
+  chatgptModels: (sub: string) => ["chatgpt", "models", sub] as const
 };

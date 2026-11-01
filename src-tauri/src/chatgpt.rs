@@ -3,7 +3,8 @@
 //! OpenAI's open-source flow: OAuth 2 + OIDC with PKCE, a public client, and a
 //! loopback redirect. Everything that touches a token happens here, and none of
 //! them is ever returned to the webview. Commands fail with a stable code from
-//! `ChatgptErrorCode` in src/types/ai.ts, never with a provider's response.
+//! `ChatgptErrorCode` in src/types/ai.ts. The only provider text that crosses is
+//! a failed reply's short diagnostic message, which holds no credentials.
 
 use std::collections::BTreeMap;
 use std::io::{Read, Write};
@@ -18,6 +19,7 @@ use ring::rand::{SecureRandom, SystemRandom};
 use ring::signature::{RsaPublicKeyComponents, RSA_PKCS1_2048_8192_SHA256};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use tauri::ipc::Channel;
 use tauri::{AppHandle, Manager, State};
 use tauri_plugin_http::reqwest;
 use tauri_plugin_opener::OpenerExt;
@@ -29,6 +31,8 @@ const TOKEN_URL: &str = "https://auth.openai.com/api/accounts/oauth/token";
 const DISCOVERY_URL: &str = "https://auth.openai.com/.well-known/openid-configuration";
 const ISSUER: &str = "https://auth.openai.com";
 const RESOURCE: &str = "https://api.openai.com/v1";
+const MODELS_URL: &str = "https://api.openai.com/v1/models";
+const RESPONSES_URL: &str = "https://api.openai.com/v1/responses";
 const SCOPES: &str = "openid profile email offline_access resource.invoke chatgpt.tokens.use.direct";
 /// Without this scope the sign-in is valid but can't use the ChatGPT plan.
 const DIRECT_SCOPE: &str = "chatgpt.tokens.use.direct";
@@ -41,6 +45,8 @@ const FALLBACK_FILE: &str = "chatgpt.json";
 
 const SIGN_IN_TIMEOUT: Duration = Duration::from_secs(5 * 60);
 const HTTP_TIMEOUT: Duration = Duration::from_secs(30);
+/// How long a reply may go silent before it counts as interrupted.
+const STREAM_IDLE_TIMEOUT: Duration = Duration::from_secs(120);
 /// Refresh this long before the access token actually expires.
 const REFRESH_MARGIN_SECS: u64 = 120;
 /// ID token clock skew allowance.
@@ -601,14 +607,17 @@ async fn save_record(store: &Arc<dyn SecretStore>, record: Record) -> CmdResult<
 
 /// A usable access token for a request to OpenAI, refreshed first if it is about
 /// to expire. Stays on this side of the IPC boundary.
-#[allow(dead_code)] // Used by the Responses and model commands from the next phases on.
-pub(crate) async fn valid_access_token(app: &AppHandle, state: &ChatgptState) -> CmdResult<String> {
+async fn valid_access_token(app: &AppHandle, state: &ChatgptState) -> CmdResult<String> {
     let store = state.store(app)?;
     let _guard = state.record_lock.lock().await;
     let mut record = load_record(&store).await?;
     let Some(session) = record.session.as_mut() else {
         return Err("reauth_required".to_owned());
     };
+    // A valid sign-in alone doesn't authorize plan usage.
+    if !account_of(session).plan_enabled {
+        return Err("plan_disabled".to_owned());
+    }
     let now = now_secs();
     if !needs_refresh(session, now) {
         return Ok(session.access_token.clone());
@@ -634,6 +643,209 @@ pub(crate) async fn valid_access_token(app: &AppHandle, state: &ChatgptState) ->
         Err(TokenError::Rejected(Some(code))) if code == "invalid_client" => Err("invalid_client".to_owned()),
         Err(TokenError::Rejected(_)) => Err("refresh_failed".to_owned()),
         Err(TokenError::Network) => Err("network".to_owned()),
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Models and inference
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatgptModel {
+    slug: String,
+    display_name: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct ModelList {
+    models: Vec<ModelEntry>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ModelEntry {
+    slug: String,
+    display_name: Option<String>,
+    visibility: Option<String>,
+}
+
+/// Note `models`, not the `data` of the ordinary OpenAI API.
+fn visible_models(body: &str) -> Result<Vec<ChatgptModel>, ()> {
+    let list: ModelList = serde_json::from_str(body).map_err(|_| ())?;
+    Ok(list
+        .models
+        .into_iter()
+        .filter(|m| m.visibility.as_deref() == Some("list"))
+        .map(|m| ChatgptModel { display_name: m.display_name.unwrap_or_else(|| m.slug.clone()), slug: m.slug })
+        .collect())
+}
+
+/// Only these fields: this route rejects `temperature`, `max_output_tokens` and
+/// others, and requires `store: false` and `stream: true`. System prompts go in
+/// `instructions`, since `role: "system"` input items are rejected too.
+fn responses_body(model: &str, instructions: &str, input: &str) -> serde_json::Value {
+    serde_json::json!({
+        "model": model,
+        "instructions": instructions,
+        "input": [{ "role": "user", "content": input }],
+        "store": false,
+        "stream": true
+    })
+}
+
+/// What the webview hears about a reply: text, and how it ended.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(tag = "type", rename_all = "camelCase")]
+pub enum ResponseEvent {
+    Delta {
+        text: String,
+    },
+    Completed,
+    Failed {
+        status: Option<u16>,
+        code: Option<String>,
+        param: Option<String>,
+        message: Option<String>,
+    },
+}
+
+impl ResponseEvent {
+    fn is_terminal(&self) -> bool {
+        !matches!(self, ResponseEvent::Delta { .. })
+    }
+}
+
+/// The docs call error text diagnostic, so it's only ever a hint for the UI.
+fn short_text(value: Option<&serde_json::Value>) -> Option<String> {
+    value.and_then(|v| v.as_str()).map(|s| s.chars().take(200).collect())
+}
+
+fn failure(status: Option<u16>, error: Option<&serde_json::Value>) -> ResponseEvent {
+    let field = |name: &str| short_text(error.and_then(|e| e.get(name)));
+    ResponseEvent::Failed { status, code: field("code"), param: field("param"), message: field("message") }
+}
+
+fn interrupted() -> ResponseEvent {
+    ResponseEvent::Failed { status: None, code: Some("stream_interrupted".to_owned()), param: None, message: None }
+}
+
+/// A failure before the stream opened: `{"error":{…}}`, or `{"detail":"…"}`.
+fn failure_from_body(status: u16, body: &str) -> ResponseEvent {
+    let value: serde_json::Value = serde_json::from_str(body).unwrap_or_default();
+    match value.get("error") {
+        Some(error) if error.is_object() => failure(Some(status), Some(error)),
+        _ => ResponseEvent::Failed {
+            status: Some(status),
+            code: None,
+            param: None,
+            message: short_text(value.get("detail")),
+        },
+    }
+}
+
+/// Only `response.completed` is success. Everything else that ends a reply is a
+/// failure, including `response.incomplete`, whose text must not pass for an answer.
+fn event_from_json(value: &serde_json::Value) -> Option<ResponseEvent> {
+    match value.get("type")?.as_str()? {
+        "response.output_text.delta" => Some(ResponseEvent::Delta { text: value.get("delta")?.as_str()?.to_owned() }),
+        "response.completed" => Some(ResponseEvent::Completed),
+        "response.failed" => Some(failure(None, value.get("response").and_then(|r| r.get("error")))),
+        "response.incomplete" => Some(ResponseEvent::Failed {
+            status: None,
+            code: Some("incomplete".to_owned()),
+            param: short_text(value.pointer("/response/incomplete_details/reason")),
+            message: None,
+        }),
+        "error" => Some(failure(None, value.get("error").or(Some(value)))),
+        _ => None,
+    }
+}
+
+/// Server-sent events from chunks that can split anywhere, even inside a
+/// multi-byte character, so it buffers bytes and decodes only whole events.
+#[derive(Default)]
+struct SseParser {
+    buffer: Vec<u8>,
+}
+
+impl SseParser {
+    fn push(&mut self, chunk: &[u8]) -> Vec<ResponseEvent> {
+        self.buffer.extend_from_slice(chunk);
+        let mut events = Vec::new();
+        while let Some((end, separator)) = Self::next_boundary(&self.buffer) {
+            let block: Vec<u8> = self.buffer.drain(..end + separator).take(end).collect();
+            events.extend(Self::parse_block(&block));
+        }
+        events
+    }
+
+    /// An event the stream ended on without its closing blank line.
+    fn finish(&mut self) -> Option<ResponseEvent> {
+        Self::parse_block(&std::mem::take(&mut self.buffer))
+    }
+
+    fn next_boundary(buffer: &[u8]) -> Option<(usize, usize)> {
+        let lf = buffer.windows(2).position(|w| w == b"\n\n").map(|i| (i, 2));
+        let crlf = buffer.windows(4).position(|w| w == b"\r\n\r\n").map(|i| (i, 4));
+        match (lf, crlf) {
+            (Some(a), Some(b)) => Some(if a.0 < b.0 { a } else { b }),
+            (a, b) => a.or(b),
+        }
+    }
+
+    fn parse_block(block: &[u8]) -> Option<ResponseEvent> {
+        let text = String::from_utf8_lossy(block);
+        let data: Vec<&str> = text
+            .lines()
+            .filter_map(|line| line.strip_prefix("data:"))
+            .map(|line| line.strip_prefix(' ').unwrap_or(line))
+            .collect();
+        let value: serde_json::Value = serde_json::from_str(&data.join("\n")).ok()?;
+        event_from_json(&value)
+    }
+}
+
+/// No total timeout, unlike `http_client`: a long reply is fine, a silent one isn't.
+fn streaming_client() -> CmdResult<reqwest::Client> {
+    reqwest::Client::builder()
+        .connect_timeout(HTTP_TIMEOUT)
+        .read_timeout(STREAM_IDLE_TIMEOUT)
+        .build()
+        .map_err(|_| "network".to_owned())
+}
+
+async fn stream_response(token: &str, body: &serde_json::Value, on_event: &Channel<ResponseEvent>) -> ResponseEvent {
+    let Ok(client) = streaming_client() else {
+        return interrupted();
+    };
+    let sent = client
+        .post(RESPONSES_URL)
+        .bearer_auth(token)
+        .header("Accept", "text/event-stream")
+        .header("Content-Type", "application/json")
+        .body(body.to_string())
+        .send()
+        .await;
+    let Ok(mut response) = sent else {
+        return ResponseEvent::Failed { status: None, code: Some("network".to_owned()), param: None, message: None };
+    };
+    let status = response.status();
+    if !status.is_success() {
+        let text = response.text().await.unwrap_or_default();
+        return failure_from_body(status.as_u16(), &text);
+    }
+    let mut parser = SseParser::default();
+    loop {
+        let chunk = match response.chunk().await {
+            Ok(Some(chunk)) => chunk,
+            Ok(None) => return parser.finish().filter(ResponseEvent::is_terminal).unwrap_or_else(interrupted),
+            Err(_) => return interrupted(),
+        };
+        for event in parser.push(&chunk) {
+            if event.is_terminal() {
+                return event;
+            }
+            let _ = on_event.send(event);
+        }
     }
 }
 
@@ -768,6 +980,35 @@ async fn revoke(session: &Session) -> bool {
         }
     }
     false
+}
+
+#[tauri::command]
+pub async fn chatgpt_models(app: AppHandle, state: State<'_, ChatgptState>) -> CmdResult<Vec<ChatgptModel>> {
+    let token = valid_access_token(&app, &state).await?;
+    let response = http_client()?.get(MODELS_URL).bearer_auth(token).send().await.map_err(|_| "network".to_owned())?;
+    if !response.status().is_success() {
+        return Err("models_failed".to_owned());
+    }
+    let body = response.text().await.map_err(|_| "network".to_owned())?;
+    visible_models(&body).map_err(|_| "models_failed".to_owned())
+}
+
+/// Streams one reply. Always ends on a terminal event once it has started. An
+/// `Err` means nothing was sent, and nothing here ever resends a request.
+#[tauri::command]
+pub async fn chatgpt_respond(
+    app: AppHandle,
+    state: State<'_, ChatgptState>,
+    model: String,
+    instructions: String,
+    input: String,
+    on_event: Channel<ResponseEvent>,
+) -> CmdResult<()> {
+    let token = valid_access_token(&app, &state).await?;
+    let body = responses_body(&model, &instructions, &input);
+    let last = stream_response(&token, &body, &on_event).await;
+    let _ = on_event.send(last);
+    Ok(())
 }
 
 #[derive(Debug, Serialize)]
@@ -1221,6 +1462,184 @@ mod tests {
         assert_eq!(error_code(r#"{"code":"refresh_token_reused"}"#).as_deref(), Some("refresh_token_reused"));
         assert_eq!(error_code(r#"{"detail":"nope"}"#), None);
         assert_eq!(error_code("<html>"), None);
+    }
+
+    // -- Models --------------------------------------------------------------
+
+    #[test]
+    fn only_listed_models_are_offered() {
+        let body = r#"{"models":[
+            {"slug":"gpt-a","display_name":"GPT A","visibility":"list"},
+            {"slug":"gpt-hidden","display_name":"Hidden","visibility":"hide"},
+            {"slug":"gpt-none","display_name":"No visibility"},
+            {"slug":"gpt-b","visibility":"list"}
+        ]}"#;
+        assert_eq!(
+            visible_models(body).unwrap(),
+            vec![
+                ChatgptModel { slug: "gpt-a".into(), display_name: "GPT A".into() },
+                ChatgptModel { slug: "gpt-b".into(), display_name: "gpt-b".into() },
+            ]
+        );
+    }
+
+    #[test]
+    fn a_model_list_in_another_shape_fails() {
+        assert!(visible_models(r#"{"data":[{"id":"gpt-a"}]}"#).is_err());
+        assert!(visible_models("<html>").is_err());
+    }
+
+    // -- Inference -----------------------------------------------------------
+
+    #[test]
+    fn the_request_body_is_exactly_what_this_route_accepts() {
+        assert_eq!(
+            responses_body("gpt-a", "Be careful.", "Who is Melchizedek?"),
+            serde_json::json!({
+                "model": "gpt-a",
+                "instructions": "Be careful.",
+                "input": [{ "role": "user", "content": "Who is Melchizedek?" }],
+                "store": false,
+                "stream": true
+            })
+        );
+    }
+
+    fn sse(json: &str) -> String {
+        format!("event: x\ndata: {json}\n\n")
+    }
+
+    fn delta(text: &str) -> ResponseEvent {
+        ResponseEvent::Delta { text: text.into() }
+    }
+
+    #[test]
+    fn deltas_then_completion() {
+        let stream = [
+            sse(r#"{"type":"response.created"}"#),
+            sse(r#"{"type":"response.output_text.delta","delta":"Hel"}"#),
+            sse(r#"{"type":"response.output_text.delta","delta":"lo"}"#),
+            sse(r#"{"type":"response.completed","response":{}}"#),
+        ]
+        .concat();
+        assert_eq!(
+            SseParser::default().push(stream.as_bytes()),
+            vec![delta("Hel"), delta("lo"), ResponseEvent::Completed]
+        );
+    }
+
+    #[test]
+    fn events_split_across_chunks_even_inside_a_character() {
+        let stream = sse(r#"{"type":"response.output_text.delta","delta":"Señor 𝄞"}"#);
+        let mut parser = SseParser::default();
+        let mut events = Vec::new();
+        for byte in stream.as_bytes() {
+            events.extend(parser.push(std::slice::from_ref(byte)));
+        }
+        assert_eq!(events, vec![delta("Señor 𝄞")]);
+    }
+
+    #[test]
+    fn crlf_separated_events_parse() {
+        let stream = "data: {\"type\":\"response.completed\"}\r\n\r\n";
+        assert_eq!(SseParser::default().push(stream.as_bytes()), vec![ResponseEvent::Completed]);
+    }
+
+    #[test]
+    fn a_usage_limit_mid_stream_fails_with_its_code() {
+        let stream = sse(
+            r#"{"type":"response.failed","response":{"error":{"code":"subscription_sharing_usage_limit_exceeded","message":"Limit."}}}"#,
+        );
+        assert_eq!(
+            SseParser::default().push(stream.as_bytes()),
+            vec![ResponseEvent::Failed {
+                status: None,
+                code: Some("subscription_sharing_usage_limit_exceeded".into()),
+                param: None,
+                message: Some("Limit.".into()),
+            }]
+        );
+    }
+
+    #[test]
+    fn an_incomplete_response_is_a_failure() {
+        let stream = sse(r#"{"type":"response.incomplete","response":{"incomplete_details":{"reason":"max_output_tokens"}}}"#);
+        let events = SseParser::default().push(stream.as_bytes());
+        assert_eq!(
+            events,
+            vec![ResponseEvent::Failed {
+                status: None,
+                code: Some("incomplete".into()),
+                param: Some("max_output_tokens".into()),
+                message: None,
+            }]
+        );
+        assert!(events[0].is_terminal());
+    }
+
+    #[test]
+    fn an_error_event_carries_its_code_and_param() {
+        for stream in [
+            sse(r#"{"type":"error","error":{"code":"subscription_sharing_unsupported_capability","param":"model"}}"#),
+            sse(r#"{"type":"error","code":"subscription_sharing_unsupported_capability","param":"model"}"#),
+        ] {
+            let events = SseParser::default().push(stream.as_bytes());
+            let ResponseEvent::Failed { code, param, .. } = &events[0] else {
+                panic!("{events:?}");
+            };
+            assert_eq!(code.as_deref(), Some("subscription_sharing_unsupported_capability"));
+            assert_eq!(param.as_deref(), Some("model"));
+        }
+    }
+
+    #[test]
+    fn a_stream_that_just_stops_has_no_terminal_event() {
+        let mut parser = SseParser::default();
+        let events = parser.push(sse(r#"{"type":"response.output_text.delta","delta":"Hel"}"#).as_bytes());
+        assert!(!events[0].is_terminal());
+        assert_eq!(parser.finish(), None);
+    }
+
+    #[test]
+    fn a_completion_without_its_closing_blank_line_still_counts() {
+        let mut parser = SseParser::default();
+        assert_eq!(parser.push(b"data: {\"type\":\"response.completed\"}"), vec![]);
+        assert_eq!(parser.finish(), Some(ResponseEvent::Completed));
+    }
+
+    #[test]
+    fn noise_in_the_stream_is_skipped() {
+        let stream = ": comment\n\ndata: [DONE]\n\ndata: {not json}\n\ndata: {\"type\":\"response.completed\"}\n\n";
+        assert_eq!(SseParser::default().push(stream.as_bytes()), vec![ResponseEvent::Completed]);
+    }
+
+    #[test]
+    fn failures_before_the_stream_keep_their_status_and_code() {
+        let event = failure_from_body(403, r#"{"error":{"code":"subscription_sharing_user_not_eligible","message":"No."}}"#);
+        assert_eq!(
+            event,
+            ResponseEvent::Failed {
+                status: Some(403),
+                code: Some("subscription_sharing_user_not_eligible".into()),
+                param: None,
+                message: Some("No.".into()),
+            }
+        );
+        let detail = failure_from_body(401, r#"{"detail":"Not accepted"}"#);
+        assert_eq!(
+            detail,
+            ResponseEvent::Failed { status: Some(401), code: None, param: None, message: Some("Not accepted".into()) }
+        );
+        let ResponseEvent::Failed { status, message, .. } = failure_from_body(503, "<html>") else {
+            panic!();
+        };
+        assert_eq!((status, message), (Some(503), None));
+    }
+
+    #[test]
+    fn diagnostic_text_is_kept_short() {
+        let long = serde_json::json!("x".repeat(1000));
+        assert_eq!(short_text(Some(&long)).unwrap().len(), 200);
     }
 
     // -- The record ----------------------------------------------------------

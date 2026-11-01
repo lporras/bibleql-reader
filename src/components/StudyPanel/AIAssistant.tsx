@@ -4,12 +4,14 @@ import { useAiChat } from "../../state/AiChatContext";
 import { useOpenRef } from "../../hooks/useOpenRef";
 import { useAddToStudy } from "../../hooks/useAddToStudy";
 import { useChatgptAccount } from "../../queries/useChatgptAccount";
+import { useAiChoice } from "../../queries/useAiModels";
 import { CHATGPT_SUPPORTED } from "../../platform/host";
 import { translationAbbrev } from "../../state/study";
 import { STR } from "../../data/strings";
 import type { AiReference } from "../../types/ai";
 import { CheckIcon, PlusIcon } from "../icons";
 import { ChatgptSection } from "../ChatgptSection";
+import { AiProviderBar } from "./AiProviderBar";
 import { AiText } from "./AiText";
 import styles from "./AIAssistant.module.scss";
 
@@ -24,6 +26,8 @@ export function AIAssistant({ active, studyTitle, suggestions }: AIAssistantProp
   const { state, actions } = useAppState();
   const t = STR[state.locale];
   const chatgptStatus = useChatgptAccount();
+  // Nothing goes out until something can answer: no model chosen, say.
+  const canAsk = !!useAiChoice().choice;
   const openRef = useOpenRef();
   const chat = useAiChat();
   const study = useAddToStudy();
@@ -48,7 +52,7 @@ export function AIAssistant({ active, studyTitle, suggestions }: AIAssistantProp
   }, [chat.messages, chat.thinking, active]);
 
   function ask(question: string): void {
-    if (!question.trim() || chat.pending) return;
+    if (!question.trim() || chat.pending || !canAsk) return;
     setInput("");
     followRef.current = true;
     void chat.ask(question, studyTitle);
@@ -108,6 +112,7 @@ export function AIAssistant({ active, studyTitle, suggestions }: AIAssistantProp
 
   return (
     <div className={styles.body} hidden={!active}>
+      {!needsSetup && CHATGPT_SUPPORTED && <AiProviderBar />}
       <div ref={messagesRef} className={styles.messages} onScroll={handleScroll}>
         {needsSetup && (
           <div className={styles.setup}>
@@ -150,7 +155,7 @@ export function AIAssistant({ active, studyTitle, suggestions }: AIAssistantProp
             placeholder={t.aiPlaceholder}
             rows={3}
           />
-          <button type="submit" className={styles.askButton}>
+          <button type="submit" className={styles.askButton} disabled={!canAsk}>
             {t.ask}
           </button>
         </form>

@@ -1,8 +1,10 @@
 import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
-import { NoObjectGeneratedError, NoOutputGeneratedError, Output, streamText, type DeepPartial } from "ai";
+import { NoObjectGeneratedError, NoOutputGeneratedError, Output, parsePartialJson, streamText, type DeepPartial } from "ai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { z } from "zod";
-import type { AiAnswer, AiReference, AskAiOptions } from "../types/ai";
+import { STR } from "../data/strings";
+import { chatgpt, chatgptErrorCode } from "../platform/chatgpt";
+import type { AiAnswer, AiReference, AskAiOptions, ChatgptFailure } from "../types/ai";
 
 // Was the `ai:ask` Electron IPC handler (src/main/ipc/ai.ts), which ran
 // in the Node main process. Tauri has no Node side, so the whole thing
@@ -116,15 +118,117 @@ function partialAnswer(partial: DeepPartial<AiAnswer> | undefined): AiAnswer {
   };
 }
 
+// The ChatGPT plan route documents plain text streaming, but neither
+// structured output nor top-level function tools (it rejects those), so the
+// answer's shape is asked for in the instructions instead. `answer` comes first
+// so it can be shown while it streams.
+const JSON_INSTRUCTIONS =
+  " Reply with only a JSON object, with no code fence and no other text, with its keys in this order: " +
+  '{"answer": string, "references": [{"ref": string, "why": string}]}.';
+
+/** A model may wrap its JSON in a code fence despite being asked not to. */
+export function stripCodeFence(text: string): string {
+  return text
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/, "");
+}
+
+/** A failed ChatGPT request. `code` lets callers react, as well as explain. */
+export class ChatgptRequestError extends Error {
+  constructor(
+    message: string,
+    readonly code: string | null,
+    readonly param: string | null
+  ) {
+    super(message);
+  }
+}
+
+/** What a failed reply means to the reader. See OpenAI's "Errors and recovery". */
+export function describeChatgptFailure(failure: ChatgptFailure, locale: "en" | "es"): string {
+  const t = STR[locale].chatgptFailure;
+  const withDiagnostic = (summary: string): string => (failure.message ? `${summary} (${failure.message})` : summary);
+  switch (failure.code) {
+    case "subscription_sharing_usage_limit_exceeded":
+      return t.limit;
+    case "subscription_sharing_usage_unavailable":
+    case "subscription_sharing_user_unavailable":
+      return t.unavailable;
+    case "subscription_sharing_user_not_eligible":
+      return t.notEligible;
+    case "subscription_sharing_unsupported_capability":
+      return failure.param === "model" ? t.modelUnavailable : withDiagnostic(`${t.unsupported} ${failure.param ?? ""}`.trim());
+    case "subscription_sharing_invalid_user":
+      return withDiagnostic(t.credential);
+    case "incomplete":
+      return t.incomplete;
+    case "stream_interrupted":
+      return t.interrupted;
+    case "network":
+      return STR[locale].chatgptError.network;
+  }
+  if (failure.code?.startsWith("chatpass_v2_")) return withDiagnostic(t.restricted);
+  if (failure.status === 401) return withDiagnostic(t.credential);
+  if (failure.status === 403) return withDiagnostic(t.restricted);
+  if (failure.status === 503) return t.unavailable;
+  if (failure.status === 429) return t.limit;
+  return withDiagnostic(t.generic);
+}
+
+async function askChatgpt({ question, locale, choice, studyTitle, onPartial }: AskAiOptions): Promise<AiAnswer> {
+  let text = "";
+  // parsePartialJson is async: keep each partial in the order it arrived.
+  let shown = Promise.resolve();
+  const showPartial = (): void => {
+    const soFar = text;
+    shown = shown.then(async () => {
+      const { value } = await parsePartialJson(stripCodeFence(soFar));
+      if (value && typeof value === "object") onPartial?.(partialAnswer(value as DeepPartial<AiAnswer>));
+    });
+  };
+
+  await new Promise<void>((resolve, reject) => {
+    chatgpt
+      .respond(
+        {
+          model: choice.model,
+          instructions: buildSystemPrompt(locale, studyTitle) + JSON_INSTRUCTIONS,
+          input: question
+        },
+        (event) => {
+          if (event.type === "delta") {
+            text += event.text;
+            showPartial();
+          } else if (event.type === "completed") {
+            resolve();
+          } else {
+            reject(new ChatgptRequestError(describeChatgptFailure(event, locale), event.code, event.param));
+          }
+        }
+      )
+      .catch((err: unknown) => {
+        const code = chatgptErrorCode(err);
+        reject(new ChatgptRequestError(STR[locale].chatgptError[code ?? "oauth_error"], code, null));
+      });
+  });
+
+  await shown;
+  try {
+    return AiAnswerSchema.parse(JSON.parse(stripCodeFence(text)));
+  } catch {
+    throw new ChatgptRequestError(STR[locale].chatgptFailure.badFormat, "bad_format", null);
+  }
+}
+
 /**
  * Streams the reply: `onPartial` gets the answer-so-far as each chunk
  * arrives, and the promise resolves with the complete, schema-validated
  * answer once the stream ends.
  */
-export async function askAi({ question, locale, choice, credential, studyTitle, onPartial }: AskAiOptions): Promise<AiAnswer> {
-  if (choice.provider !== "anthropic") {
-    throw new Error(`Unsupported AI provider: ${choice.provider}`);
-  }
+export async function askAi(options: AskAiOptions): Promise<AiAnswer> {
+  const { question, locale, choice, credential, studyTitle, onPartial } = options;
+  if (choice.provider === "chatgpt") return askChatgpt(options);
   if (!credential?.trim()) {
     throw new Error("No Anthropic API key configured. Add one in the key dialog.");
   }

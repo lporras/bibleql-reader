@@ -1,5 +1,6 @@
+import { Channel } from "@tauri-apps/api/core";
 import { call, hasShell } from "./shell";
-import type { ChatgptAccount, ChatgptErrorCode } from "../types/ai";
+import type { ChatgptAccount, ChatgptErrorCode, ChatgptEvent, ChatgptModel, ChatgptRequest } from "../types/ai";
 
 // Sign in with ChatGPT: the seam to src-tauri/src/chatgpt.rs, which does the
 // OAuth flow and keeps every token. Only safe account details cross this
@@ -32,6 +33,18 @@ export const chatgpt = {
   /** `revoked` is false if OpenAI couldn't confirm it; the local tokens are gone either way. */
   signOut(): Promise<{ revoked: boolean }> {
     return call<{ revoked: boolean }>("chatgpt_sign_out");
+  },
+  async models(): Promise<ChatgptModel[]> {
+    return (await call<ChatgptModel[] | null>("chatgpt_models")) ?? [];
+  },
+  /**
+   * Streams one reply through Rust, which holds the token. Rejects if nothing
+   * was sent; once sent, the reply always ends on a `completed` or `failed` event.
+   */
+  async respond(request: ChatgptRequest, onEvent: (event: ChatgptEvent) => void): Promise<void> {
+    const channel = new Channel<ChatgptEvent>();
+    channel.onmessage = onEvent;
+    await call("chatgpt_respond", { ...request, onEvent: channel });
   }
 };
 
@@ -49,8 +62,10 @@ const CODES: ReadonlySet<ChatgptErrorCode> = new Set<ChatgptErrorCode>([
   "invalid_client",
   "invalid_grant",
   "invalid_id_token",
+  "models_failed",
   "network",
   "oauth_error",
+  "plan_disabled",
   "random",
   "reauth_required",
   "refresh_failed",

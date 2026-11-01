@@ -254,3 +254,182 @@ test.describe("Sign in with ChatGPT: the Assistant's setup prompt", () => {
     });
   }
 });
+
+test.describe("Answering with ChatGPT", () => {
+  const MODELS = [
+    { slug: "gpt-a", displayName: "GPT A" },
+    { slug: "gpt-b", displayName: "GPT B" }
+  ];
+  const ANSWER = { answer: "A priest and king.", references: [{ ref: "Genesis 14:18", why: "He appears." }] };
+  const SIGNED_IN = { chatgpt_account: ACCOUNT, chatgpt_has_registration: true, chatgpt_models: MODELS };
+  const QUESTION = labelPattern("What does the Bible say", "Qué dice la Biblia");
+  const providerSelect = (page: Page) => page.getByLabel(labelPattern("^Answers from", "^Responde"));
+  const modelSelect = (page: Page) => page.getByLabel(labelPattern("^Model", "^Modelo"));
+  const sendButton = (page: Page) => page.getByRole("button", { name: labelPattern("^Ask$", "^Preguntar$") });
+
+  // Plays a reply through the Channel, as Rust does, and records each request.
+  async function launchSignedIn(
+    page: Page,
+    tauri: Record<string, unknown> = SIGNED_IN,
+    events: unknown[] = [{ type: "delta", text: JSON.stringify(ANSWER) }, { type: "completed" }]
+  ): Promise<void> {
+    await alreadyWelcomed(page);
+    await prepareApp(page, tauri);
+    await page.addInitScript((events: unknown[]) => {
+      const internals = (window as unknown as { __TAURI_INTERNALS__: { invoke: (cmd: string, args?: never) => Promise<unknown> } })
+        .__TAURI_INTERNALS__;
+      const invoke = internals.invoke;
+      internals.invoke = async (cmd, args) => {
+        const answer = await invoke(cmd, args);
+        if (cmd === "chatgpt_respond") {
+          const channel = (args as unknown as { onEvent: { onmessage: (event: unknown) => void } }).onEvent;
+          events.forEach((event) => channel.onmessage(event));
+        }
+        return answer;
+      };
+    }, events);
+    await page.goto("/");
+  }
+
+  async function askQuestion(page: Page, text = "Who is Melchizedek?"): Promise<void> {
+    await page.getByPlaceholder(QUESTION).fill(text);
+    await sendButton(page).click();
+  }
+
+  test("a signed-in reader with no key gets ChatGPT, its models, and an answer", async ({ page }) => {
+    await launchSignedIn(page);
+    await expect(providerSelect(page)).toHaveValue("chatgpt");
+    await expect(modelSelect(page)).toHaveValue("gpt-a");
+    await expect(page.getByText(labelPattern("Using ChatGPT plan", "Usando tu plan"))).toBeVisible();
+
+    await askQuestion(page);
+
+    await expect(page.getByText("A priest and king.")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Genesis 14:18", exact: true })).toBeVisible();
+    const calls = await waitForTauriCalls(page, "chatgpt_respond");
+    expect(calls[0].args.model).toBe("gpt-a");
+    expect(calls[0].args.input).toBe("Who is Melchizedek?");
+  });
+
+  test("choosing a model is remembered and used", async ({ page }) => {
+    await launchSignedIn(page);
+    await modelSelect(page).selectOption("gpt-b");
+    await askQuestion(page);
+    const calls = await waitForTauriCalls(page, "chatgpt_respond");
+    expect(calls[0].args.model).toBe("gpt-b");
+    const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("biblereader.prefs") ?? "{}"));
+    expect(stored.aiModels.chatgpt).toBe("gpt-b");
+  });
+
+  test("the first model is saved, so it can't change silently later", async ({ page }) => {
+    await launchSignedIn(page);
+    await expect(modelSelect(page)).toHaveValue("gpt-a");
+    await expect
+      .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("biblereader.prefs") ?? "{}").aiModels?.chatgpt))
+      .toBe("gpt-a");
+  });
+
+  test("a saved model that's gone asks for another and blocks asking until then", async ({ page }) => {
+    await page.addInitScript(() =>
+      localStorage.setItem("biblereader.prefs", '{"chatgptWelcomed":true,"aiModels":{"chatgpt":"gpt-old"}}')
+    );
+    await prepareApp(page, SIGNED_IN);
+    await page.goto("/");
+
+    await expect(modelSelect(page)).toHaveValue("");
+    await expect(page.getByText(/no longer available/)).toBeVisible();
+    await expect(sendButton(page)).toBeDisabled();
+
+    await modelSelect(page).selectOption("gpt-b");
+    await expect(sendButton(page)).toBeEnabled();
+  });
+
+  test("switching provider keeps the conversation, and Claude gets the key", async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem("biblereader.aikey", "sk-ant-test"));
+    await launchSignedIn(page);
+    await providerSelect(page).selectOption("chatgpt");
+    await askQuestion(page);
+    await expect(page.getByText("A priest and king.")).toBeVisible();
+
+    await providerSelect(page).selectOption("anthropic");
+
+    await expect(page.getByText("A priest and king.")).toBeVisible();
+    await expect(modelSelect(page)).toHaveCount(0);
+    await expect(page.getByText(labelPattern("Using ChatGPT plan", "Usando tu plan"))).toHaveCount(0);
+  });
+
+  test("choosing Claude without a key opens the settings to add one", async ({ page }) => {
+    await launchSignedIn(page);
+    await providerSelect(page).selectOption("anthropic");
+    await expect(dialog(page).getByPlaceholder("sk-ant-…")).toBeVisible();
+  });
+
+  test("signed out with a key saved, ChatGPT stays selected rather than spending the key", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("biblereader.aikey", "sk-ant-test");
+      localStorage.setItem("biblereader.prefs", '{"aiProvider":"chatgpt"}');
+    });
+    await launchApp(page);
+    await expect(providerSelect(page)).toHaveValue("chatgpt");
+    await expect(page.getByRole("button", CONTINUE)).toBeVisible();
+    await expect(sendButton(page)).toBeDisabled();
+  });
+
+  test("a failure mid-stream shows its own message, not half an answer", async ({ page }) => {
+    await launchSignedIn(page, SIGNED_IN, [
+      { type: "delta", text: '{"answer":"A pri' },
+      { type: "failed", status: null, code: "subscription_sharing_usage_limit_exceeded", param: null, message: null }
+    ]);
+    await askQuestion(page);
+    await expect(page.getByText(/reached your ChatGPT plan's limit/)).toBeVisible();
+  });
+
+  test("the model list has loading-error, empty and refresh states", async ({ page }) => {
+    await launchSignedIn(page, { ...SIGNED_IN, chatgpt_models: [] });
+    await expect(page.getByText(/no models available/)).toBeVisible();
+    await expect(sendButton(page)).toBeDisabled();
+    const refresh = { name: labelPattern("Refresh models", "Actualizar modelos") };
+    await expect(page.getByRole("button", refresh)).toHaveCount(0);
+
+    const settings = await openSettings(page);
+    await settings.getByRole("button", refresh).click();
+    await expect.poll(async () => (await tauriCalls(page)).filter((c) => c.cmd === "chatgpt_models").length).toBe(2);
+    await expect(settings.getByRole("status")).toContainText(labelPattern("Models up to date", "Modelos al día"));
+  });
+
+  test("usage and refresh live in AI settings, not in the chat", async ({ page }) => {
+    await launchSignedIn(page);
+    const usage = { name: labelPattern("Manage usage", "Administrar uso") };
+    await expect(modelSelect(page)).toBeVisible();
+    await expect(page.getByRole("link", usage)).toHaveCount(0);
+
+    const settings = await openSettings(page);
+    await expect(settings.getByRole("link", usage)).toBeVisible();
+    await expect(settings.getByRole("button", { name: labelPattern("Refresh models", "Actualizar modelos") })).toBeVisible();
+  });
+
+  test("the inline prompt for a sign-in without the plan has no usage or refresh links", async ({ page }) => {
+    await launchSignedIn(page, { ...SIGNED_IN, chatgpt_account: { ...ACCOUNT, planEnabled: false } });
+    await expect(page.getByRole("button", { name: labelPattern("Reconnect", "Volver a conectar") })).toBeVisible();
+    await expect(page.getByRole("link", { name: labelPattern("Manage usage", "Administrar uso") })).toHaveCount(0);
+  });
+
+  test("no token ever reaches the webview's storage", async ({ page }) => {
+    await launchSignedIn(page);
+    await askQuestion(page);
+    await expect(page.getByText("A priest and king.")).toBeVisible();
+    const everything = await page.evaluate(() => JSON.stringify({ ...localStorage }));
+    expect(everything).not.toMatch(/token|bearer|eyJ/i);
+    const calls = await tauriCalls(page);
+    for (const call of calls.filter((c) => c.cmd.startsWith("chatgpt_"))) {
+      expect(Object.keys(call.args)).not.toContain("token");
+    }
+  });
+
+  test("on mobile there's no provider or model select", async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem("biblereader.aikey", "sk-ant-test"));
+    await launchApp(page, "", { __platform: "android" });
+    await expect(sendButton(page)).toBeVisible();
+    await expect(providerSelect(page)).toHaveCount(0);
+  });
+});

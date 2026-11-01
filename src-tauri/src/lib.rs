@@ -36,6 +36,8 @@ pub fn run() {
             chatgpt::chatgpt_account,
             chatgpt::chatgpt_has_registration,
             chatgpt::chatgpt_sign_out,
+            chatgpt::chatgpt_models,
+            chatgpt::chatgpt_respond,
             install::get_install_token,
             install::set_install_token,
             install::clear_install_token,
