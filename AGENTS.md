@@ -13,10 +13,11 @@ This codebase has several unique conventions and gotchas due to its mixed Tauri/
 - **API Keys & Secrets:**
     - **No API key is compiled in.** Each installation registers its own BibleQL token at first launch and keeps it in the OS credential store (`src-tauri/src/install.rs`, `docs/installation-keys.md`). Unsplash goes through BibleQL (`backgroundImages`). `scripts/check-bundle-secrets.mjs` fails the build if a key shows up in `dist/`.
     - **Anthropic key is NEVER bundled;** it must be read from `localStorage` and passed per-call to `lib/ai.ts`.
+    - **ChatGPT tokens never reach the webview.** All OpenAI traffic is in `src-tauri/src/chatgpt.rs` (`docs/chatgpt-sign-in.md`).
 
 ## ⚠️ Common Mistakes & Gotchas
 - **Platform Detection:** The `os` plugin returns `"macos"`, not `"darwin"`. Use `platform/host.ts` wrapper.
 - **Shell Access:** All Tauri shell calls must go through one of the defined platform abstraction entry points (`platform/index.ts`, `platform/host.ts`, etc.)—never direct plugin imports at the call site.
-- **Networking:** BibleQL and Unsplash use plain `fetch` (CORS allowance `*`). Only `api.anthropic.com` routes through the Tauri HTTP plugin.
+- **Networking:** BibleQL and Unsplash use plain `fetch` (CORS allowance `*`). Only `api.anthropic.com` routes through the Tauri HTTP plugin's JS API; `api.openai.com` is called from Rust.
 - **DOM Interaction:** When using `contentEditable` (e.g., in `features/image-creator`), explicitly clear the element's `textContent` before exiting edit mode to prevent visible text doubling.
 - **Offline Mode:** Translation queries must use `isLocalNow()` inside the TanStack `queryFn` to correctly switch between remote/local sources.

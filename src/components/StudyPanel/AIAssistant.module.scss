@@ -159,4 +159,10 @@
   color: var(--accent-deep);
   font-size: 13px;
   @include hoverable-surface;
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: default;
+    background: none;
+  }
 }
