@@ -10,6 +10,7 @@ import { ReaderPage } from "./routes/ReaderPage";
 import { ImageCreatorPage } from "./routes/ImageCreatorPage";
 import { StudyPage, StudyRedirect } from "./routes/StudyPage";
 import { UpdateBanner } from "./components/UpdateBanner";
+import { ChatgptWelcome } from "./components/ChatgptWelcome";
 
 export default function App(): JSX.Element {
   return (
@@ -28,6 +29,7 @@ export default function App(): JSX.Element {
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
               <UpdateBanner />
+              <ChatgptWelcome />
             </AiChatProvider>
           </StudiesProvider>
         </OfflineDownloadsProvider>

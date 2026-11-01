@@ -16,6 +16,9 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 // never navigate in-app, hand https off to the system browser, drop
 // everything else (file:, about:, custom schemes) silently.
 
+// OpenAI's own page for a user's plan usage in apps like this one.
+export const MANAGE_USAGE_URL = "https://chatgpt.com/settings/usage";
+
 function isHttps(url: string): boolean {
   try {
     return new URL(url).protocol === "https:";
