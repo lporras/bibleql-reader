@@ -13,8 +13,28 @@ val tauriProperties = Properties().apply {
     }
 }
 
+// The Play upload key (docs: tauri.app/distribute/sign/android). keystore.properties is
+// git-ignored and lives next to settings.gradle; without it, release builds come out
+// unsigned as before, so CI and contributors need nothing.
+val keystoreProperties = Properties().apply {
+    val propFile = rootProject.file("keystore.properties")
+    if (propFile.exists()) {
+        propFile.inputStream().use { load(it) }
+    }
+}
+
 android {
     compileSdk = 36
+    if (!keystoreProperties.isEmpty) {
+        signingConfigs {
+            create("release") {
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("password")
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("password")
+            }
+        }
+    }
     namespace = "org.bibleql.reader"
     defaultConfig {
         manifestPlaceholders["usesCleartextTraffic"] = "false"
@@ -37,6 +57,7 @@ android {
             }
         }
         getByName("release") {
+            if (!keystoreProperties.isEmpty) signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             proguardFiles(
                 *fileTree(".") { include("**/*.pro") }
