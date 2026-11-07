@@ -66,6 +66,9 @@ src-tauri/
   tauri.conf.json          window geometry, macOS title bar style, bundle config
   capabilities/default.json  which plugin commands the window may call, and with what scopes
 e2e/                       Playwright specs driving the app in a browser (see Testing below)
+site/                      static GitHub Pages site (privacy.html — the store listings' privacy
+                            policy URL), deployed by .github/workflows/pages.yml. Keep it in step
+                            with what the app actually sends where.
 ```
 
 Every component has a colocated `.module.scss`.
