@@ -201,6 +201,10 @@ yarn tauri android build --aab
 The version code comes from `version` in `tauri.conf.json` (0.4.1 → 4001). Play rejects a bundle
 whose version code it has already seen, so bump the version for every upload.
 
+On Play the app is **tablets only**: `<supports-screens>` in `AndroidManifest.xml` turns off
+small and normal (phone) screens, matching the iPad-only iOS build. Debug APKs installed with
+`adb` aren't filtered, so a phone still works for development.
+
 As on desktop, no API key is needed to build: the app registers its own BibleQL token on first
 launch.
 
