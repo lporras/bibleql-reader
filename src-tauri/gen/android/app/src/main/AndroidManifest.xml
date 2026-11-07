@@ -11,6 +11,18 @@
         </intent>
     </queries>
 
+    <!-- Tablets only, like the iPad-only iOS build (docs/ios.md): the layout
+         isn't responsive down to phone widths yet. Google Play filters on
+         small/normalScreens="false"; requiresSmallestWidthDp documents the
+         600dp tablet cutoff but Play doesn't filter on it. Remove this block
+         once the layout handles phones. -->
+    <supports-screens
+        android:smallScreens="false"
+        android:normalScreens="false"
+        android:largeScreens="true"
+        android:xlargeScreens="true"
+        android:requiresSmallestWidthDp="600" />
+
     <!-- AndroidTV support -->
     <uses-feature android:name="android.software.leanback" android:required="false" />
 
