@@ -40,11 +40,6 @@ $coarse-control-height: 36px;
   letter-spacing: 0.01em;
 }
 
-.kicker {
-  @include uppercase-label;
-  font-variant-numeric: tabular-nums;
-}
-
 .toolbar {
   display: flex;
   align-items: center;
