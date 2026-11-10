@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping out with Bible Reader. You can contribute bug reports, fixes, translations or
+Thanks for helping out with RhemaPress. You can contribute bug reports, fixes, translations or
 features, and this guide covers each. For a small fix, open a pull request directly. For anything
 bigger (a new feature, a new dependency, an architectural change), open an issue first so we can
 agree on the approach before you write the code.

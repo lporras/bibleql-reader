@@ -33,8 +33,8 @@ Download the DMG from the draft release, so it's quarantined like a user's copy,
 and run:
 
 ```bash
-spctl -a -vv "/Applications/BibleQL Reader.app"       # expect: accepted, source=Notarized Developer ID
-xcrun stapler validate "/Applications/BibleQL Reader.app"
+spctl -a -vv "/Applications/RhemaPress.app"       # expect: accepted, source=Notarized Developer ID
+xcrun stapler validate "/Applications/RhemaPress.app"
 ```
 
 Then open it normally. There should be no warning.

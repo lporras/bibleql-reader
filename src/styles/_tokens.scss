@@ -2,20 +2,22 @@
 // maps into CSS custom properties so the app can still switch themes at
 // runtime via the `data-theme` attribute — SCSS variables alone are
 // compile-time only and can't do that.
+// Light is drawn from the app icon: blue-white pages, navy ink, the icon's royal
+// blue, deepened toward its navy, as the accent.
 $palette-light: (
-  bg: #f3f2f2,
-  surface: #eae9e9,
-  raise: #f8f4f4,
-  ink: #201f1d,
-  muted: #605d5d,
-  faint: #7d7979,
-  accent: #b68235,
-  accent-deep: #7d5411,
-  sel: #fff3e4,
-  divider: rgba(32, 31, 29, 0.16),
-  hair: rgba(32, 31, 29, 0.09),
-  shadow: 0 3px 10px rgba(45, 43, 43, 0.16),
-  shadow-lg: 0 12px 32px rgba(45, 43, 43, 0.22),
+  bg: #f4f6fb,
+  surface: #e8edf6,
+  raise: #fbfcfe,
+  ink: #0f1d40,
+  muted: #475473,
+  faint: #66718d,
+  accent: #14336f,
+  accent-deep: #0a1c4d,
+  sel: #e3ecfd,
+  divider: rgba(15, 29, 64, 0.16),
+  hair: rgba(15, 29, 64, 0.09),
+  shadow: 0 3px 10px rgba(11, 31, 94, 0.14),
+  shadow-lg: 0 12px 32px rgba(11, 31, 94, 0.2),
   highlight-wash: 42%,
   highlight-edge: 78%
 );
@@ -56,7 +58,7 @@ $highlights: (
 );
 
 $font-heading: "Cormorant Garamond", Georgia, serif;
-$font-body: Lora, Georgia, serif;
+$font-body: Literata, Lora, Georgia, serif;
 $font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 
 // Not theme-dependent — plain SCSS constants, used directly in component styles.

@@ -1,8 +1,8 @@
-# BibleQL Reader — Verse Image Creator Plan
+# RhemaPress — Verse Image Creator Plan
 
 ## 1. Feature Overview
 
-Add a **Verse Image Creator** to BibleQL Reader, designed from the beginning to remain platform-independent so the application can move from Electron toward Tauri 2 and eventually support desktop, iPadOS/iOS, and Android.
+Add a **Verse Image Creator** to RhemaPress, designed from the beginning to remain platform-independent so the application can move from Electron toward Tauri 2 and eventually support desktop, iPadOS/iOS, and Android.
 
 The feature allows users to:
 
@@ -13,7 +13,7 @@ The feature allows users to:
 5. Customize typography and text appearance.
 6. Position and resize Bible text on the image.
 7. Export the result as PNG/JPEG using social-media-friendly presets.
-8. Save the editable design as a local BibleQL Reader project.
+8. Save the editable design as a local RhemaPress project.
 9. Preserve image attribution/source metadata for externally sourced images.
 
 ### Primary UX
@@ -50,7 +50,7 @@ Export / Copy / Share
 
 - Integrate Unsplash as a background-image provider.
 - Allow local image uploads.
-- Reuse BibleQL Reader's existing Bible/reference/verse selection UI.
+- Reuse RhemaPress's existing Bible/reference/verse selection UI.
 - Support selecting multiple verses.
 - Provide a dedicated visual editor.
 - Support drag-and-drop positioning of text.
@@ -158,7 +158,7 @@ The UI should not be tightly coupled to Unsplash. Design an image-provider abstr
 
 ### Export-friendly
 
-The final result must be a normal PNG/JPEG that can be used outside BibleQL Reader.
+The final result must be a normal PNG/JPEG that can be used outside RhemaPress.
 
 ---
 
@@ -710,7 +710,7 @@ Required:
 ☑ John 3:18
 ```
 
-Support non-contiguous selections if the existing BibleQL Reader architecture already supports them.
+Support non-contiguous selections if the existing RhemaPress architecture already supports them.
 
 Example:
 
@@ -869,7 +869,7 @@ Suggested editor:
 
 ```text
 ┌──────────────────────────────────────────────────────────┐
-│ BibleQL Reader                         Save  Export       │
+│ RhemaPress                         Save  Export       │
 ├───────────────┬──────────────────────────┬───────────────┤
 │               │                          │               │
 │ Background    │                          │ Properties    │
@@ -977,7 +977,7 @@ Handle:
 
 # 22. Offline Behavior
 
-BibleQL Reader should remain usable when offline.
+RhemaPress should remain usable when offline.
 
 If Unsplash is unavailable:
 
@@ -1055,7 +1055,7 @@ Test both:
 
 ## Regression tests
 
-Existing BibleQL Reader functionality must continue working.
+Existing RhemaPress functionality must continue working.
 
 Especially:
 
@@ -1448,7 +1448,7 @@ The responsibilities should remain:
 BibleQL API
     = Bible data
 
-BibleQL Reader
+RhemaPress
     = reading + design + export
 
 Unsplash
@@ -1507,7 +1507,7 @@ feat(image-creator): add undo redo and polish
 The feature should be considered complete when a new user can perform this workflow without developer intervention:
 
 ```text
-Open BibleQL Reader
+Open RhemaPress
       ↓
 Select John 3:16–17
       ↓
