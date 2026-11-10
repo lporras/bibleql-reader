@@ -7,4 +7,7 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <!-- Launch background, before the webview paints: the app icon's navy, same as
+         backgroundColor in tauri.conf.json and the splash in index.html. -->
+    <color name="launch_background">#FF0B1F5E</color>
 </resources>

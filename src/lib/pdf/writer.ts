@@ -144,7 +144,7 @@ export function writePdf(doc: PdfDocument): Uint8Array {
 
   add("<< /Type /Catalog /Pages 2 0 R >>");
   add(""); // the page tree, filled in once the page objects are numbered
-  add(`<< /Title ${utf16Hex(doc.title)} /Producer (BibleQL Reader) >>`);
+  add(`<< /Title ${utf16Hex(doc.title)} /Producer (RhemaPress) >>`);
   const fontDict = FONT_KEYS.map(
     (key, i) => `/F${i + 1} ${add(`<< /Type /Font /Subtype /Type1 /BaseFont /${FONTS[key]} /Encoding /WinAnsiEncoding >>`)} 0 R`
   ).join(" ");

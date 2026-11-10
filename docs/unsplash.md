@@ -199,7 +199,7 @@ the file that implements it, so this can be re-verified later without re-auditin
 |---|---|
 | Photos hotlinked to the original Unsplash URL | BibleQL returns Unsplash's `urls` unchanged. `providers/mapBackgroundImage.ts` passes `urls.thumb`/`urls.regular` straight through, and `BibleQLImageProvider.ts` stores the CDN URL as the asset's `objectUrl`. Images are never downloaded, proxied or cached. The six bundled curated photos are Unsplash-License downloads, not API uses (see above). |
 | Download triggered on use | `selectUnsplashBackground` sends `trackImageDownload`. The server pings the photo's `links.download_location` verbatim (`ixid` included). |
-| No Unsplash logo; name not similar to "Unsplash" | App is **BibleQL Reader** (`package.json` `productName`, appId `org.bibleql.reader`). No Unsplash logo asset in the repo; the Background tab is labelled generically ("Search"/"Buscar"). |
+| No Unsplash logo; name not similar to "Unsplash" | App is **RhemaPress** (`tauri.conf.json` `productName`, appId `org.bibleql.reader`). No Unsplash logo asset in the repo; the Background tab is labelled generically ("Search"/"Buscar"). |
 | Accurate app name and description | Submitted description kept in sync with this document's opening paragraph. |
 | Photographer and Unsplash attributed and linked | `components/PhotoCredit.tsx` renders the credit under every search thumbnail, every curated thumbnail, and for the selected background. `lib/attribution.ts` UTM-tags both links, and they open in the system browser via `src/lib/externalLinks.ts`. |
 

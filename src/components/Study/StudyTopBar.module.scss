@@ -11,7 +11,7 @@ $coarse-control-height: 36px;
   gap: 14px;
   padding: 0 12px;
   border-bottom: 1px solid var(--divider);
-  background: var(--surface);
+  @include chrome-scope;
   user-select: none;
 }
 
