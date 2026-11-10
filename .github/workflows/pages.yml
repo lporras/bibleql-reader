@@ -1,7 +1,8 @@
 name: Pages
 
 # Publishes site/ (the privacy policy the app stores link to) to
-# https://lporras.github.io/bibleql-reader/. Needs Settings → Pages →
+# https://rhemapress.org/ (custom domain; the old lporras.github.io/bibleql-reader/
+# URL redirects there). Needs Settings → Pages →
 # Source: "GitHub Actions", set once.
 
 on:
