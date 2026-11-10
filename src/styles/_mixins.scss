@@ -1,3 +1,5 @@
+@use "tokens" as t;
+
 // The original design used a fake `style-hover="..."` attribute (a design-tool
 // affordance, not real CSS) for this exact "background: var(--sel)" treatment
 // on nearly every interactive element. Real CSS gets a real :hover instead.
@@ -53,4 +55,24 @@ $touch-target: 48px;
   cursor: pointer;
   font: inherit;
   color: inherit;
+}
+
+// The app frame (title bar, status bar): re-points the palette tokens at the
+// chrome palette (see $chrome-light in _tokens.scss) for everything inside,
+// so buttons, fields and focus rings follow without per-control overrides.
+@mixin chrome-scope {
+  @each $name in t.$chrome-keys {
+    --#{$name}: var(--chrome-#{$name});
+  }
+  background: var(--surface);
+  color: var(--ink);
+}
+
+// A popover that opens from inside a chrome scope switches back to the page
+// palette.
+@mixin page-scope {
+  @each $name in t.$chrome-keys {
+    --#{$name}: var(--page-#{$name});
+  }
+  color: var(--ink);
 }

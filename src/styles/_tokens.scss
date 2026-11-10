@@ -40,6 +40,28 @@ $palette-dark: (
   highlight-edge: 62%
 );
 
+// The app's frame (title bar, status bar): the splash screen's navy in light,
+// while dark keeps the frame on its own palette. A chrome scope re-points these
+// tokens for everything inside it (see `chrome-scope` in _mixins.scss); a
+// popover that opens from the frame switches back with `page-scope`. Any key
+// missing from a theme's map falls back to that theme's own value.
+$chrome-keys: (surface, bg, ink, muted, faint, accent, accent-deep, sel, divider, hair);
+
+$chrome-light: (
+  surface: #0b1f5e,
+  bg: #14307a,
+  ink: #f1f5ff,
+  muted: #c3cfee,
+  faint: #9fb0dc,
+  accent: #6cbcff,
+  accent-deep: #9fd2ff,
+  sel: rgba(255, 255, 255, 0.12),
+  divider: rgba(255, 255, 255, 0.2),
+  hair: rgba(255, 255, 255, 0.1)
+);
+
+$chrome-dark: ();
+
 // Highlight pens. One hue set for both themes — what changes per theme is how
 // much of it washes over the page (`highlight-wash`), so a highlight reads as
 // the same pen in light and dark without ever fighting the body text.

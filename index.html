@@ -3,16 +3,63 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RhemaPress</title>
+    <!-- Splash: painted on the very first frame, before any JS or bundled CSS.
+         It lives inside #root, so React's first render replaces it. The navy
+         matches the app icon and `backgroundColor` in tauri.conf.json. -->
+    <style>
+      .splash {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 28px;
+        background: radial-gradient(circle at 50% 42%, #16399a 0%, #0b1f5e 55%, #071440 100%);
+      }
+      .splash img {
+        width: 128px;
+        height: 128px;
+      }
+      .splash i {
+        width: 22px;
+        height: 22px;
+        border: 2px solid rgba(255, 255, 255, 0.18);
+        border-top-color: #5fb6ff;
+        border-radius: 50%;
+        animation: splash-spin 0.9s linear infinite;
+      }
+      @keyframes splash-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .splash i {
+          animation-duration: 2.4s;
+        }
+      }
+    </style>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Loaded without blocking first paint: a plain stylesheet link holds the
+         whole window blank until Google answers, which offline means until the
+         request fails. -->
     <link
       href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
     />
-    <title>RhemaPress</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="splash" aria-hidden="true">
+        <img src="/splash-icon.png" alt="">
+        <i></i>
+      </div>
+    </div>
     <script type="module" src="./src/main.tsx"></script>
   </body>
 </html>

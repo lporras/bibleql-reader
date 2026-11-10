@@ -24,9 +24,24 @@
   }
 }
 
+// Each chrome key twice: `--chrome-*` for the frame and `--page-*` (the plain
+// palette value) so a popover inside the frame can switch back.
+@mixin emit-chrome($palette, $chrome) {
+  @each $name in t.$chrome-keys {
+    $page: map.get($palette, $name);
+    $frame: $page;
+    @if map.has-key($chrome, $name) {
+      $frame: map.get($chrome, $name);
+    }
+    --page-#{$name}: #{$page};
+    --chrome-#{$name}: #{$frame};
+  }
+}
+
 :root {
   @include emit-theme(t.$palette-light);
   @include emit-highlights(t.$palette-light);
+  @include emit-chrome(t.$palette-light, t.$chrome-light);
 }
 
 // The toggle wins over the OS setting — matches the original app, which had
@@ -34,4 +49,5 @@
 [data-theme="dark"] {
   @include emit-theme(t.$palette-dark);
   @include emit-highlights(t.$palette-dark);
+  @include emit-chrome(t.$palette-dark, t.$chrome-dark);
 }

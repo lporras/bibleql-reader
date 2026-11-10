@@ -1,3 +1,4 @@
+@use "../styles/mixins" as *;
 @use "../styles/tokens" as t;
 
 .bar {
@@ -9,7 +10,7 @@
   gap: 16px;
   padding: 0 14px;
   border-top: 1px solid var(--divider);
-  background: var(--surface);
+  @include chrome-scope;
   font-size: 10.5px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
