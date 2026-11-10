@@ -45,7 +45,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 # Offline translation packages (src/offline.rs): `bundled` compiles SQLite in
 # with FTS5, so search works the same on every OS and on Android's NDK.
-rusqlite = { version = "0.40", features = ["bundled"] }
+rusqlite = { version = "0.41", features = ["bundled"] }
 sha2 = "0.10"
 flate2 = "1"
 unicode-normalization = "0.1"
