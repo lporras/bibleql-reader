@@ -1,6 +1,6 @@
 [package]
 name = "bibleql-reader"
-version = "0.4.3"
+version = "0.4.4"
 description = "Desktop Bible reader on the BibleQL GraphQL API"
 authors = ["Luis Porras <lporras16@gmail.com>"]
 license = "MIT"
