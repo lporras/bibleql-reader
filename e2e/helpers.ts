@@ -45,7 +45,7 @@ async function installTauriStub(page: Page, responses: TauriResponses = {}): Pro
     // "linux" keeps the non-macOS layout (a normal OS title bar), which
     // is what a browser page should look like.
     (window as unknown as { __TAURI_OS_PLUGIN_INTERNALS__: unknown }).__TAURI_OS_PLUGIN_INTERNALS__ = {
-      platform: "linux",
+      platform: (responses.__platform as string | undefined) ?? "linux",
       eol: "\n",
       version: "0.0.0",
       family: "unix",

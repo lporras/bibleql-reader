@@ -54,8 +54,18 @@ unicode-normalization = "0.1"
 # `keyring` umbrella crate, whose v1 mode has no iOS or Android store.
 keyring-core = "1"
 uuid = { version = "1", features = ["v4"] }
+# Sign in with ChatGPT (src/chatgpt.rs). ring verifies the RS256 ID token and
+# supplies randomness; rustls already links it. Not jsonwebtoken: its backends
+# are the rsa crate (an open RUSTSEC advisory) or aws-lc-rs (a C build on every
+# target), to check a single fixed algorithm.
+ring = "0.17"
+base64 = "0.22"
+url = "2"
 
-# No macOS store: see init_native_store in src/install.rs.
+# Release builds only: see init_native_store in src/secret_store.rs.
+[target.'cfg(target_os = "macos")'.dependencies]
+apple-native-keyring-store = { version = "1", features = ["keychain"] }
+
 [target.'cfg(target_os = "ios")'.dependencies]
 apple-native-keyring-store = { version = "1", features = ["protected"] }
 

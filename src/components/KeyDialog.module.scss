@@ -20,17 +20,26 @@
   border-radius: t.$radius-md;
   box-shadow: var(--shadow-lg);
   padding: 22px 24px;
+  max-height: 100%;
+  overflow-y: auto;
 }
 
 .sectionTitle {
   font-family: t.$font-heading;
   font-size: 26px;
   font-weight: 600;
-  margin: 0 0 6px;
+  margin: 0 0 12px;
 
   &:not(:first-child) {
     margin-top: 20px;
   }
+}
+
+.fieldTitle {
+  display: block;
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .help {

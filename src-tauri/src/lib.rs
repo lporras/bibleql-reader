@@ -1,5 +1,7 @@
+mod chatgpt;
 mod install;
 mod offline;
+mod secret_store;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -22,9 +24,20 @@ pub fn run() {
         // Offline translation packages: download, verify, and query the
         // downloaded SQLite files. App commands need no capability entry.
         .manage(offline::OfflineState::default())
-        // Per-installation BibleQL token, kept in the OS credential store.
+        // The OS credential store, or a 0600 file where it can't be reached.
+        .manage(secret_store::SecretStores::default())
+        // Per-installation BibleQL token, kept in that store.
         .manage(install::InstallState::default())
+        // Sign in with ChatGPT. Its tokens stay on this side of the IPC boundary.
+        .manage(chatgpt::ChatgptState::default())
         .invoke_handler(tauri::generate_handler![
+            chatgpt::chatgpt_sign_in,
+            chatgpt::chatgpt_cancel_sign_in,
+            chatgpt::chatgpt_account,
+            chatgpt::chatgpt_has_registration,
+            chatgpt::chatgpt_sign_out,
+            chatgpt::chatgpt_models,
+            chatgpt::chatgpt_respond,
             install::get_install_token,
             install::set_install_token,
             install::clear_install_token,

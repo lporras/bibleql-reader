@@ -67,7 +67,7 @@ export function TitleBar({ showOffline = false }: TitleBarProps): JSX.Element {
         <button type="button" className={styles.iconButton} title={t.theme} onClick={actions.toggleTheme}>
           {isDark ? <SunIcon /> : <MoonIcon />}
         </button>
-        <button type="button" className={styles.iconButton} title={t.aiApiKey} onClick={actions.openKeyDialog}>
+        <button type="button" className={styles.iconButton} title={t.aiSettings} onClick={actions.openKeyDialog}>
           <KeyIcon />
         </button>
       </div>

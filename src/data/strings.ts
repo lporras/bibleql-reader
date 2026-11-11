@@ -1,3 +1,5 @@
+import type { ChatgptErrorCode } from "../types/ai";
+
 export type Locale = "en" | "es";
 
 export interface StringsShape {
@@ -6,6 +8,53 @@ export interface StringsShape {
   panel: string;
   theme: string;
   aiApiKey: string;
+  aiSettings: string;
+  aiSetupTitle: string;
+  aiSetupHelp: string;
+  aiSetupKey: string;
+  aiProvider: string;
+  aiModel: string;
+  aiClaudeNeedsKey: string;
+  aiChooseModel: string;
+  aiChooseFirst: string;
+  aiModelsLoading: string;
+  aiModelsError: string;
+  aiModelsEmpty: string;
+  aiModelGone: string;
+  aiModelsRefresh: string;
+  aiModelsRefreshing: string;
+  aiModelsRefreshed: string;
+  chatgptUsingPlan: string;
+  chatgptFailure: {
+    limit: string;
+    unavailable: string;
+    notEligible: string;
+    modelUnavailable: string;
+    unsupported: string;
+    credential: string;
+    restricted: string;
+    incomplete: string;
+    interrupted: string;
+    badFormat: string;
+    generic: string;
+  };
+  chatgptPlanTitle: string;
+  chatgptPlanHelp: string;
+  chatgptPlanNote: string;
+  chatgptPlanDisabled: string;
+  chatgptContinue: string;
+  chatgptDifferentAccount: string;
+  chatgptWaiting: string;
+  chatgptSignedInAs: string;
+  chatgptSignedIn: string;
+  chatgptSignOut: string;
+  chatgptReconnect: string;
+  chatgptManageUsage: string;
+  chatgptRevokeUnconfirmed: string;
+  chatgptWelcomeTitle: string;
+  chatgptWelcomeBody: string;
+  chatgptGotIt: string;
+  chatgptError: Record<ChatgptErrorCode, string>;
   translation: string;
   findBook: string;
   prev: string;
@@ -199,6 +248,76 @@ export const STR: Record<Locale, StringsShape> = {
     panel: "Tools",
     theme: "Theme",
     aiApiKey: "Anthropic API key",
+    aiSettings: "AI settings",
+    aiSetupTitle: "Set up the assistant",
+    aiSetupHelp: "The assistant needs an AI account to answer your questions. Connect one to get started.",
+    aiSetupKey: "Use an Anthropic API key",
+    aiProvider: "Answers from",
+    aiModel: "Model",
+    aiClaudeNeedsKey: "Claude (add a key)",
+    aiChooseModel: "Choose a model",
+    aiChooseFirst: "Choose who answers before asking.",
+    aiModelsLoading: "Loading your models…",
+    aiModelsError: "Couldn't load your ChatGPT models. Check your connection and refresh them in AI settings.",
+    aiModelsEmpty: "Your ChatGPT account has no models available for this app.",
+    aiModelGone: "The model you were using is no longer available. Choose another to keep asking.",
+    aiModelsRefresh: "Refresh models",
+    aiModelsRefreshing: "Refreshing…",
+    aiModelsRefreshed: "Models up to date",
+    chatgptUsingPlan: "Using ChatGPT plan",
+    chatgptFailure: {
+      limit: "You've reached your ChatGPT plan's limit for this app. See \"Manage usage\" in AI settings, or switch to Claude.",
+      unavailable: "ChatGPT plan usage is temporarily unavailable. Please try again in a moment.",
+      notEligible: "This ChatGPT account can't use its plan in this app. It needs a Plus or Pro plan.",
+      modelUnavailable: "That model isn't available for this app. Choose another one above.",
+      unsupported: "ChatGPT can't do this with your plan:",
+      credential: "ChatGPT didn't accept your account for this request.",
+      restricted: "ChatGPT blocked this request for your account or region.",
+      incomplete: "ChatGPT stopped before finishing that answer. Please try again.",
+      interrupted: "The connection dropped before the answer finished. Please try again.",
+      badFormat: "The assistant's reply didn't match the expected format. Try rephrasing.",
+      generic: "ChatGPT couldn't answer that. Please try again."
+    },
+    chatgptPlanTitle: "Use your ChatGPT plan",
+    chatgptPlanHelp:
+      "Sign in so the assistant can answer using your ChatGPT account. You need a Plus or Pro plan. This app doesn't charge you anything.",
+    chatgptPlanNote: "The assistant answers using your ChatGPT plan. You can see how much you've used in your ChatGPT settings.",
+    chatgptPlanDisabled:
+      "You signed in, but didn't allow this app to use your ChatGPT plan, so it can't answer with it. Reconnect to allow it, or use an API key.",
+    chatgptContinue: "Continue with ChatGPT",
+    chatgptDifferentAccount: "Use a different account",
+    chatgptWaiting: "Finish signing in in your browser…",
+    chatgptSignedInAs: "Signed in as",
+    chatgptSignedIn: "Signed in to ChatGPT",
+    chatgptSignOut: "Sign out",
+    chatgptReconnect: "Reconnect",
+    chatgptManageUsage: "Manage usage",
+    chatgptRevokeUnconfirmed:
+      "You're signed out here, but OpenAI couldn't confirm access was revoked. To be sure, disconnect this app in your ChatGPT settings.",
+    chatgptWelcomeTitle: "You're using your ChatGPT plan",
+    chatgptWelcomeBody: "The assistant will answer using your ChatGPT plan.",
+    chatgptGotIt: "Got it",
+    chatgptError: {
+      access_denied: "Sign-in was cancelled in the browser.",
+      account_mismatch:
+        "That's a different account from the one last used here. To switch, choose \"Use a different account\".",
+      browser: "Couldn't open your browser to sign in.",
+      cancelled: "Sign-in was cancelled.",
+      invalid_client: "OpenAI rejected this app's registration. Try \"Use a different account\".",
+      invalid_grant: "That sign-in expired before it could finish. Please try again.",
+      invalid_id_token: "OpenAI's sign-in response couldn't be verified. Please try again.",
+      models_failed: "Couldn't load your ChatGPT models.",
+      plan_disabled: "You haven't allowed this app to use your ChatGPT plan. Reconnect in AI settings.",
+      network: "Couldn't reach OpenAI. Check your connection and try again.",
+      oauth_error: "Sign-in with ChatGPT failed. Please try again.",
+      random: "Sign-in with ChatGPT failed. Please try again.",
+      reauth_required: "Your ChatGPT sign-in has ended. Please sign in again.",
+      refresh_failed: "Couldn't renew your ChatGPT sign-in. Please try again.",
+      registration_incomplete: "OpenAI didn't finish registering this app. Please try again.",
+      sign_out_first: "Sign out before using a different account.",
+      storage: "Couldn't access this device's secure storage for your ChatGPT sign-in.",
+      timeout: "Sign-in timed out. Please try again."
+    },
     translation: "Translation",
     findBook: "Filter books",
     prev: "Previous chapter",
@@ -390,6 +509,76 @@ export const STR: Record<Locale, StringsShape> = {
     panel: "Herramientas",
     theme: "Tema",
     aiApiKey: "Clave de API de Anthropic",
+    aiSettings: "Ajustes de IA",
+    aiSetupTitle: "Configura el asistente",
+    aiSetupHelp: "El asistente necesita una cuenta de IA para responder tus preguntas. Conecta una para empezar.",
+    aiSetupKey: "Usar una clave de API de Anthropic",
+    aiProvider: "Responde",
+    aiModel: "Modelo",
+    aiClaudeNeedsKey: "Claude (agrega una clave)",
+    aiChooseModel: "Elige un modelo",
+    aiChooseFirst: "Elige quién responde antes de preguntar.",
+    aiModelsLoading: "Cargando tus modelos…",
+    aiModelsError: "No se pudieron cargar tus modelos de ChatGPT. Revisa tu conexión y actualízalos en Ajustes de IA.",
+    aiModelsEmpty: "Tu cuenta de ChatGPT no tiene modelos disponibles para esta aplicación.",
+    aiModelGone: "El modelo que usabas ya no está disponible. Elige otro para seguir preguntando.",
+    aiModelsRefresh: "Actualizar modelos",
+    aiModelsRefreshing: "Actualizando…",
+    aiModelsRefreshed: "Modelos al día",
+    chatgptUsingPlan: "Usando tu plan de ChatGPT",
+    chatgptFailure: {
+      limit: "Llegaste al límite de tu plan de ChatGPT para esta aplicación. Mira \"Administrar uso\" en Ajustes de IA o cambia a Claude.",
+      unavailable: "El uso de tu plan de ChatGPT no está disponible por ahora. Inténtalo de nuevo en un momento.",
+      notEligible: "Esta cuenta de ChatGPT no puede usar su plan en esta aplicación. Necesita un plan Plus o Pro.",
+      modelUnavailable: "Ese modelo no está disponible para esta aplicación. Elige otro arriba.",
+      unsupported: "ChatGPT no puede hacer esto con tu plan:",
+      credential: "ChatGPT no aceptó tu cuenta para esta solicitud.",
+      restricted: "ChatGPT bloqueó esta solicitud para tu cuenta o región.",
+      incomplete: "ChatGPT se detuvo antes de terminar la respuesta. Inténtalo de nuevo.",
+      interrupted: "La conexión se cortó antes de terminar la respuesta. Inténtalo de nuevo.",
+      badFormat: "La respuesta del asistente no tuvo el formato esperado. Intenta reformular la pregunta.",
+      generic: "ChatGPT no pudo responder. Inténtalo de nuevo."
+    },
+    chatgptPlanTitle: "Usa tu plan de ChatGPT",
+    chatgptPlanHelp:
+      "Inicia sesión para que el asistente responda con tu cuenta de ChatGPT. Necesitas un plan Plus o Pro. Esta aplicación no te cobra nada.",
+    chatgptPlanNote: "El asistente responde con tu plan de ChatGPT. Puedes ver cuánto usas en los ajustes de ChatGPT.",
+    chatgptPlanDisabled:
+      "Iniciaste sesión, pero no permitiste que esta aplicación use tu plan de ChatGPT, así que no puede responder con él. Vuelve a conectar para permitirlo o usa una clave de API.",
+    chatgptContinue: "Continuar con ChatGPT",
+    chatgptDifferentAccount: "Usar otra cuenta",
+    chatgptWaiting: "Termina de iniciar sesión en tu navegador…",
+    chatgptSignedInAs: "Sesión iniciada como",
+    chatgptSignedIn: "Sesión iniciada en ChatGPT",
+    chatgptSignOut: "Cerrar sesión",
+    chatgptReconnect: "Volver a conectar",
+    chatgptManageUsage: "Administrar uso",
+    chatgptRevokeUnconfirmed:
+      "Cerraste sesión aquí, pero OpenAI no pudo confirmar que se revocó el acceso. Para asegurarte, desconecta esta aplicación en los ajustes de ChatGPT.",
+    chatgptWelcomeTitle: "Estás usando tu plan de ChatGPT",
+    chatgptWelcomeBody: "El asistente responderá con tu plan de ChatGPT.",
+    chatgptGotIt: "Entendido",
+    chatgptError: {
+      access_denied: "Se canceló el inicio de sesión en el navegador.",
+      account_mismatch:
+        "Esa cuenta es distinta de la última que se usó aquí. Para cambiar, elige \"Usar otra cuenta\".",
+      browser: "No se pudo abrir el navegador para iniciar sesión.",
+      cancelled: "Se canceló el inicio de sesión.",
+      invalid_client: "OpenAI rechazó el registro de esta aplicación. Prueba \"Usar otra cuenta\".",
+      invalid_grant: "Ese inicio de sesión caducó antes de terminar. Inténtalo de nuevo.",
+      invalid_id_token: "No se pudo verificar la respuesta de inicio de sesión de OpenAI. Inténtalo de nuevo.",
+      models_failed: "No se pudieron cargar tus modelos de ChatGPT.",
+      plan_disabled: "No has permitido que esta aplicación use tu plan de ChatGPT. Vuelve a conectar en Ajustes de IA.",
+      network: "No se pudo conectar con OpenAI. Revisa tu conexión e inténtalo de nuevo.",
+      oauth_error: "Falló el inicio de sesión con ChatGPT. Inténtalo de nuevo.",
+      random: "Falló el inicio de sesión con ChatGPT. Inténtalo de nuevo.",
+      reauth_required: "Tu sesión de ChatGPT terminó. Vuelve a iniciar sesión.",
+      refresh_failed: "No se pudo renovar tu sesión de ChatGPT. Inténtalo de nuevo.",
+      registration_incomplete: "OpenAI no terminó de registrar esta aplicación. Inténtalo de nuevo.",
+      sign_out_first: "Cierra sesión antes de usar otra cuenta.",
+      storage: "No se pudo acceder al almacenamiento seguro de este dispositivo para tu sesión de ChatGPT.",
+      timeout: "Se agotó el tiempo para iniciar sesión. Inténtalo de nuevo."
+    },
     translation: "Traducción",
     findBook: "Filtrar libros",
     prev: "Capítulo anterior",

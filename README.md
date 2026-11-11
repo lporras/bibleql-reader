@@ -55,21 +55,28 @@ UI work, though the native Save-As dialog and the AI assistant need the real she
 
 Requests go to `https://bibleql.org/graphql` with an `Authorization: Bearer` header. No key is
 compiled into the app: on first launch each installation registers itself with BibleQL and gets
-its own token, kept in the OS credential store (Credential Manager, Secret Service, iOS Keychain,
+its own token, kept in the OS credential store (Keychain, Credential Manager, Secret Service,
 Android Keystore) — see [docs/installation-keys.md](docs/installation-keys.md). Until that
 succeeds (offline on first launch, say), the reader shows a bundled public-domain sample chapter
 (Psalm 23). The Image Creator's Unsplash search goes through BibleQL too, which keeps the
 Unsplash key on the server.
 
-The AI assistant calls Claude via the [Vercel AI SDK](https://ai-sdk.dev) (`src/lib/ai.ts`), with
-the request itself issued by the Rust side through Tauri's HTTP plugin — `api.anthropic.com`
-refuses cross-origin requests. (The plugin still attaches its own `Origin`, so the call also
-opts in via `anthropic-dangerous-direct-browser-access`; the key is the user's own and the
-request is made by the Rust process, not by a page anyone else can script.) Like the BibleQL token, the Anthropic key is never compiled in:
-it's entered per-user from the key dialog (key icon in the title bar) and stored locally — never
-committed or sent anywhere else.
+The AI assistant answers with either of two providers, set up from the Assistant tab or from AI
+settings (key icon in the title bar). Neither involves BibleQL's server, and no key is compiled in.
 
-Get an Anthropic key at https://console.anthropic.com. (BibleQL's own docs: https://docs.bibleql.org.)
+- **Claude**, with your own Anthropic API key from https://console.anthropic.com. It goes through
+  the [Vercel AI SDK](https://ai-sdk.dev) (`src/lib/ai.ts`), with the request itself issued by the Rust
+  side through Tauri's HTTP plugin — `api.anthropic.com` refuses cross-origin requests. (The plugin
+  still attaches its own `Origin`, so the call also opts in via
+  `anthropic-dangerous-direct-browser-access`; the key is the user's own and the request is made by
+  the Rust process, not by a page anyone else can script.) The key is stored locally, and never
+  committed or sent anywhere else.
+- **ChatGPT**, by signing in with a Plus or Pro plan, on desktop only. Tokens stay in the OS credential
+  store and never reach the webview. Requests use your plan's limits, not OpenAI API billing, and
+  not every ChatGPT feature is available here. You can manage usage or disconnect in your ChatGPT
+  settings. See [docs/chatgpt-sign-in.md](docs/chatgpt-sign-in.md).
+
+(BibleQL's own docs: https://docs.bibleql.org.)
 
 ## Running on an Android device
 

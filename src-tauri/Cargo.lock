@@ -277,8 +277,10 @@ version = "0.4.3"
 dependencies = [
  "android-native-keyring-store",
  "apple-native-keyring-store",
+ "base64 0.22.1",
  "flate2",
  "keyring-core",
+ "ring",
  "rusqlite",
  "serde",
  "serde_json",
@@ -292,6 +294,7 @@ dependencies = [
  "tauri-plugin-os",
  "tauri-plugin-quicklook",
  "unicode-normalization",
+ "url",
  "uuid",
  "windows-native-keyring-store",
  "zbus-secret-service-keyring-store",

@@ -1,0 +1,61 @@
+@use "../../styles/tokens" as t;
+@use "../../styles/mixins" as *;
+
+.bar {
+  flex: 0 0 auto;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--hair);
+  font-size: 13px;
+}
+
+.selects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+.picker {
+  flex: 1 1 120px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  select {
+    width: 100%;
+    padding: 5px 6px;
+    border: 1px solid var(--divider);
+    border-radius: t.$radius-md;
+    background: var(--bg);
+    font-size: 13px;
+  }
+}
+
+.label {
+  @include uppercase-label;
+}
+
+.status,
+.problem {
+  margin: 8px 0 0;
+  line-height: 1.5;
+}
+
+.status {
+  color: var(--muted);
+}
+
+.problem {
+  color: var(--accent-deep);
+}
+
+.plan {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+// The ChatgptSection, when it stands in for the model select.
+.bar > section {
+  margin-top: 12px;
+}

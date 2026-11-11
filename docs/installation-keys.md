@@ -37,7 +37,8 @@ launch ─▶ get_install_token (Rust) ─▶ token stored? ──yes──▶ u
   Psalm 23 sample. It retries on reconnect and once a minute.
 - **`src/platform/install.ts`** — the seam to Rust: the `get_install_token`, `set_install_token`
   and `clear_install_token` commands. These are app commands, so they need no capability entry.
-- **`src-tauri/src/install.rs`** — the storage.
+- **`src-tauri/src/install.rs`** — the commands and the id. **`src-tauri/src/secret_store.rs`** —
+  the storage.
 
 Registering again with the same installation id makes the server revoke the old token. The id is
 created once and never changes, so a reinstall that keeps the credential store reuses it.
@@ -46,7 +47,7 @@ created once and never changes, so a reinstall that keeps the credential store r
 
 | Platform | Store | Crate |
 |---|---|---|
-| macOS | The fallback file (see below) | — |
+| macOS | Login keychain (release builds; debug builds use the fallback file) | `apple-native-keyring-store` (`keychain`) |
 | iOS / iPadOS | Data-protection keychain | `apple-native-keyring-store` (`protected`) |
 | Windows | Credential Manager | `windows-native-keyring-store` |
 | Linux | Secret Service (GNOME Keyring, KWallet…) over D-Bus | `zbus-secret-service-keyring-store` (pure Rust, no libdbus) |
@@ -56,7 +57,7 @@ These crates sit on `keyring-core`. The `keyring` umbrella crate's simple mode d
 iOS or Android, which is why the app links them directly. The Android store needs `ndk-context`,
 which Tauri's Android runtime initializes.
 
-**Fallback.** If the credential store can't be reached, `install.rs` keeps the id and token in
+**Fallback.** If the credential store can't be reached, the id and token are kept in
 `<app data>/installation.json` instead. The file is created with mode 0600, so only the owner
 can read it. One case where this happens is a Linux desktop with no Secret Service daemon
 running. This fallback is weaker than a keychain, because any process running as the same user
@@ -64,13 +65,21 @@ can read the file. It exists because the alternative is worse: if storage failed
 register again on every launch, revoking the previous token each time and using up the
 per-IP registration limit.
 
-**Why macOS doesn't use the Keychain.** The login keychain lets an item be read without a
-prompt only by the app that created it, identified by its code signature. Release builds are
-ad-hoc signed (there is no Developer ID), and an ad-hoc signature changes with every build. So
-after each update, macOS would ask for the login keychain password before giving the token back.
-Once releases are signed with a Developer ID, the signature stays stable across updates and the
-Keychain store can come back. To do that, re-add `apple-native-keyring-store` (`keychain`) for
-macOS and restore its line in `init_native_store`.
+**Moving off the file.** On launch, if the credential store works and `installation.json` holds
+anything, `secret_store.rs` copies it to the store, reads it back, and only then deletes the file.
+The file wins over whatever the store already has, because it is only written on a run where the
+store couldn't be used, so it's the newer copy. If any step fails, the file stays and is used for
+that run, and the move is tried again next launch. Losing the id or token would force a new
+registration, so a failure here must never lose them. This is how existing macOS installs
+(v0.4.x, which used the file) move to the Keychain.
+
+**Why macOS debug builds don't use the Keychain.** The login keychain lets an item be read without
+a prompt only by the app that created it, identified by its code signature. Release builds are
+signed with a Developer ID ([macos-signing.md](macos-signing.md)), which stays stable across
+updates. A dev build has no stable signature, so every rebuild would ask for the login keychain
+password. A locally built release (`yarn tauri build` without a Developer ID certificate) has the
+same problem. A dev build and a signed release on one Mac share the app data dir, so a release
+launched after a dev build takes over the dev build's identity.
 
 The token is never written to `localStorage`.
 
@@ -114,4 +123,5 @@ contains any of the following:
     spec overrides it with `token: null` to test first launch.
   - The mocked BibleQL answers `registerInstallation` and records every request's
     `Authorization` header (`bibleqlRequests`).
-- **Rust** (`cargo test`): the fallback file round-trip, and that it is owner-only.
+- **Rust** (`cargo test`): the fallback file round-trip, that it is owner-only, that files from
+  older releases still parse, and the move to the credential store, including each way it can fail.

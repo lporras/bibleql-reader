@@ -26,7 +26,7 @@ yarn test               # vitest run — pure-logic unit tests, no network, no s
 yarn test:coverage      # same + v8 coverage of src/**/*.ts (CI uploads it to Codecov)
 yarn test:e2e           # Playwright drives the app in headless Chromium
 cargo check --manifest-path src-tauri/Cargo.toml    # the Rust side
-cargo test --manifest-path src-tauri/Cargo.toml     # Rust unit tests (offline.rs, install.rs)
+cargo test --manifest-path src-tauri/Cargo.toml     # Rust unit tests (offline.rs, install.rs, secret_store.rs, chatgpt.rs)
 yarn audit --groups dependencies --level high       # what security.yml gates on (+ CodeQL)
 cargo audit --file src-tauri/Cargo.lock             # likewise for the Rust crates
 ```
@@ -48,12 +48,13 @@ src/
   platform/                PlatformCapabilities — the shell seam (see docs/platform-abstraction.md)
                             + host.ts (IS_MAC) + offline.ts (offline translations, docs/offline-mode.md)
                             + install.ts (installation token, docs/installation-keys.md)
+                            + chatgpt.ts (Sign in with ChatGPT, docs/chatgpt-sign-in.md)
   routes/                  route-level composition shells (thin — pull their own state/data)
   queries/                 TanStack Query hooks, one per BibleQL query, key factory in keys.ts
   state/                   AppStateContext (Context + useReducer) + persist.ts (localStorage),
                             AnnotationsContext, OfflineDownloadsContext, StudiesContext (+ study.ts,
                             its pure reducer), AiChatContext (one chat transcript app-wide)
-  lib/                     graphql client (+ graphqlClient.ts, installation.ts), ai.ts, externalLinks.ts, refs.ts, speech.ts, format.ts,
+  lib/                     graphql client (+ graphqlClient.ts, installation.ts), ai.ts, aiModels.ts, externalLinks.ts, refs.ts, speech.ts, format.ts,
                             pdf/ (dependency-free PDF: WinAnsi text, layout, writer, studyPdf.ts)
   data/                    static data: books.ts, strings.ts (i18n), sample.ts, fallbackTranslations.ts
   types/                   shared TS types (bible.ts, app.ts, ai.ts, imageCreator.ts)
@@ -61,7 +62,10 @@ src/
 src-tauri/
   src/lib.rs               plugin registration (opener, dialog, fs, http, os) + offline_* commands
   src/offline.rs           offline translation packages: download, verify, query (rusqlite + FTS5)
-  src/install.rs           the per-installation BibleQL token, in the OS credential store
+  src/install.rs           the per-installation BibleQL token
+  src/secret_store.rs      the OS credential store, its 0600 file fallback, and the move between them
+  src/chatgpt.rs           Sign in with ChatGPT + all OpenAI traffic; tokens never leave Rust
+  testdata/                a throwaway RSA key, only for chatgpt.rs's ID token tests
   plugins/tauri-plugin-quicklook/  local plugin: Quick Look (Swift) for the study PDF on iOS
   gen/apple/               the Xcode project (iPad-only; settings live in project.yml, see docs/ios.md)
   tauri.conf.json          window geometry, macOS title bar style, bundle config
@@ -97,10 +101,11 @@ Every component has a colocated `.module.scss`.
 - **All user-facing strings live in `data/strings.ts`** (`STR[locale]`, `Locale = "en" | "es"`).
   Adding a key to `StringsShape` without both `en` and `es` entries fails `yarn typecheck`.
 - Imports are relative. There is no path alias.
-- **Shell access goes through one of five places, never a plugin import at a call site**:
+- **Shell access goes through one of six places, never a plugin import at a call site**:
   `platform/index.ts` (`getPlatform()`) for Image Creator capabilities, `platform/host.ts` for
   `IS_MAC`, `lib/externalLinks.ts` for outbound links, `platform/offline.ts` for the
-  `offline_*` commands, `platform/install.ts` for the installation token commands (both use
+  `offline_*` commands, `platform/install.ts` for the installation token commands,
+  `platform/chatgpt.ts` for the `chatgpt_*` commands (the last three use
   `platform/shell.ts`'s `hasShell`/`call`). `features/image-creator/**` in
   particular must stay platform-neutral — see docs/platform-abstraction.md. Most capabilities
   (file picker, clipboard) are plain web-platform APIs and need no shell call at all; only
@@ -108,7 +113,12 @@ Every component has a colocated `.module.scss`.
 - **Every new Tauri plugin command needs a permission** in `src-tauri/capabilities/default.json`,
   and path/URL-scoped ones need their scope too. A missing permission fails at runtime, not at
   build time, with a "not allowed" error from `invoke`. App commands defined in `src-tauri/src`
-  (the `offline_*` and `*_install_token` ones) need no entry: Tauri allows an app's own commands by default.
+  (the `offline_*`, `*_install_token` and `chatgpt_*` ones) need no entry: Tauri allows an app's own commands by default.
+- **ChatGPT tokens never reach the webview.** `src-tauri/src/chatgpt.rs` makes every OpenAI
+  request, and the frontend only ever gets safe account details, reply text and error codes.
+  ChatGPT is desktop only (`CHATGPT_SUPPORTED`), and which provider answers is decided in
+  `lib/aiModels.ts`: never fall back onto a billed API key, never switch model silently. See
+  docs/chatgpt-sign-in.md.
 - **Downloaded translations: chapters are always local; search and concordance are
   remote-first** (`remoteFirst()` — BibleQL when reachable, the local index offline or on
   failure; local concordance cursors carry a `local:` prefix so "Load more" stays on one
@@ -142,7 +152,8 @@ Two layers, deliberately different in kind:
   (`get_install_token`); override it with `token: null` to exercise first-launch registration.
   To override a BibleQL answer *before* the first request, use `prepareApp` + your own
   `page.route` + `page.goto` instead of `launchApp`. The app must never call api.unsplash.com
-  directly — `image-search.spec.ts` asserts it.
+  directly — `image-search.spec.ts` asserts it. The stub reports Linux; pass `__platform` in the
+  Tauri responses to make it report another OS.
 
 ## Gotchas
 
@@ -167,8 +178,9 @@ Two layers, deliberately different in kind:
   `yarn typecheck`.
 - **No API key is compiled into the bundle.** Each installation registers its own BibleQL token
   on first launch (`registerInstallation`) and keeps it in the OS credential store via
-  `src-tauri/src/install.rs` (keyring-core + a per-OS store crate; a 0600 file fallback) — see
-  docs/installation-keys.md. Unsplash goes through BibleQL (`backgroundImages`,
+  `src-tauri/src/secret_store.rs` (keyring-core + a per-OS store crate; a 0600 file fallback, which
+  macOS debug builds always use because an unsigned rebuild would prompt for the keychain password)
+  — see docs/installation-keys.md. Unsplash goes through BibleQL (`backgroundImages`,
   `trackImageDownload`), which holds that key server-side. The Anthropic key is read from
   `localStorage` and passed per-call into `lib/ai.ts`. Never ship a secret at build time;
   `yarn build` runs `scripts/check-bundle-secrets.mjs`, which fails on anything key-shaped in
@@ -179,8 +191,9 @@ Two layers, deliberately different in kind:
   (`lib/graphqlClient.ts`) and concurrent 401s share one registration (`lib/installation.ts`).
   `backgroundImages` exists only for installation keys — a developer key gets "Field doesn't
   exist". The relay mutations take a single `input:` argument.
-- **Only `api.anthropic.com` goes through Tauri's HTTP plugin**, because it refuses
-  cross-origin requests. BibleQL sends `access-control-allow-origin: *` and must keep using
+- **Only `api.anthropic.com` goes through Tauri's HTTP plugin's JS API**, because it refuses
+  cross-origin requests. (`api.openai.com` is called from `chatgpt.rs`, to keep tokens out of the
+  webview.) BibleQL sends `access-control-allow-origin: *` and must keep using
   plain `fetch` — routing it through the plugin would break the E2E suite, which mocks it at the
   network layer. (Offline packages are downloaded by `offline.rs` in
   Rust, using the plugin's re-exported `reqwest` directly — the package host sends no CORS

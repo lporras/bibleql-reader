@@ -3,6 +3,7 @@ import { STR, type Locale } from "../data/strings";
 import type { AnnotationMap } from "../types/annotations";
 import type { TranslationSummary } from "../types/bible";
 import type { StudiesState } from "../types/study";
+import type { AiProvider } from "../types/ai";
 
 export interface PersistedPrefs {
   theme: Theme;
@@ -13,6 +14,11 @@ export interface PersistedPrefs {
   transB: string;
   bookId: string;
   chapter: number;
+  aiProvider: AiProvider;
+  /** The last model picked per provider. Claude has only one, so it isn't here. */
+  aiModels: { chatgpt?: string };
+  /** OpenAI's guidelines show the plan-usage welcome only the first time. */
+  chatgptWelcomed: boolean;
 }
 
 const PREFS_KEY = "biblereader.prefs";

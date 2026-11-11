@@ -8,6 +8,11 @@ const fetchMock = vi.fn();
 vi.mock("@tauri-apps/plugin-http", () => ({ fetch: (...args: unknown[]) => fetchMock(...args) }));
 
 const { askAi } = await import("./ai");
+const { ANTHROPIC_CHOICE } = await import("./aiModels");
+
+function ask(credential: string): Promise<unknown> {
+  return askAi({ question: "Who is Melchizedek?", locale: "en", choice: ANTHROPIC_CHOICE, credential });
+}
 
 function headerFrom(init: RequestInit | undefined, name: string): string | undefined {
   const headers = init?.headers as Record<string, string> | undefined;
@@ -20,7 +25,7 @@ describe("askAi", () => {
   beforeEach(() => fetchMock.mockReset());
 
   it("refuses to call out at all when no key is configured", async () => {
-    await expect(askAi("Who is Melchizedek?", "en", "   ")).rejects.toThrow(/No Anthropic API key/);
+    await expect(ask("   ")).rejects.toThrow(/No Anthropic API key/);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -32,7 +37,7 @@ describe("askAi", () => {
       })
     );
 
-    await expect(askAi("Who is Melchizedek?", "en", "sk-ant-test-123")).rejects.toThrow();
+    await expect(ask("sk-ant-test-123")).rejects.toThrow();
 
     expect(fetchMock).toHaveBeenCalled();
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
@@ -41,6 +46,20 @@ describe("askAi", () => {
     // regression guard for "my key works in the old app but not here".
     expect(headerFrom(init, "x-api-key")).toBe("sk-ant-test-123");
     expect(headerFrom(init, "anthropic-version")).toBe("2023-06-01");
+  });
+
+  it("asks Anthropic for the chosen model", async () => {
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ type: "error", error: { message: "nope" } }), {
+        status: 401,
+        headers: { "content-type": "application/json" }
+      })
+    );
+
+    await expect(ask("sk-ant-test-123")).rejects.toThrow();
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(JSON.parse(String(init.body)).model).toBe("claude-sonnet-5");
   });
 
   // tauri-plugin-http strips the caller's Origin and then sets its own
@@ -56,7 +75,7 @@ describe("askAi", () => {
       })
     );
 
-    await expect(askAi("Who is Melchizedek?", "en", "sk-ant-test-123")).rejects.toThrow();
+    await expect(ask("sk-ant-test-123")).rejects.toThrow();
 
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(headerFrom(init, "anthropic-dangerous-direct-browser-access")).toBe("true");
@@ -70,8 +89,6 @@ describe("askAi", () => {
       })
     );
 
-    await expect(askAi("Who is Melchizedek?", "en", "sk-ant-bad")).rejects.toThrow(
-      /rejected.*API key is invalid/s
-    );
+    await expect(ask("sk-ant-bad")).rejects.toThrow(/rejected.*API key is invalid/s);
   });
 });
