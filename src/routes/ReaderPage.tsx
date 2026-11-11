@@ -1,10 +1,11 @@
-import { useEffect, type JSX } from "react";
+import { useEffect, useState, type JSX } from "react";
 import { useParams } from "react-router-dom";
 import { useAppState } from "../state/AppStateContext";
 import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 import { writeLastLocation } from "../state/persist";
 import { TitleBar } from "../components/TitleBar/TitleBar";
 import { Sidebar } from "../components/Sidebar/Sidebar";
+import { SidebarDrawer } from "../components/Sidebar/SidebarDrawer";
 import { ReaderPane } from "../components/Reader/ReaderPane";
 import { StudyPanel } from "../components/StudyPanel/StudyPanel";
 import { KeyDialog } from "../components/KeyDialog";
@@ -20,6 +21,13 @@ export function ReaderPage(): JSX.Element {
   const chapter = Number(chapterParam) || 1;
   const { state } = useAppState();
   const { panelEff, showSidebar, compareEff } = useResponsiveLayout(state.panelOpen, state.compare);
+  const [navOpen, setNavOpen] = useState(false);
+
+  // Rotating to a width where the sidebar fits as a column shuts the drawer, so
+  // it doesn't pop back open on the next rotation to portrait.
+  useEffect(() => {
+    if (showSidebar) setNavOpen(false);
+  }, [showSidebar]);
 
   useEffect(() => {
     writeLastLocation({ bookId, chapter });
@@ -30,10 +38,14 @@ export function ReaderPage(): JSX.Element {
       <TitleBar showOffline={!showSidebar} />
       <div className={styles.body}>
         {showSidebar && <Sidebar />}
-        <ReaderPane compareEff={compareEff} />
+        <ReaderPane
+          compareEff={compareEff}
+          nav={showSidebar ? undefined : { open: navOpen, onOpen: () => setNavOpen(true) }}
+        />
         {panelEff && <StudyPanel />}
       </div>
       <StatusBar />
+      {!showSidebar && <SidebarDrawer open={navOpen} onClose={() => setNavOpen(false)} />}
       {state.keyDialogOpen && <KeyDialog />}
     </div>
   );

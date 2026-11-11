@@ -10,6 +10,11 @@
   background: var(--surface);
 }
 
+.inDrawer {
+  flex: 1 1 auto;
+  border-right: 0;
+}
+
 .translationBlock {
   padding: 12px 14px 10px;
   border-bottom: 1px solid var(--hair);

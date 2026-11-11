@@ -3,18 +3,25 @@
 .grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 3px;
+  gap: 4px;
   padding: 8px 8px 12px;
 }
 
 .chapter {
-  min-width: 28px;
-  height: 26px;
-  padding: 0 4px;
+  min-width: 36px;
+  height: 34px;
+  padding: 0 5px;
   border: 1px solid var(--hair);
   border-radius: 3px;
-  font-size: 11.5px;
+  font-size: 14px;
   font-variant-numeric: tabular-nums;
   color: var(--muted);
   @include hoverable-surface;
+
+  // Fingertip-sized on touch (Apple's HIG minimum); six fit across the drawer.
+  @media (pointer: coarse) {
+    min-width: 44px;
+    height: 44px;
+    font-size: 15px;
+  }
 }
