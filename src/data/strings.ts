@@ -110,6 +110,7 @@ export interface StringsShape {
   notePlaceholder: string;
   deleteNote: string;
   close: string;
+  browseBooks: string;
   marksIdle: string;
   allMarks: string;
   favorites: string;
@@ -302,6 +303,7 @@ export const STR: Record<Locale, StringsShape> = {
     notePlaceholder: "What this passage says to you…",
     deleteNote: "Delete note",
     close: "Close",
+    browseBooks: "Books, chapters and translations",
     marksIdle: "Select a verse in the reader to favorite, highlight or annotate it.",
     allMarks: "All",
     favorites: "Favorites",
@@ -492,6 +494,7 @@ export const STR: Record<Locale, StringsShape> = {
     notePlaceholder: "Lo que este pasaje te dice…",
     deleteNote: "Eliminar nota",
     close: "Cerrar",
+    browseBooks: "Libros, capítulos y traducciones",
     marksIdle: "Selecciona un versículo en el lector para marcarlo, resaltarlo o anotarlo.",
     allMarks: "Todas",
     favorites: "Favoritos",

@@ -1,0 +1,106 @@
+@use "../../styles/mixins" as *;
+@use "../../styles/tokens" as t;
+
+$duration: 240ms;
+$ease: cubic-bezier(0.32, 0.72, 0, 1);
+
+// Opens below the title bar, which stays usable: on macOS the native traffic
+// lights are drawn over the top of the webview (titleBarStyle "Overlay").
+.root {
+  position: fixed;
+  inset: t.$titlebar-height 0 0 0;
+  z-index: 35;
+
+  &[data-state="closed"] {
+    pointer-events: none;
+  }
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 19, 18, 0.42);
+  transition: opacity $duration ease;
+
+  .root[data-state="open"] & {
+    animation: fade-in $duration ease;
+  }
+
+  .root[data-state="closed"] & {
+    opacity: 0;
+  }
+}
+
+.panel {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: min(340px, 86vw);
+  display: flex;
+  flex-direction: column;
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  background: var(--surface);
+  border-right: 1px solid var(--divider);
+  box-shadow: var(--shadow-lg);
+  transition: transform $duration $ease;
+  // Vertical pans still scroll the book list; horizontal ones are ours, for
+  // the swipe-to-dismiss in SidebarDrawer.tsx.
+  touch-action: pan-y;
+
+  .root[data-state="open"] & {
+    animation: slide-in $duration $ease;
+  }
+
+  .root[data-state="closed"] & {
+    transform: translateX(-100%);
+  }
+
+  // The panel follows the finger 1:1 while dragging.
+  &[data-dragging="true"] {
+    transition: none;
+  }
+}
+
+.header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 10px 10px 14px;
+  border-bottom: 1px solid var(--hair);
+}
+
+.title {
+  @include uppercase-label;
+}
+
+.closeButton {
+  @include bare-button;
+  @include icon-button;
+  @include focus-ring;
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+// Still a (1ms) transition rather than none, so transitionend fires and the
+// drawer unmounts after closing.
+@media (prefers-reduced-motion: reduce) {
+  .panel,
+  .backdrop {
+    animation: none !important;
+    transition-duration: 1ms !important;
+  }
+}

@@ -15,7 +15,7 @@ import { fillTemplate } from "../../lib/format";
 import { copyText } from "../../lib/clipboard";
 import { STR } from "../../data/strings";
 import { SAMPLE } from "../../data/sample";
-import { NextIcon, PrevIcon, SpeakIcon, StopIcon } from "../icons";
+import { ChevronRightIcon, NextIcon, PrevIcon, SpeakIcon, StopIcon } from "../icons";
 import { ReaderColumn, type ColumnView } from "./ReaderColumn";
 import { NoteDialog } from "./NoteDialog";
 import type { VerseMarking } from "./VerseList";
@@ -23,9 +23,12 @@ import styles from "./ReaderPane.module.scss";
 
 interface ReaderPaneProps {
   compareEff: boolean;
+  // Set when the book sidebar has no room as a column: the heading then
+  // becomes the button that opens it as a drawer.
+  nav?: { open: boolean; onOpen(): void };
 }
 
-export function ReaderPane({ compareEff }: ReaderPaneProps): JSX.Element {
+export function ReaderPane({ compareEff, nav }: ReaderPaneProps): JSX.Element {
   const { state } = useAppState();
   const t = STR[state.locale];
   const navigate = useNavigate();
@@ -197,10 +200,25 @@ export function ReaderPane({ compareEff }: ReaderPaneProps): JSX.Element {
   return (
     <div className={styles.pane}>
       <div className={styles.header}>
-        <div className={styles.headingGroup}>
-          <span className={styles.headingRef}>{headingRef}</span>
-          <span className={styles.headingNote}>{headingNote}</span>
-        </div>
+        {nav ? (
+          <button
+            type="button"
+            className={`${styles.headingGroup} ${styles.headingButton}`}
+            onClick={nav.onOpen}
+            title={t.browseBooks}
+            aria-haspopup="dialog"
+            aria-expanded={nav.open}
+          >
+            <span className={styles.headingRef}>{headingRef}</span>
+            {headingNote && <span className={styles.headingNote}>{headingNote}</span>}
+            <ChevronRightIcon className={styles.headingChevron} aria-hidden="true" />
+          </button>
+        ) : (
+          <div className={styles.headingGroup}>
+            <span className={styles.headingRef}>{headingRef}</span>
+            <span className={styles.headingNote}>{headingNote}</span>
+          </div>
+        )}
         {verseSelection.count > 0 && (
           <div className={styles.selectionBar}>
             <span className={styles.selectionCount}>{fillTemplate(t.selectedCount, { n: String(verseSelection.count) })}</span>

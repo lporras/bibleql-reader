@@ -12,9 +12,12 @@ interface BookAccordionProps {
   bookId: string;
   chapter: number;
   locale: Locale;
+  // Fires after a chapter is picked from the grid (not a book), so the
+  // drawer can get out of the way once the reader has somewhere to go.
+  onChapterSelect?: () => void;
 }
 
-export function BookAccordion({ filter, bookId, chapter, locale }: BookAccordionProps): JSX.Element {
+export function BookAccordion({ filter, bookId, chapter, locale, onChapterSelect }: BookAccordionProps): JSX.Element {
   const t = STR[locale];
   const navigate = useNavigate();
   const { panel = "ai" } = useParams();
@@ -70,7 +73,14 @@ export function BookAccordion({ filter, bookId, chapter, locale }: BookAccordion
                       <span className={styles.bookChapters}>{b.chapters}</span>
                     </button>
                     {active && (
-                      <ChapterGrid chapterCount={b.chapters} activeChapter={chapter} onSelect={(n) => selectBook(b.id, n)} />
+                      <ChapterGrid
+                        chapterCount={b.chapters}
+                        activeChapter={chapter}
+                        onSelect={(n) => {
+                          selectBook(b.id, n);
+                          onChapterSelect?.();
+                        }}
+                      />
                     )}
                   </div>
                 );
