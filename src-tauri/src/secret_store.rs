@@ -5,6 +5,9 @@
 //! Keystore-encrypted SharedPreferences on Android. Anywhere else (a Linux
 //! desktop with no Secret Service daemon, say) a 0600 JSON file in the app data
 //! dir stands in, one per consumer.
+//!
+//! On macOS every secret shares one keychain item (`VaultStore`), so the login
+//! keychain has a single item to grant this app, not one per key.
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -13,7 +16,17 @@ use std::sync::{Arc, Mutex, OnceLock};
 
 use tauri::{AppHandle, Manager};
 
+#[cfg(not(target_os = "macos"))]
 const SERVICE: &str = "org.bibleql.reader";
+
+/// A new name, not `SERVICE`: the per-key items that 0.4.4 and earlier left
+/// under `SERVICE` were created by builds whose signatures this app may not
+/// match, so reading any of them could prompt. They are never touched again;
+/// the token registers anew and ChatGPT asks for a fresh sign-in.
+#[cfg(target_os = "macos")]
+const VAULT_SERVICE: &str = "org.bibleql.reader.vault";
+#[cfg(target_os = "macos")]
+const VAULT_ACCOUNT: &str = "secrets";
 
 pub type CmdResult<T> = Result<T, String>;
 
@@ -28,11 +41,13 @@ pub trait SecretStore: Send + Sync {
 // ---------------------------------------------------------------------------
 // OS credential store
 
-struct KeyringStore;
+struct KeyringStore {
+    service: &'static str,
+}
 
 impl SecretStore for KeyringStore {
     fn get(&self, key: &str) -> CmdResult<Option<String>> {
-        match keyring_core::Entry::new(SERVICE, key).and_then(|e| e.get_password()) {
+        match keyring_core::Entry::new(self.service, key).and_then(|e| e.get_password()) {
             Ok(value) => Ok(Some(value)),
             Err(keyring_core::Error::NoEntry) => Ok(None),
             Err(e) => Err(e.to_string()),
@@ -40,13 +55,13 @@ impl SecretStore for KeyringStore {
     }
 
     fn set(&self, key: &str, value: &str) -> CmdResult<()> {
-        keyring_core::Entry::new(SERVICE, key)
+        keyring_core::Entry::new(self.service, key)
             .and_then(|e| e.set_password(value))
             .map_err(|e| e.to_string())
     }
 
     fn delete(&self, key: &str) -> CmdResult<()> {
-        match keyring_core::Entry::new(SERVICE, key).and_then(|e| e.delete_credential()) {
+        match keyring_core::Entry::new(self.service, key).and_then(|e| e.delete_credential()) {
             Ok(()) | Err(keyring_core::Error::NoEntry) => Ok(()),
             Err(e) => Err(e.to_string()),
         }
@@ -78,6 +93,77 @@ fn init_native_store() -> keyring_core::Result<()> {
     #[cfg(target_os = "android")]
     keyring_core::set_default_store(android_native_keyring_store::Store::new()?);
     Ok(())
+}
+
+// ---------------------------------------------------------------------------
+// One slot for everything
+
+type VaultContents = BTreeMap<String, String>;
+
+/// Every key in one slot of `backend`, as a JSON map read once per run.
+///
+/// For the macOS login keychain, which asks for the login password per item
+/// whenever the reading app isn't on that item's access list. One item means
+/// one grant at most, and none at all once this Developer ID signed app has
+/// created it: the access list names the app by its signature requirement,
+/// which updates keep. It also means one read per launch however many keys
+/// there are.
+///
+/// A failed first read is kept for the run, so a denied prompt isn't asked
+/// again by the next consumer; `select_store` then falls back to the file.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+pub struct VaultStore {
+    backend: Arc<dyn SecretStore>,
+    slot: &'static str,
+    contents: Mutex<Option<CmdResult<VaultContents>>>,
+}
+
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+impl VaultStore {
+    pub fn new(backend: Arc<dyn SecretStore>, slot: &'static str) -> Self {
+        Self { backend, slot, contents: Mutex::new(None) }
+    }
+
+    /// Unparseable contents read as empty, as the fallback file does.
+    fn load(&self) -> CmdResult<VaultContents> {
+        Ok(self
+            .backend
+            .get(self.slot)?
+            .and_then(|json| serde_json::from_str(&json).ok())
+            .unwrap_or_default())
+    }
+
+    /// Runs `f` on a copy and keeps it only once the slot has taken it, so a
+    /// failed write leaves memory agreeing with what is stored.
+    fn update(&self, f: impl FnOnce(&mut VaultContents)) -> CmdResult<()> {
+        let mut guard = self.contents.lock().unwrap_or_else(|e| e.into_inner());
+        let mut contents = guard.get_or_insert_with(|| self.load()).clone()?;
+        f(&mut contents);
+        let json = serde_json::to_string(&contents).map_err(|e| e.to_string())?;
+        self.backend.set(self.slot, &json)?;
+        *guard = Some(Ok(contents));
+        Ok(())
+    }
+}
+
+impl SecretStore for VaultStore {
+    fn get(&self, key: &str) -> CmdResult<Option<String>> {
+        let mut guard = self.contents.lock().unwrap_or_else(|e| e.into_inner());
+        let contents = guard.get_or_insert_with(|| self.load()).as_ref().map_err(Clone::clone)?;
+        Ok(contents.get(key).cloned())
+    }
+
+    fn set(&self, key: &str, value: &str) -> CmdResult<()> {
+        self.update(|c| {
+            c.insert(key.to_owned(), value.to_owned());
+        })
+    }
+
+    fn delete(&self, key: &str) -> CmdResult<()> {
+        self.update(|c| {
+            c.remove(key);
+        })
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -242,22 +328,32 @@ fn migrate_record(store: &dyn SecretStore, file: &FileStore, name: &str) -> CmdR
 }
 
 /// keyring-core's default store is process-wide, so it is set up once here and
-/// shared by everything that keeps secrets.
+/// shared by everything that keeps secrets. So is the macOS vault, which every
+/// consumer must see the same copy of.
 #[derive(Default)]
 pub struct SecretStores {
-    native: OnceLock<bool>,
+    native: OnceLock<Option<Arc<dyn SecretStore>>>,
 }
 
 impl SecretStores {
     pub fn native(&self) -> Option<Arc<dyn SecretStore>> {
-        let available = *self.native.get_or_init(|| init_native_store().is_ok());
-        available.then(|| Arc::new(KeyringStore) as Arc<dyn SecretStore>)
+        self.native.get_or_init(|| init_native_store().is_ok().then(native_store)).clone()
     }
 
     pub fn fallback(&self, app: &AppHandle, file_name: &str) -> CmdResult<Arc<FileStore>> {
         let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
         Ok(Arc::new(FileStore::new(dir.join(file_name))))
     }
+}
+
+#[cfg(target_os = "macos")]
+fn native_store() -> Arc<dyn SecretStore> {
+    Arc::new(VaultStore::new(Arc::new(KeyringStore { service: VAULT_SERVICE }), VAULT_ACCOUNT))
+}
+
+#[cfg(not(target_os = "macos"))]
+fn native_store() -> Arc<dyn SecretStore> {
+    Arc::new(KeyringStore { service: SERVICE })
 }
 
 // ---------------------------------------------------------------------------
@@ -721,5 +817,120 @@ mod tests {
 
         assert_eq!(read_record(chosen.as_ref(), "chatgpt").unwrap().as_deref(), Some("kept"));
         assert_eq!(*native.sets.lock().unwrap(), sets);
+    }
+
+    // -- The macOS vault -----------------------------------------------------
+
+    const SLOT: &str = "secrets";
+
+    fn vault(backend: &Arc<MemoryStore>) -> VaultStore {
+        VaultStore::new(backend.clone() as Arc<dyn SecretStore>, SLOT)
+    }
+
+    #[test]
+    fn the_vault_keeps_every_key_in_one_slot() {
+        let backend = Arc::new(MemoryStore::default());
+        let store = vault(&backend);
+
+        store.set(ID, "abc").unwrap();
+        store.set(TOKEN, "bql_1").unwrap();
+        write_record(&store, "chatgpt", &"x".repeat(10_000)).unwrap();
+
+        assert_eq!(backend.len(), 1);
+        let reopened = vault(&backend);
+        assert_eq!(reopened.get(ID).unwrap().as_deref(), Some("abc"));
+        assert_eq!(reopened.get(TOKEN).unwrap().as_deref(), Some("bql_1"));
+        assert_eq!(read_record(&reopened, "chatgpt").unwrap().map(|v| v.len()), Some(10_000));
+    }
+
+    #[test]
+    fn a_vault_delete_drops_only_that_key() {
+        let backend = Arc::new(MemoryStore::default());
+        let store = vault(&backend);
+        store.set(ID, "abc").unwrap();
+        store.set(TOKEN, "bql_1").unwrap();
+
+        store.delete(TOKEN).unwrap();
+
+        let reopened = vault(&backend);
+        assert_eq!(reopened.get(ID).unwrap().as_deref(), Some("abc"));
+        assert_eq!(reopened.get(TOKEN).unwrap(), None);
+    }
+
+    /// Counts reads, since each one is a chance for the keychain to prompt.
+    struct CountingStore {
+        inner: MemoryStore,
+        reads: Mutex<usize>,
+    }
+
+    impl SecretStore for CountingStore {
+        fn get(&self, key: &str) -> CmdResult<Option<String>> {
+            *self.reads.lock().unwrap() += 1;
+            self.inner.get(key)
+        }
+        fn set(&self, key: &str, value: &str) -> CmdResult<()> {
+            self.inner.set(key, value)
+        }
+        fn delete(&self, key: &str) -> CmdResult<()> {
+            self.inner.delete(key)
+        }
+    }
+
+    #[test]
+    fn the_vault_reads_its_slot_once_per_run() {
+        let backend = Arc::new(CountingStore { inner: MemoryStore::default(), reads: Mutex::new(0) });
+        let store = VaultStore::new(backend.clone(), SLOT);
+
+        store.get(ID).unwrap();
+        store.set(TOKEN, "bql_1").unwrap();
+        store.get(TOKEN).unwrap();
+        write_record(&store, "chatgpt", "record").unwrap();
+        read_record(&store, "chatgpt").unwrap();
+
+        assert_eq!(*backend.reads.lock().unwrap(), 1);
+    }
+
+    #[test]
+    fn a_denied_vault_read_is_not_asked_again_and_falls_back_to_the_file() {
+        let backend = Arc::new(CountingStore {
+            inner: MemoryStore { fail_get: true, ..Default::default() },
+            reads: Mutex::new(0),
+        });
+        let store: Arc<dyn SecretStore> = Arc::new(VaultStore::new(backend.clone(), SLOT));
+        let file = Arc::new(FileStore::new(temp_path()));
+
+        let first = select_store(Some(store.clone()), file.clone(), &KEYS);
+        let second = select_record_store(Some(store), file.clone(), "chatgpt");
+
+        assert!(Arc::ptr_eq(&first, &(file.clone() as Arc<dyn SecretStore>)));
+        assert!(Arc::ptr_eq(&second, &(file.clone() as Arc<dyn SecretStore>)));
+        assert_eq!(*backend.reads.lock().unwrap(), 1);
+        assert_eq!(backend.inner.len(), 0);
+    }
+
+    #[test]
+    fn a_failed_vault_write_is_not_remembered() {
+        let backend = Arc::new(MemoryStore { sets_allowed: Some(1), ..Default::default() });
+        let store = vault(&backend);
+        store.set(ID, "abc").unwrap();
+
+        assert!(store.set(TOKEN, "bql_1").is_err());
+
+        assert_eq!(store.get(TOKEN).unwrap(), None);
+        assert_eq!(vault(&backend).get(ID).unwrap().as_deref(), Some("abc"));
+    }
+
+    #[test]
+    fn the_file_moves_into_the_vault() {
+        let backend = Arc::new(MemoryStore::default());
+        let store: Arc<dyn SecretStore> = Arc::new(vault(&backend));
+        let file = file_with(r#"{"installation_id":"abc","token":"bql_1"}"#);
+
+        let chosen = select_store(Some(store), file.clone(), &KEYS);
+
+        assert_eq!(chosen.get(TOKEN).unwrap().as_deref(), Some("bql_1"));
+        assert!(!file.path.exists());
+        assert_eq!(backend.len(), 1);
+        cleanup(&file);
     }
 }
