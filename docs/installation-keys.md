@@ -47,7 +47,7 @@ created once and never changes, so a reinstall that keeps the credential store r
 
 | Platform | Store | Crate |
 |---|---|---|
-| macOS | Login keychain (release builds; debug builds use the fallback file) | `apple-native-keyring-store` (`keychain`) |
+| macOS | Login keychain, one item for every secret (release builds; debug builds use the fallback file) | `apple-native-keyring-store` (`keychain`) |
 | iOS / iPadOS | Data-protection keychain | `apple-native-keyring-store` (`protected`) |
 | Windows | Credential Manager | `windows-native-keyring-store` |
 | Linux | Secret Service (GNOME Keyring, KWallet…) over D-Bus | `zbus-secret-service-keyring-store` (pure Rust, no libdbus) |
@@ -80,6 +80,26 @@ updates. A dev build has no stable signature, so every rebuild would ask for the
 password. A locally built release (`yarn tauri build` without a Developer ID certificate) has the
 same problem. A dev build and a signed release on one Mac share the app data dir, so a release
 launched after a dev build takes over the dev build's identity.
+
+**One keychain item on macOS.** The login keychain asks for the login password per item, every
+time an app that isn't on that item's access list reads it, and "Allow" lets one read through.
+0.4.4 kept one item per key under the `org.bibleql.reader` service, and the ChatGPT sign-in alone
+was five of them (pointer + chunks), so a mismatched signature meant up to seven prompts on every
+launch. Since then `VaultStore` keeps every key as one JSON map in a single item (service
+`org.bibleql.reader.vault`, account `secrets`), read once per run and rewritten whole on each
+change. The Developer ID signed app creates that item, so it is on the access list and is never
+asked, including after updates. A build with a different signature (an unsigned local release, say)
+gets at most one prompt, and if that one is denied the run uses the fallback file instead of
+asking again.
+
+The old per-key items are left alone: reading them is exactly what prompted. So the first launch of
+the vault release registers a new token (revoking the old one) and asks for a fresh ChatGPT sign-in.
+Their leftovers are harmless; to remove them, delete the `org.bibleql.reader` entries in Keychain
+Access.
+
+No other platform prompts, so they keep one entry per key: iOS's data-protection keychain and
+Android's Keystore-backed store belong to the app alone, Linux's Secret Service unlocks with the
+session, and Windows Credential Manager couldn't hold the combined map anyway (2560 bytes per entry).
 
 The token is never written to `localStorage`.
 
