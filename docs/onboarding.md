@@ -1,6 +1,6 @@
 # Onboarding
 
-A guided tour of BibleQL Reader for developers joining the project. It covers the architecture,
+A guided tour of RhemaPress for developers joining the project. It covers the architecture,
 then walks through how the four main features are built: the **AI Assistant**, the
 **Concordance**, **Studies (sermons)**, and the **Verse Image Creator**.
 

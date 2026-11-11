@@ -4,7 +4,8 @@ Guidance for agents working in this repository.
 
 ## What this is
 
-Tauri 2 + Vite 7 + React 19 + TypeScript 5.9 (strict) desktop Bible reader over the BibleQL
+**RhemaPress** (formerly BibleQL Reader — the identifier stays `org.bibleql.reader`, since Play and
+the App Store tie published builds and user data to it): a Tauri 2 + Vite 7 + React 19 + TypeScript 5.9 (strict) desktop Bible reader over the BibleQL
 GraphQL API (`https://bibleql.org/graphql`), plus a Verse Image Creator (select verses → style
 them over a background → export as PNG/JPEG) and Studies — sermon/lesson prep: a title, a
 rich-text body, and passages collected from the reader or the AI assistant, exportable as PDF. `"type": "module"`. Yarn, not npm. The UI runs in
@@ -70,6 +71,9 @@ src-tauri/
   tauri.conf.json          window geometry, macOS title bar style, bundle config
   capabilities/default.json  which plugin commands the window may call, and with what scopes
 e2e/                       Playwright specs driving the app in a browser (see Testing below)
+site/                      static GitHub Pages site (privacy.html — the store listings' privacy
+                            policy URL), deployed by .github/workflows/pages.yml. Keep it in step
+                            with what the app actually sends where.
 ```
 
 Every component has a colocated `.module.scss`.

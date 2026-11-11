@@ -263,13 +263,15 @@ fn respond(stream: &mut TcpStream, status: &str, body: &str) {
     );
 }
 
-/// The request target of a GET, or `None` for anything else.
+/// The request target of a GET, or `None` for anything else. Reads every header,
+/// not just the request line: closing with any of the request unread sends a
+/// reset, and the browser retries the callback against a listener that's gone.
 fn read_request_target(stream: &mut TcpStream) -> Option<String> {
     stream.set_nonblocking(false).ok()?;
     stream.set_read_timeout(Some(Duration::from_secs(2))).ok()?;
     let mut buffer = Vec::new();
     let mut chunk = [0u8; 1024];
-    while !buffer.windows(2).any(|w| w == b"\r\n") && buffer.len() < 16 * 1024 {
+    while !buffer.windows(4).any(|w| w == b"\r\n\r\n") && buffer.len() < 16 * 1024 {
         let read = stream.read(&mut chunk).ok()?;
         if read == 0 {
             break;
@@ -1221,6 +1223,31 @@ mod tests {
         assert!(wrong.starts_with("HTTP/1.1 404"));
         assert!(good.starts_with("HTTP/1.1 200"));
         assert!(good.contains("Puedes cerrar"));
+    }
+
+    #[test]
+    fn listener_reads_a_browser_sized_request_before_answering() {
+        // Closing with any of the request unread makes the socket send a reset,
+        // and a browser that sees one retries against a listener that's gone.
+        let listener = TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let client = std::thread::spawn(move || {
+            let mut stream = TcpStream::connect(("127.0.0.1", port)).unwrap();
+            let target = format!("/auth/callback?code={}&state=the-state&client_id=oaiapp_9", "c".repeat(900));
+            let headers = format!("X-Padding: {}\r\n", "p".repeat(4000));
+            write!(stream, "GET {target} HTTP/1.1\r\nHost: 127.0.0.1\r\n{headers}\r\n").unwrap();
+            // Give the listener time to answer and close before reading, as a
+            // browser busy elsewhere would.
+            std::thread::sleep(Duration::from_millis(200));
+            let mut response = String::new();
+            stream.read_to_string(&mut response).map(|_| response)
+        });
+
+        let cancelled = AtomicBool::new(false);
+        wait_for_callback(&listener, &attempt(None), "en", &cancelled, Duration::from_secs(10)).unwrap();
+
+        let response = client.join().unwrap().expect("the connection was reset");
+        assert!(response.starts_with("HTTP/1.1 200"));
     }
 
     #[test]

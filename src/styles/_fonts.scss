@@ -104,6 +104,25 @@
   src: url("../assets/fonts/spectral-italic-latin.woff2") format("woff2");
 }
 
+// Literata — the app's body and scripture face ($font-body), designed for long-form
+// reading on screens. One variable file covers 400–700 and the optical-size axis,
+// which the browser applies automatically from the font size.
+@font-face {
+  font-family: "Literata";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("../assets/fonts/literata-latin.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Literata";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../assets/fonts/literata-italic-latin.woff2") format("woff2");
+}
+
 // Single-weight display/script faces — only one file each on Google Fonts.
 @font-face {
   font-family: "Lobster";

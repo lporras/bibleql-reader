@@ -8,7 +8,14 @@ import { BookFilter } from "./BookFilter";
 import { BookAccordion } from "./BookAccordion";
 import styles from "./Sidebar.module.scss";
 
-export function Sidebar(): JSX.Element {
+interface SidebarProps {
+  // Rendered inside SidebarDrawer: fill the panel instead of being a fixed
+  // column beside the reader.
+  inDrawer?: boolean;
+  onChapterSelect?: () => void;
+}
+
+export function Sidebar({ inDrawer = false, onChapterSelect }: SidebarProps): JSX.Element {
   const { state } = useAppState();
   const t = STR[state.locale];
   const { bookId = "PSA", chapter: chapterParam } = useParams();
@@ -16,7 +23,7 @@ export function Sidebar(): JSX.Element {
   const [bookFilter, setBookFilter] = useState("");
 
   return (
-    <div className={styles.sidebar}>
+    <div className={inDrawer ? `${styles.sidebar} ${styles.inDrawer}` : styles.sidebar}>
       <div className={styles.translationBlock}>
         <div className={styles.sectionTitle}>{t.translation}</div>
         <TranslationCombo which="a" />
@@ -33,7 +40,13 @@ export function Sidebar(): JSX.Element {
         <BookFilter value={bookFilter} onChange={setBookFilter} placeholder={t.findBook} />
       </div>
 
-      <BookAccordion filter={bookFilter} bookId={bookId} chapter={chapter} locale={state.locale} />
+      <BookAccordion
+        filter={bookFilter}
+        bookId={bookId}
+        chapter={chapter}
+        locale={state.locale}
+        onChapterSelect={onChapterSelect}
+      />
     </div>
   );
 }

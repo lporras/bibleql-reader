@@ -29,8 +29,7 @@ export function TitleBar({ showOffline = false }: TitleBarProps): JSX.Element {
       {IS_MAC && <div className={styles.trafficLightsSpacer} />}
 
       <div className={styles.wordmark}>
-        <span className={styles.title}>Bible Reader</span>
-        <span className={styles.kicker}>BibleQL</span>
+        <span className={styles.title}>RhemaPress</span>
       </div>
 
       <RefSearchForm />

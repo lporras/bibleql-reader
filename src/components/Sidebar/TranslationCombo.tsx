@@ -38,6 +38,8 @@ export function TranslationCombo({ which }: TranslationComboProps): JSX.Element 
 
   function handleKeyDown(event: KeyboardEvent<HTMLInputElement>): void {
     if (event.key === "Escape") {
+      // Closing an open list shouldn't also close the SidebarDrawer around it.
+      if (open) event.stopPropagation();
       setOpen(false);
       setQuery("");
       return;

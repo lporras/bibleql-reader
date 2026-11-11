@@ -209,6 +209,14 @@ export function OfflineReadyIcon({ size = 15, ...rest }: IconProps): JSX.Element
   );
 }
 
+export function FlagIcon({ size = 15, ...rest }: IconProps): JSX.Element {
+  return (
+    <svg {...base(size, { stroke: "currentColor", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round", ...rest })}>
+      <path d="M5.5 21V4M5.5 4.5h11l-2.5 4 2.5 4h-11" />
+    </svg>
+  );
+}
+
 export function PlusIcon({ size = 15, ...rest }: IconProps): JSX.Element {
   return (
     <svg {...base(size, { stroke: "currentColor", strokeWidth: 1.7, strokeLinecap: "round", ...rest })}>

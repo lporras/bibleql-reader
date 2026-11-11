@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "BibleQL Reader",
-  "version": "0.4.1",
+  "productName": "RhemaPress",
+  "version": "0.4.3",
   "identifier": "org.bibleql.reader",
   "build": {
     "beforeDevCommand": "yarn dev",
@@ -13,14 +13,14 @@
     "macOSPrivateApi": true,
     "windows": [
       {
-        "title": "Bible Reader",
+        "title": "RhemaPress",
         "width": 1440,
         "height": 900,
         "minWidth": 1040,
         "minHeight": 620,
         "titleBarStyle": "Overlay",
         "hiddenTitle": true,
-        "backgroundColor": "#f3f2f2"
+        "backgroundColor": "#0b1f5e"
       }
     ],
     "security": {

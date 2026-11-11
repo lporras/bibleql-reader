@@ -8,8 +8,10 @@ import { useAiChoice } from "../../queries/useAiModels";
 import { CHATGPT_SUPPORTED } from "../../platform/host";
 import { translationAbbrev } from "../../state/study";
 import { STR } from "../../data/strings";
+import { buildAiReportUrl } from "../../lib/aiReport";
+import { openExternal } from "../../lib/externalLinks";
 import type { AiReference } from "../../types/ai";
-import { CheckIcon, PlusIcon } from "../icons";
+import { CheckIcon, FlagIcon, PlusIcon } from "../icons";
 import { ChatgptSection } from "../ChatgptSection";
 import { AiProviderBar } from "./AiProviderBar";
 import { AiText } from "./AiText";
@@ -103,6 +105,20 @@ export function AIAssistant({ active, studyTitle, suggestions }: AIAssistantProp
     );
   }
 
+  // Google Play's AI-Generated Content policy: every answer can be reported.
+  // The form opens in the system browser, prefilled with this exchange.
+  function report(index: number): void {
+    const answer = chat.messages[index];
+    const prev = chat.messages[index - 1];
+    openExternal(
+      buildAiReportUrl({
+        question: prev?.from === "user" ? prev.text : "",
+        response: answer.text,
+        locale: state.locale,
+      })
+    );
+  }
+
   const prompts = suggestions ?? [t.s1, t.s2, t.s3];
 
   // Nothing can answer yet, so show how to fix that rather than a box whose
@@ -141,6 +157,19 @@ export function AIAssistant({ active, studyTitle, suggestions }: AIAssistantProp
             <div className={styles.who}>{m.who}</div>
             {m.from === "assistant" ? <AiText text={m.text} /> : <div className={styles.text}>{m.text}</div>}
             {m.refs.length > 0 && <div className={styles.refs}>{m.refs.map(renderRef)}</div>}
+            {/* Not until the reply has finished streaming in — a half answer isn't what the user would be reporting. */}
+            {m.from === "assistant" && m.text && !(chat.pending && i === chat.messages.length - 1) && (
+              <button
+                type="button"
+                className={styles.report}
+                title={t.reportResponseHelp}
+                aria-label={t.reportResponseHelp}
+                onClick={() => report(i)}
+              >
+                <FlagIcon size={11} />
+                {t.reportResponse}
+              </button>
+            )}
           </div>
         ))}
         {chat.thinking && <div className={styles.thinking}>{t.thinking}</div>}

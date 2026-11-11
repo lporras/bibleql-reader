@@ -159,6 +159,7 @@ export interface StringsShape {
   notePlaceholder: string;
   deleteNote: string;
   close: string;
+  browseBooks: string;
   marksIdle: string;
   allMarks: string;
   favorites: string;
@@ -185,6 +186,8 @@ export interface StringsShape {
   inStudy: string;
   addRefToStudy: string;
   refInStudy: string;
+  reportResponse: string;
+  reportResponseHelp: string;
   openInReader: string;
   untitledStudy: string;
   studyIdle: string;
@@ -419,6 +422,7 @@ export const STR: Record<Locale, StringsShape> = {
     notePlaceholder: "What this passage says to you…",
     deleteNote: "Delete note",
     close: "Close",
+    browseBooks: "Books, chapters and translations",
     marksIdle: "Select a verse in the reader to favorite, highlight or annotate it.",
     allMarks: "All",
     favorites: "Favorites",
@@ -445,6 +449,8 @@ export const STR: Record<Locale, StringsShape> = {
     inStudy: "In study",
     addRefToStudy: "Add to the current study",
     refInStudy: "Already in the current study",
+    reportResponse: "Report",
+    reportResponseHelp: "Report this response as offensive, harmful or wrong (opens a form in your browser)",
     openInReader: "Open in the reader",
     untitledStudy: "Untitled study",
     studyIdle: "Gather passages for a sermon or a lesson: select verses in the reader, or ask the assistant, and add them to a study.",
@@ -677,6 +683,7 @@ export const STR: Record<Locale, StringsShape> = {
     notePlaceholder: "Lo que este pasaje te dice…",
     deleteNote: "Eliminar nota",
     close: "Cerrar",
+    browseBooks: "Libros, capítulos y traducciones",
     marksIdle: "Selecciona un versículo en el lector para marcarlo, resaltarlo o anotarlo.",
     allMarks: "Todas",
     favorites: "Favoritos",
@@ -703,6 +710,8 @@ export const STR: Record<Locale, StringsShape> = {
     inStudy: "En el estudio",
     addRefToStudy: "Añadir al estudio actual",
     refInStudy: "Ya está en el estudio actual",
+    reportResponse: "Reportar",
+    reportResponseHelp: "Reportar esta respuesta como ofensiva, dañina o incorrecta (abre un formulario en tu navegador)",
     openInReader: "Abrir en el lector",
     untitledStudy: "Estudio sin título",
     studyIdle: "Reúne pasajes para un sermón o una lección: selecciona versículos en el lector, o pregúntale al asistente, y añádelos a un estudio.",

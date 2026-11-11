@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RhemaPress — Privacy Policy</title>
+  <link rel="canonical" href="https://docs.rhemapress.org/privacy.html">
+  <meta name="description" content="Privacy policy for RhemaPress on macOS, Windows, Linux, iPad and Android.">
+  <style>
+    :root {
+      --bg: #fbfaf7;
+      --ink: #23201b;
+      --muted: #6b655c;
+      --rule: #e4dfd5;
+      --accent: #7a5a2e;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1b1a18;
+        --ink: #ebe6dc;
+        --muted: #a49d91;
+        --rule: #38352f;
+        --accent: #d2ad74;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font: 17px/1.65 Georgia, "Iowan Old Style", "Times New Roman", serif;
+    }
+    main { max-width: 720px; margin: 0 auto; padding: 48px 16px 80px; }
+    h1 { font-size: 30px; line-height: 1.25; margin: 0 0 6px; }
+    h2 { font-size: 20px; margin: 36px 0 8px; }
+    p, li { text-wrap: pretty; }
+    ul { padding-left: 22px; }
+    li { margin: 4px 0; }
+    a { color: var(--accent); }
+    .meta, .lang { color: var(--muted); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    .lang { margin: 0 0 32px; }
+    hr { border: 0; border-top: 1px solid var(--rule); margin: 64px 0; }
+  </style>
+</head>
+<body>
+<main>
+
+<section id="en" lang="en">
+  <h1>RhemaPress — Privacy Policy</h1>
+  <p class="meta">Effective November 9, 2026</p>
+  <p class="lang"><a href="#es">Leer en español</a></p>
+
+  <p>RhemaPress (formerly BibleQL Reader) is a Bible reading and study app for macOS, Windows, Linux, iPad and Android. This policy applies to every version of the app. The short version: <strong>there are no accounts, ads, analytics or tracking, and your notes and studies stay on your device.</strong></p>
+
+  <h2>What stays on your device</h2>
+  <p>These are stored only in the app's own storage on your device and are never uploaded:</p>
+  <ul>
+    <li>Your preferences (language, theme, translation, reading position).</li>
+    <li>Your highlights, notes and studies, including any images you attach to a study.</li>
+    <li>Translations you download for offline reading.</li>
+    <li>Your Anthropic API key, if you add one for the Assistant.</li>
+    <li>An anonymous installation token (see below), kept in your system's secure credential store where one is available, otherwise in a private app file.</li>
+  </ul>
+  <p>Images and PDFs you export are saved where you choose. Uninstalling the app deletes all of this data.</p>
+
+  <h2>BibleQL</h2>
+  <p>The app gets Bible text, search results, concordance data and background image results from the BibleQL service (<a href="https://bibleql.org">bibleql.org</a>). On first launch, the app registers itself with a randomly generated installation ID and receives a token that it sends with each request. The token identifies the installation, not you: no name, email or account is involved. As with any internet service, BibleQL receives your IP address when the app connects, and keeps standard server logs only as long as needed to run and protect the service.</p>
+
+  <h2>Background images (Unsplash)</h2>
+  <p>Image searches in the Verse Image Creator are sent through BibleQL to <a href="https://unsplash.com">Unsplash</a>. The photos themselves load directly from Unsplash's servers, which receive your IP address. When you use a photo, the app tells Unsplash (through BibleQL) that it was downloaded, as Unsplash requires. Unsplash's <a href="https://unsplash.com/privacy">privacy policy</a> applies to those requests.</p>
+
+  <h2>The AI Assistant (optional)</h2>
+  <p>The Assistant only works if you add your own Anthropic API key. When you ask a question, the question (with the app language and, on a study page, the study's title) is sent directly from your device to Anthropic under your own Anthropic account. It does not pass through BibleQL or the developer. Anthropic's <a href="https://www.anthropic.com/legal/privacy">privacy policy</a> and the terms of your Anthropic account apply. Chat history is not saved; it is cleared when you close the app.</p>
+
+  <h2>Reporting an AI response</h2>
+  <p>Each Assistant answer has a Report button. It opens a Google Form in your browser, filled in with your question and the answer. Nothing is sent unless you submit the form, and you can edit or remove any text first. Submitted reports are seen only by the developer, are used only to improve the Assistant's answers, and are deleted once they have been reviewed. Google's <a href="https://policies.google.com/privacy">privacy policy</a> applies to the form.</p>
+
+  <h2>Other services</h2>
+  <ul>
+    <li><strong>YouTube videos</strong> you add to a study load from YouTube when shown, and Google's privacy policy applies to them.</li>
+    <li><strong>Offline downloads</strong> are fetched from a file server, which receives your IP address like any download.</li>
+    <li><strong>Read aloud</strong> uses your device's built-in text-to-speech engine, under your operating system's own settings.</li>
+    <li><strong>Links</strong> to websites open in your own browser.</li>
+  </ul>
+
+  <h2>What we don't do</h2>
+  <p>No advertising, analytics, crash reporting, tracking or profiling. No personal information is sold or shared for marketing. The app does not request access to your location, contacts, camera, microphone or files beyond the ones you pick yourself.</p>
+
+  <h2>Children</h2>
+  <p>The app is not directed at children under 13 and does not knowingly collect personal information from anyone.</p>
+
+  <h2>Changes</h2>
+  <p>If this policy changes, the new version will be posted on this page with a new effective date.</p>
+
+  <h2>Contact</h2>
+  <p>Questions, or a request to delete a report you submitted: <a href="mailto:dev@bibleql.dev">dev@bibleql.dev</a></p>
+</section>
+
+<hr>
+
+<section id="es" lang="es">
+  <h1>RhemaPress — Política de privacidad</h1>
+  <p class="meta">Vigente desde el 9 de noviembre de 2026</p>
+  <p class="lang"><a href="#en">Read in English</a></p>
+
+  <p>RhemaPress (antes BibleQL Reader) es una app de lectura y estudio de la Biblia para macOS, Windows, Linux, iPad y Android. Esta política se aplica a todas las versiones de la app. En resumen: <strong>no hay cuentas, anuncios, analíticas ni rastreo, y tus notas y estudios se quedan en tu dispositivo.</strong></p>
+
+  <h2>Lo que se queda en tu dispositivo</h2>
+  <p>Esto se guarda solo en el almacenamiento propio de la app en tu dispositivo y nunca se sube:</p>
+  <ul>
+    <li>Tus preferencias (idioma, tema, traducción, posición de lectura).</li>
+    <li>Tus resaltados, notas y estudios, incluidas las imágenes que adjuntes a un estudio.</li>
+    <li>Las traducciones que descargues para leer sin conexión.</li>
+    <li>Tu clave de API de Anthropic, si agregas una para el Asistente.</li>
+    <li>Un token de instalación anónimo (ver abajo), guardado en el almacén seguro de credenciales del sistema cuando existe, o si no en un archivo privado de la app.</li>
+  </ul>
+  <p>Las imágenes y los PDF que exportes se guardan donde tú elijas. Al desinstalar la app se borran todos estos datos.</p>
+
+  <h2>BibleQL</h2>
+  <p>La app obtiene el texto bíblico, los resultados de búsqueda, la concordancia y los resultados de imágenes de fondo del servicio BibleQL (<a href="https://bibleql.org">bibleql.org</a>). En el primer inicio, la app se registra con un identificador de instalación generado al azar y recibe un token que envía con cada solicitud. El token identifica la instalación, no a ti: no se usa nombre, correo ni cuenta. Como cualquier servicio de internet, BibleQL recibe tu dirección IP cuando la app se conecta, y guarda registros estándar del servidor solo el tiempo necesario para operar y proteger el servicio.</p>
+
+  <h2>Imágenes de fondo (Unsplash)</h2>
+  <p>Las búsquedas de imágenes en el Creador de imágenes se envían a través de BibleQL a <a href="https://unsplash.com">Unsplash</a>. Las fotos se cargan directamente desde los servidores de Unsplash, que reciben tu dirección IP. Cuando usas una foto, la app avisa a Unsplash (a través de BibleQL) que fue descargada, como Unsplash exige. A esas solicitudes se aplica la <a href="https://unsplash.com/privacy">política de privacidad</a> de Unsplash.</p>
+
+  <h2>El Asistente de IA (opcional)</h2>
+  <p>El Asistente solo funciona si agregas tu propia clave de API de Anthropic. Cuando haces una pregunta, la pregunta (junto con el idioma de la app y, en la página de un estudio, el título del estudio) se envía directamente desde tu dispositivo a Anthropic, bajo tu propia cuenta de Anthropic. No pasa por BibleQL ni por el desarrollador. Se aplican la <a href="https://www.anthropic.com/legal/privacy">política de privacidad</a> de Anthropic y los términos de tu cuenta de Anthropic. El historial del chat no se guarda; se borra al cerrar la app.</p>
+
+  <h2>Reportar una respuesta de IA</h2>
+  <p>Cada respuesta del Asistente tiene un botón Reportar. Abre un formulario de Google en tu navegador, con tu pregunta y la respuesta ya escritas. No se envía nada a menos que envíes el formulario, y antes puedes editar o borrar cualquier texto. Los reportes enviados solo los ve el desarrollador, se usan solo para mejorar las respuestas del Asistente y se borran después de revisarlos. Al formulario se aplica la <a href="https://policies.google.com/privacy">política de privacidad</a> de Google.</p>
+
+  <h2>Otros servicios</h2>
+  <ul>
+    <li><strong>Los videos de YouTube</strong> que agregues a un estudio se cargan desde YouTube al mostrarse, y se les aplica la política de privacidad de Google.</li>
+    <li><strong>Las descargas sin conexión</strong> se obtienen de un servidor de archivos, que recibe tu dirección IP como en cualquier descarga.</li>
+    <li><strong>La lectura en voz alta</strong> usa el motor de texto a voz de tu dispositivo, según la configuración de tu sistema operativo.</li>
+    <li><strong>Los enlaces</strong> a sitios web se abren en tu propio navegador.</li>
+  </ul>
+
+  <h2>Lo que no hacemos</h2>
+  <p>Sin publicidad, analíticas, informes de fallos, rastreo ni perfiles. No se vende ni se comparte información personal con fines de marketing. La app no pide acceso a tu ubicación, contactos, cámara, micrófono ni a archivos más allá de los que tú elijas.</p>
+
+  <h2>Menores</h2>
+  <p>La app no está dirigida a menores de 13 años y no recopila a sabiendas información personal de nadie.</p>
+
+  <h2>Cambios</h2>
+  <p>Si esta política cambia, la nueva versión se publicará en esta página con una nueva fecha de vigencia.</p>
+
+  <h2>Contacto</h2>
+  <p>Preguntas, o para pedir que se borre un reporte que enviaste: <a href="mailto:dev@bibleql.dev">dev@bibleql.dev</a></p>
+</section>
+
+</main>
+</body>
+</html>

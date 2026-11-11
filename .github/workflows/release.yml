@@ -87,7 +87,7 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: "BibleQL Reader ${{ github.ref_name }}"
+          releaseName: "RhemaPress ${{ github.ref_name }}"
           releaseDraft: true
           generateReleaseNotes: true
           args: ${{ matrix.args }}

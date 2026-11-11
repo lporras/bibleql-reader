@@ -1,10 +1,10 @@
-# Bible Reader
+# RhemaPress
 
 [![CI](https://github.com/lporras/bibleql-reader/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/lporras/bibleql-reader/actions/workflows/ci.yml)
 [![Security](https://github.com/lporras/bibleql-reader/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/lporras/bibleql-reader/actions/workflows/security.yml)
 [![codecov](https://codecov.io/gh/lporras/bibleql-reader/branch/main/graph/badge.svg)](https://codecov.io/gh/lporras/bibleql-reader)
 
-An open-source desktop Bible reader built on the [BibleQL](https://github.com/lporras/bibleql) GraphQL API.
+RhemaPress is an open-source Bible reading and study app for desktop, iPad and Android, built on the [BibleQL](https://github.com/lporras/bibleql) GraphQL API.
 
 ## What it does
 
@@ -179,6 +179,38 @@ phone and builds much faster. The APK file name then includes `arm64` instead of
 **unsigned**, and Android won't install it until you sign it with your own keystore (see Tauri's
 [Android code signing](https://tauri.app/distribute/sign/android/) guide). For testing on your own
 phone, use the debug build.
+
+### Google Play bundle
+
+Play takes a signed Android App Bundle. Create an upload key once, and keep it (and its password)
+outside the repo and backed up:
+
+```bash
+keytool -genkey -v -keystore ~/.android-keys/bibleql-upload.jks -keyalg RSA -keysize 2048 \
+  -validity 10000 -alias upload
+```
+
+Then create `src-tauri/gen/android/keystore.properties` (git-ignored):
+
+```properties
+password=<the keystore password>
+keyAlias=upload
+storeFile=/Users/<you>/.android-keys/bibleql-upload.jks
+```
+
+and build:
+
+```bash
+yarn tauri android build --aab
+# → src-tauri/gen/android/app/build/outputs/bundle/universalRelease/app-universal-release.aab
+```
+
+The version code comes from `version` in `tauri.conf.json` (0.4.1 → 4001). Play rejects a bundle
+whose version code it has already seen, so bump the version for every upload.
+
+On Play the app is **tablets only**: `<supports-screens>` in `AndroidManifest.xml` turns off
+small and normal (phone) screens, matching the iPad-only iOS build. Debug APKs installed with
+`adb` aren't filtered, so a phone still works for development.
 
 As on desktop, no API key is needed to build: the app registers its own BibleQL token on first
 launch.

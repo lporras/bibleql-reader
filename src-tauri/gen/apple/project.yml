@@ -10,7 +10,7 @@ configs:
 settingGroups:
   app:
     base:
-      PRODUCT_NAME: BibleQL Reader
+      PRODUCT_NAME: RhemaPress
       PRODUCT_BUNDLE_IDENTIFIER: org.bibleql.reader
 targetTemplates:
   app:
@@ -56,7 +56,7 @@ targets:
           - UIInterfaceOrientationLandscapeRight
         # Required by the share sheet's "Save Image" (the Image Creator export, see
         # src/platform/tauri.ts): without it iOS terminates the app when it's tapped.
-        NSPhotoLibraryAddUsageDescription: BibleQL Reader saves the verse images you create to your photo library.
+        NSPhotoLibraryAddUsageDescription: RhemaPress saves the verse images you create to your photo library.
         # The app only uses HTTPS (exempt encryption). Declaring it here skips App Store Connect's
         # export-compliance question on every TestFlight upload.
         ITSAppUsesNonExemptEncryption: false

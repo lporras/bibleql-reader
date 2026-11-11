@@ -116,8 +116,11 @@
   color: var(--faint);
 }
 
+// Opens from the title bar in its icon variant, so it switches back to the
+// page palette (see chrome-scope).
 .menu {
   position: absolute;
+  @include page-scope;
   left: 0;
   top: calc(100% + 4px);
   z-index: 30;
