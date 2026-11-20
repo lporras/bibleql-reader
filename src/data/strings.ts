@@ -12,6 +12,7 @@ export interface StringsShape {
   aiSetupTitle: string;
   aiSetupHelp: string;
   aiSetupKey: string;
+  aiSetupApple: string;
   aiProvider: string;
   aiModel: string;
   aiClaudeNeedsKey: string;
@@ -35,6 +36,31 @@ export interface StringsShape {
     restricted: string;
     incomplete: string;
     interrupted: string;
+    badFormat: string;
+    generic: string;
+  };
+  /** The one model Apple Intelligence offers apps, as the model select shows it. */
+  appleAiModel: string;
+  appleAiOnDevice: string;
+  appleAiStatus: {
+    checking: string;
+    deviceNotEligible: string;
+    appleIntelligenceNotEnabled: string;
+    modelNotReady: string;
+    unsupportedLocale: string;
+    unsupportedOS: string;
+    unavailable: string;
+  };
+  appleAiFailure: {
+    guardrailViolation: string;
+    refusal: string;
+    exceededContextWindowSize: string;
+    unsupportedLanguageOrLocale: string;
+    assetsUnavailable: string;
+    rateLimited: string;
+    concurrentRequests: string;
+    unsupportedOS: string;
+    cancelled: string;
     badFormat: string;
     generic: string;
   };
@@ -252,6 +278,7 @@ export const STR: Record<Locale, StringsShape> = {
     aiSetupTitle: "Set up the assistant",
     aiSetupHelp: "The assistant needs an AI account to answer your questions. Connect one to get started.",
     aiSetupKey: "Use an Anthropic API key",
+    aiSetupApple: "Use Apple Intelligence",
     aiProvider: "Answers from",
     aiModel: "Model",
     aiClaudeNeedsKey: "Claude (add a key)",
@@ -278,6 +305,31 @@ export const STR: Record<Locale, StringsShape> = {
       badFormat: "The assistant's reply didn't match the expected format. Try rephrasing.",
       generic: "ChatGPT couldn't answer that. Please try again."
     },
+    appleAiModel: "On this device",
+    appleAiOnDevice: "Runs on this device: your questions aren't sent anywhere, and it works offline.",
+    appleAiStatus: {
+      checking: "Checking Apple Intelligence…",
+      deviceNotEligible: "This device doesn't support Apple Intelligence. Choose Claude or ChatGPT instead.",
+      appleIntelligenceNotEnabled: "Turn on Apple Intelligence in Settings to use it here.",
+      modelNotReady: "Apple Intelligence is still downloading its model. Try again once it's ready.",
+      unsupportedLocale: "Apple Intelligence doesn't support the app's language on this device yet.",
+      unsupportedOS: "Apple Intelligence needs iPadOS 26 or macOS 26 or later.",
+      unavailable: "Apple Intelligence isn't available right now."
+    },
+    appleAiFailure: {
+      guardrailViolation: "Apple Intelligence declined to answer that. Try rephrasing the question.",
+      refusal: "Apple Intelligence declined to answer that. Try rephrasing the question.",
+      exceededContextWindowSize: "That question is too long for the on-device model. Try a shorter one.",
+      unsupportedLanguageOrLocale: "Apple Intelligence doesn't support this language yet.",
+      assetsUnavailable: "Apple Intelligence's model isn't ready. Check Apple Intelligence in Settings and try again.",
+      rateLimited: "Apple Intelligence is busy. Please try again in a moment.",
+      concurrentRequests: "Apple Intelligence is still answering another question. Please wait a moment.",
+      unsupportedOS: "Apple Intelligence needs iPadOS 26 or macOS 26 or later.",
+      cancelled: "The answer was cancelled.",
+      badFormat: "The assistant's reply didn't match the expected format. Try rephrasing.",
+      generic: "Apple Intelligence couldn't answer that. Please try again."
+    },
+
     chatgptPlanTitle: "Use your ChatGPT plan",
     chatgptPlanHelp:
       "Sign in so the assistant can answer using your ChatGPT account. You need a Plus or Pro plan. This app doesn't charge you anything.",
@@ -513,6 +565,7 @@ export const STR: Record<Locale, StringsShape> = {
     aiSetupTitle: "Configura el asistente",
     aiSetupHelp: "El asistente necesita una cuenta de IA para responder tus preguntas. Conecta una para empezar.",
     aiSetupKey: "Usar una clave de API de Anthropic",
+    aiSetupApple: "Usar Apple Intelligence",
     aiProvider: "Responde",
     aiModel: "Modelo",
     aiClaudeNeedsKey: "Claude (agrega una clave)",
@@ -539,6 +592,31 @@ export const STR: Record<Locale, StringsShape> = {
       badFormat: "La respuesta del asistente no tuvo el formato esperado. Intenta reformular la pregunta.",
       generic: "ChatGPT no pudo responder. Inténtalo de nuevo."
     },
+    appleAiModel: "En este dispositivo",
+    appleAiOnDevice: "Funciona en este dispositivo: tus preguntas no se envían a ningún lado y funciona sin conexión.",
+    appleAiStatus: {
+      checking: "Comprobando Apple Intelligence…",
+      deviceNotEligible: "Este dispositivo no es compatible con Apple Intelligence. Elige Claude o ChatGPT.",
+      appleIntelligenceNotEnabled: "Activa Apple Intelligence en Ajustes para usarlo aquí.",
+      modelNotReady: "Apple Intelligence todavía está descargando su modelo. Inténtalo cuando esté listo.",
+      unsupportedLocale: "Apple Intelligence aún no admite el idioma de la aplicación en este dispositivo.",
+      unsupportedOS: "Apple Intelligence necesita iPadOS 26 o macOS 26 o posterior.",
+      unavailable: "Apple Intelligence no está disponible en este momento."
+    },
+    appleAiFailure: {
+      guardrailViolation: "Apple Intelligence prefirió no responder eso. Intenta reformular la pregunta.",
+      refusal: "Apple Intelligence prefirió no responder eso. Intenta reformular la pregunta.",
+      exceededContextWindowSize: "La pregunta es demasiado larga para el modelo del dispositivo. Prueba con una más corta.",
+      unsupportedLanguageOrLocale: "Apple Intelligence aún no admite este idioma.",
+      assetsUnavailable: "El modelo de Apple Intelligence no está listo. Revisa Apple Intelligence en Ajustes e inténtalo de nuevo.",
+      rateLimited: "Apple Intelligence está ocupado. Inténtalo de nuevo en un momento.",
+      concurrentRequests: "Apple Intelligence aún está respondiendo otra pregunta. Espera un momento.",
+      unsupportedOS: "Apple Intelligence necesita iPadOS 26 o macOS 26 o posterior.",
+      cancelled: "Se canceló la respuesta.",
+      badFormat: "La respuesta del asistente no tuvo el formato esperado. Intenta reformular la pregunta.",
+      generic: "Apple Intelligence no pudo responder. Inténtalo de nuevo."
+    },
+
     chatgptPlanTitle: "Usa tu plan de ChatGPT",
     chatgptPlanHelp:
       "Inicia sesión para que el asistente responda con tu cuenta de ChatGPT. Necesitas un plan Plus o Pro. Esta aplicación no te cobra nada.",

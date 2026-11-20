@@ -5,7 +5,7 @@ import { useOpenRef } from "../../hooks/useOpenRef";
 import { useAddToStudy } from "../../hooks/useAddToStudy";
 import { useChatgptAccount } from "../../queries/useChatgptAccount";
 import { useAiChoice } from "../../queries/useAiModels";
-import { CHATGPT_SUPPORTED } from "../../platform/host";
+import { APPLE_AI_SUPPORTED, CHATGPT_SUPPORTED } from "../../platform/host";
 import { translationAbbrev } from "../../state/study";
 import { STR } from "../../data/strings";
 import { buildAiReportUrl } from "../../lib/aiReport";
@@ -28,8 +28,9 @@ export function AIAssistant({ active, studyTitle, suggestions }: AIAssistantProp
   const { state, actions } = useAppState();
   const t = STR[state.locale];
   const chatgptStatus = useChatgptAccount();
+  const { choice, appleStatus } = useAiChoice();
   // Nothing goes out until something can answer: no model chosen, say.
-  const canAsk = !!useAiChoice().choice;
+  const canAsk = !!choice;
   const openRef = useOpenRef();
   const chat = useAiChat();
   const study = useAddToStudy();
@@ -124,17 +125,33 @@ export function AIAssistant({ active, studyTitle, suggestions }: AIAssistantProp
   // Nothing can answer yet, so show how to fix that rather than a box whose
   // every question would fail. Not while the account is still loading: that
   // would flash the prompt at someone already signed in.
-  const needsSetup = !state.aiApiKey.trim() && !chatgptStatus.isLoading && !chatgptStatus.data?.account?.planEnabled;
+  // Apple Intelligence counts once it can answer, or once chosen: then the
+  // provider bar says what it still needs (Settings, a download).
+  const appleChecking = APPLE_AI_SUPPORTED && !appleStatus;
+  const appleCounts = APPLE_AI_SUPPORTED && (appleStatus === "available" || state.aiProvider === "apple");
+  // Offered in the prompt when this device could have it, even if not yet set up.
+  const appleOffered = APPLE_AI_SUPPORTED && !!appleStatus && appleStatus !== "unsupportedOS" && appleStatus !== "deviceNotEligible";
+  const needsSetup =
+    !state.aiApiKey.trim() &&
+    !chatgptStatus.isLoading &&
+    !chatgptStatus.data?.account?.planEnabled &&
+    !appleChecking &&
+    !appleCounts;
 
   return (
     <div className={styles.body} hidden={!active}>
-      {!needsSetup && CHATGPT_SUPPORTED && <AiProviderBar />}
+      {!needsSetup && (CHATGPT_SUPPORTED || APPLE_AI_SUPPORTED) && <AiProviderBar />}
       <div ref={messagesRef} className={styles.messages} onScroll={handleScroll}>
         {needsSetup && (
           <div className={styles.setup}>
             <h3 className={styles.setupTitle}>{t.aiSetupTitle}</h3>
             <p className={styles.setupHelp}>{t.aiSetupHelp}</p>
             {CHATGPT_SUPPORTED && <ChatgptSection embedded />}
+            {appleOffered && (
+              <button type="button" className={styles.setupKey} onClick={() => actions.setAiProvider("apple")}>
+                {t.aiSetupApple}
+              </button>
+            )}
             <button type="button" className={styles.setupKey} onClick={actions.openKeyDialog}>
               {t.aiSetupKey}
             </button>

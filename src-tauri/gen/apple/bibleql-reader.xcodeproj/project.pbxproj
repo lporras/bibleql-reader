@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		09F01DBEBE33A13664BC9605 /* FoundationModels.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C78D14042A35C84B2A4FC898 /* FoundationModels.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		0AC17BEB87387689577ABFB1 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 250F2F57AEBBFAC892F2D7D7 /* LaunchScreen.storyboard */; };
 		11F40AA3227B8D8B114BC01B /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0B2253D3F1BFADF2F038921A /* UIKit.framework */; };
 		466A2FE1854F78753282B6B1 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3C5067A5687DE7D284BCB348 /* Metal.framework */; };
@@ -27,8 +28,10 @@
 		1E7B31B19678FBE309E49F46 /* install.rs */ = {isa = PBXFileReference; path = install.rs; sourceTree = "<group>"; };
 		21B0221E2EF1984E9445CBB4 /* bibleql-reader_iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "bibleql-reader_iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		250F2F57AEBBFAC892F2D7D7 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
+		2ABE75A62770298205739354 /* chatgpt.rs */ = {isa = PBXFileReference; path = chatgpt.rs; sourceTree = "<group>"; };
 		2B3C791B6E1B15F8D1732CD3 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		2C125EC35877FFBB7B16F83C /* offline.rs */ = {isa = PBXFileReference; path = offline.rs; sourceTree = "<group>"; };
+		38EBF07EE1E9F8EA1D032154 /* secret_store.rs */ = {isa = PBXFileReference; path = secret_store.rs; sourceTree = "<group>"; };
 		3C5067A5687DE7D284BCB348 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
 		3F47D971E8A8FF1BC4EB9C54 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		4CDC5B8E1D718E80EE440B5F /* bibleql-reader_iOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "bibleql-reader_iOS.entitlements"; sourceTree = "<group>"; };
@@ -41,6 +44,7 @@
 		A683C4BFB31460C15C5836C4 /* bindings.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = bindings.h; sourceTree = "<group>"; };
 		ADF4B6DE2E699669CF960EFC /* libapp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libapp.a; sourceTree = "<group>"; };
 		B618CAE65AD16E28274A258F /* libapp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libapp.a; sourceTree = "<group>"; };
+		C78D14042A35C84B2A4FC898 /* FoundationModels.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FoundationModels.framework; path = System/Library/Frameworks/FoundationModels.framework; sourceTree = SDKROOT; };
 		D8A55C5F1E83B03EF0B15360 /* main.rs */ = {isa = PBXFileReference; path = main.rs; sourceTree = "<group>"; };
 		E3B9B788893B14D5B3E78EA1 /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
 		FA063F445CC078897B6BBD7F /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; path = assets; sourceTree = SOURCE_ROOT; };
@@ -59,6 +63,7 @@
 				5C37CA83A46605C558EBE70D /* Security.framework in Frameworks */,
 				11F40AA3227B8D8B114BC01B /* UIKit.framework in Frameworks */,
 				A32DB9A38323B9940B945FC6 /* WebKit.framework in Frameworks */,
+				09F01DBEBE33A13664BC9605 /* FoundationModels.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -110,6 +115,7 @@
 			isa = PBXGroup;
 			children = (
 				6E33C376C8F8656C44D3E447 /* CoreGraphics.framework */,
+				C78D14042A35C84B2A4FC898 /* FoundationModels.framework */,
 				B618CAE65AD16E28274A258F /* libapp.a */,
 				3C5067A5687DE7D284BCB348 /* Metal.framework */,
 				E3B9B788893B14D5B3E78EA1 /* MetalKit.framework */,
@@ -133,10 +139,12 @@
 		A9E120EEBCD389AFEE001258 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				2ABE75A62770298205739354 /* chatgpt.rs */,
 				1E7B31B19678FBE309E49F46 /* install.rs */,
 				76F1D35C51DD73245B6FB942 /* lib.rs */,
 				D8A55C5F1E83B03EF0B15360 /* main.rs */,
 				2C125EC35877FFBB7B16F83C /* offline.rs */,
+				38EBF07EE1E9F8EA1D032154 /* secret_store.rs */,
 			);
 			name = src;
 			path = ../../src;
@@ -378,7 +386,7 @@
 				"LIBRARY_SEARCH_PATHS[arch=arm64]" = "$(inherited) $(PROJECT_DIR)/Externals/arm64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME) $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/$(PLATFORM_NAME)";
 				"LIBRARY_SEARCH_PATHS[arch=x86_64]" = "$(inherited) $(PROJECT_DIR)/Externals/x86_64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME) $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/$(PLATFORM_NAME)";
 				PRODUCT_BUNDLE_IDENTIFIER = org.bibleql.reader;
-				PRODUCT_NAME = RhemaPress;
+				PRODUCT_NAME = "RhemaPress";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = 2;
 				VALID_ARCHS = arm64;
@@ -410,7 +418,7 @@
 				"LIBRARY_SEARCH_PATHS[arch=arm64]" = "$(inherited) $(PROJECT_DIR)/Externals/arm64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME) $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/$(PLATFORM_NAME)";
 				"LIBRARY_SEARCH_PATHS[arch=x86_64]" = "$(inherited) $(PROJECT_DIR)/Externals/x86_64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME) $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/$(PLATFORM_NAME)";
 				PRODUCT_BUNDLE_IDENTIFIER = org.bibleql.reader;
-				PRODUCT_NAME = RhemaPress;
+				PRODUCT_NAME = "RhemaPress";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = 2;
 				VALID_ARCHS = arm64;

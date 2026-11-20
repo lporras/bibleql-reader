@@ -2,9 +2,11 @@ import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
 import { NoObjectGeneratedError, NoOutputGeneratedError, Output, parsePartialJson, streamText, type DeepPartial } from "ai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { z } from "zod";
-import { STR } from "../data/strings";
+import { STR, type Locale } from "../data/strings";
+import { appleAi } from "../platform/appleai";
 import { chatgpt, chatgptErrorCode } from "../platform/chatgpt";
-import type { AiAnswer, AiReference, AskAiOptions, ChatgptFailure } from "../types/ai";
+import { bookLabel, parseRef } from "./refs";
+import type { AiAnswer, AiReference, AppleAiEvent, AskAiOptions, ChatgptFailure } from "../types/ai";
 
 // Was the `ai:ask` Electron IPC handler (src/main/ipc/ai.ts), which ran
 // in the Node main process. Tauri has no Node side, so the whole thing
@@ -221,6 +223,109 @@ async function askChatgpt({ question, locale, choice, studyTitle, onPartial }: A
   }
 }
 
+// Apple Intelligence: the on-device model, through plugins/tauri-plugin-appleai.
+// Guided generation makes the model produce exactly {answer, references}, so
+// unlike ChatGPT there is no JSON to ask for or repair: each event already
+// carries the answer so far.
+
+/**
+ * The on-device model's instructions: the same brief as buildSystemPrompt, but
+ * **always written in Spanish**, with the answer's language named in them.
+ *
+ * Not a translation for its own sake. Tested on macOS 26.6 (SDK 27.2), guided
+ * generation under *English* instructions was refused almost every time ("I
+ * apologize, but I cannot fulfill this request", a `refusal`), whatever the
+ * question. Even "You are a Bible study assistant. Be concise (120 words
+ * maximum)." was enough. The same instructions in Spanish were never refused, in
+ * either answer language, across 26 runs. There is also no example reference:
+ * the model copied whichever one it was given into nearly every answer. Recheck
+ * both after an OS update (docs/apple-intelligence.md has the harness).
+ *
+ * It also insists on one language throughout: Spanish answers picked up English
+ * words ("fulfillment", "Zechariah"). And it doesn't ask for blank lines between
+ * paragraphs: in a guided string a blank line ends the field, which cut answers
+ * short, so core/ generates paragraphs as a list and joins them itself. No bold
+ * either: given the choice, it bolded word after word and left stray "**".
+ */
+export function buildAppleInstructions(locale: "en" | "es", studyTitle?: string): string {
+  const es = locale === "es";
+  const study = studyTitle?.trim()
+    ? ` El usuario prepara un sermón o estudio bíblico titulado "${studyTitle.trim()}"; cuando la pregunta sea abierta, ` +
+      "prefiere referencias e ideas que sirvan a ese estudio."
+    : "";
+  const language = es ? "español" : "inglés";
+  return (
+    "Eres un asistente cuidadoso de estudio bíblico dentro de una aplicación para leer la Biblia. Escribe todo en " +
+    `${language}, también los nombres de los libros y los motivos, sin mezclar palabras de otro idioma. ` +
+    "La respuesta debe ser concisa (máximo 120 palabras) y estar completa: no la termines anunciando una lista que " +
+    "no escribes. Apégate al texto bíblico y, cuando tradiciones fieles lean un pasaje de forma distinta, menciónalo " +
+    "en lugar de afirmar una sola postura. No copies el texto de los versículos: la aplicación lo muestra. Da formato " +
+    "fácil de leer: párrafos cortos, de una a tres frases; un esquema o varios puntos como lista, cada elemento " +
+    'empezando con "1." o "-"; sin negritas, títulos ni tablas. ' +
+    "Pon siempre un espacio después de cada punto. Después de la respuesta, da de 2 a 5 referencias. Cada cita es " +
+    `un solo pasaje: libro, capítulo y versículos, con el nombre completo del libro en ${language}, sin abreviar. Cada motivo ` +
+    "es una sola frase corta y completa, sin otras referencias." +
+    study
+  );
+}
+
+/** What a failed on-device reply means to the reader. */
+export function describeAppleFailure(code: string, locale: "en" | "es"): string {
+  const t = STR[locale].appleAiFailure;
+  return code in t ? t[code as keyof typeof t] : t.generic;
+}
+
+/**
+ * The answer a `partial` event carries. A reference counts once it has a reason,
+ * and only once: the small model sometimes lists the same passage twice.
+ */
+export function applePartial(event: Extract<AppleAiEvent, { type: "partial" }>, locale: Locale): AiAnswer {
+  return partialAnswer({ answer: event.answer, references: appleRefs(event.references, locale) });
+}
+
+/**
+ * The model's references worth a chip: each passage once, only ones that open,
+ * and named in the reader's language. Other providers' unparseable references
+ * get a disabled chip, but the small model makes up book names ("Micael 5:2")
+ * often enough that those are dropped; and it sometimes names a book in English
+ * in a Spanish answer ("Zechariah 12:10"), so each one is written out again.
+ */
+function appleRefs<T extends { ref: string }>(references: T[], locale: Locale): T[] {
+  const seen = new Set<string>();
+  return references.flatMap((r) => {
+    const parsed = parseRef(r.ref);
+    if (!parsed) return [];
+    const verses = parsed.from ? `:${parsed.from}${parsed.to ? `-${parsed.to}` : ""}` : "";
+    const ref = `${bookLabel(parsed.bookId, locale)} ${parsed.chapter}${verses}`;
+    if (seen.has(ref)) return [];
+    seen.add(ref);
+    return [{ ...r, ref }];
+  });
+}
+
+async function askApple({ question, locale, studyTitle, onPartial }: AskAiOptions): Promise<AiAnswer> {
+  let last: Extract<AppleAiEvent, { type: "partial" }> | undefined;
+  await new Promise<void>((resolve, reject) => {
+    appleAi
+      .respond({ instructions: buildAppleInstructions(locale, studyTitle), prompt: question }, (event) => {
+        if (event.type === "partial") {
+          last = event;
+          onPartial?.(applePartial(event, locale));
+        } else if (event.type === "completed") {
+          resolve();
+        } else {
+          reject(new Error(describeAppleFailure(event.code, locale)));
+        }
+      })
+      .catch((err: unknown) => reject(new Error(describeAppleFailure(err instanceof Error ? err.message : "", locale))));
+  });
+  const final = AiAnswerSchema.safeParse(
+    last && { answer: last.answer, references: appleRefs(last.references, locale).map((r) => ({ ref: r.ref, why: r.why ?? "" })) }
+  );
+  if (!final.success || !final.data.answer.trim()) throw new Error(STR[locale].appleAiFailure.badFormat);
+  return final.data;
+}
+
 /**
  * Streams the reply: `onPartial` gets the answer-so-far as each chunk
  * arrives, and the promise resolves with the complete, schema-validated
@@ -229,6 +334,7 @@ async function askChatgpt({ question, locale, choice, studyTitle, onPartial }: A
 export async function askAi(options: AskAiOptions): Promise<AiAnswer> {
   const { question, locale, choice, credential, studyTitle, onPartial } = options;
   if (choice.provider === "chatgpt") return askChatgpt(options);
+  if (choice.provider === "apple") return askApple(options);
   if (!credential?.trim()) {
     throw new Error("No Anthropic API key configured. Add one in the key dialog.");
   }

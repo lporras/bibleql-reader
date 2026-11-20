@@ -91,6 +91,10 @@ targets:
       - sdk: Security.framework
       - sdk: UIKit.framework
       - sdk: WebKit.framework
+      # iOS 26+ only (plugins/tauri-plugin-appleai); weak, so the app still launches on
+      # older iPadOS, where the plugin reports "unsupportedOS".
+      - sdk: FoundationModels.framework
+        weak: true
     preBuildScripts:
       - script: yarn tauri ios xcode-script -v --platform ${PLATFORM_DISPLAY_NAME:?} --sdk-root ${SDKROOT:?} --framework-search-paths "${FRAMEWORK_SEARCH_PATHS:?}" --header-search-paths "${HEADER_SEARCH_PATHS:?}" --gcc-preprocessor-definitions "${GCC_PREPROCESSOR_DEFINITIONS:-}" --configuration ${CONFIGURATION:?} ${FORCE_COLOR} ${ARCHS:?}
         name: Build Rust Code

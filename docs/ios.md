@@ -184,7 +184,8 @@ yarn tauri ios build --debug --target aarch64-sim    # a .app for the simulator
 yarn tauri ios build                                 # a signed .ipa for devices (needs a team)
 ```
 
-The `.ipa` ends up under `src-tauri/gen/apple/build/`. `ExportOptions.plist` controls how it's
+The `.ipa` ends up at `src-tauri/gen/apple/build/arm64/RhemaPress.ipa`. A `Payload/` folder beside it
+may be left over from an older build; check the `.ipa` itself. `ExportOptions.plist` controls how it's
 exported (development, ad-hoc, or App Store). As on desktop, no API key goes into the build: the
 app registers its own BibleQL token on first launch and keeps it in the iOS keychain.
 

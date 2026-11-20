@@ -21,6 +21,9 @@ pub fn run() {
         // quicklook (local, plugins/): iOS can't open a saved file in another
         // app's viewer, so the exported study PDF is shown in Quick Look.
         .plugin(tauri_plugin_quicklook::init())
+        // appleai (local, plugins/): Apple Intelligence's on-device model as an
+        // Assistant provider. Runs on the device; no network.
+        .plugin(tauri_plugin_appleai::init())
         // Offline translation packages: download, verify, and query the
         // downloaded SQLite files. App commands need no capability entry.
         .manage(offline::OfflineState::default())

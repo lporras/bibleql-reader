@@ -10,6 +10,7 @@
     "core:window:allow-start-dragging",
     "os:allow-platform",
     "quicklook:allow-preview",
+    "appleai:default",
     "dialog:allow-save",
     {
       "identifier": "fs:allow-write-file",
