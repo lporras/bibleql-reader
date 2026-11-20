@@ -8,7 +8,7 @@ export interface AiAnswer {
   references: AiReference[];
 }
 
-export type AiProvider = "anthropic" | "chatgpt";
+export type AiProvider = "anthropic" | "chatgpt" | "apple";
 
 export interface AiModelChoice {
   provider: AiProvider;
@@ -81,3 +81,22 @@ export interface AskAiOptions {
   /** Called with the answer-so-far as the reply streams in. */
   onPartial?: (answer: AiAnswer) => void;
 }
+
+/**
+ * Whether Apple Intelligence's on-device model can answer, from
+ * plugins/tauri-plugin-appleai: `available`, or why not.
+ */
+export type AppleAiStatus =
+  | "available"
+  | "deviceNotEligible"
+  | "appleIntelligenceNotEnabled"
+  | "modelNotReady"
+  | "unsupportedLocale"
+  | "unsupportedOS"
+  | "unavailable";
+
+/** A reply as it arrives from the on-device model. Only `completed` is success. */
+export type AppleAiEvent =
+  | { type: "partial"; answer: string; references: { ref: string; why?: string }[] }
+  | { type: "completed" }
+  | { type: "failed"; code: string; message?: string };

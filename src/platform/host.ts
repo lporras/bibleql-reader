@@ -33,6 +33,11 @@ export const IS_IOS = PLATFORM === "ios";
 // sign-in lives in Rust. See docs/chatgpt-sign-in.md.
 export const CHATGPT_SUPPORTED = PLATFORM === "macos" || PLATFORM === "windows" || PLATFORM === "linux";
 
+// Apple Intelligence (Foundation Models) exists only on Apple platforms. Whether
+// this device and OS can actually run it is asked at run time
+// (platform/appleai.ts); this only decides whether to ask.
+export const APPLE_AI_SUPPORTED = PLATFORM === "macos" || PLATFORM === "ios";
+
 export type RegistrationPlatform = "MACOS" | "WINDOWS" | "LINUX" | "IOS" | "ANDROID";
 
 const REGISTRATION_PLATFORMS: Record<string, RegistrationPlatform> = {

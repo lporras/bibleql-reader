@@ -1,9 +1,10 @@
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { useAppState } from "../state/AppStateContext";
 import { chatgpt } from "../platform/chatgpt";
-import { CHATGPT_SUPPORTED } from "../platform/host";
+import { APPLE_AI_SUPPORTED, CHATGPT_SUPPORTED } from "../platform/host";
 import { effectiveProvider, pickChatgptModel, resolveChoice } from "../lib/aiModels";
-import type { AiModelChoice, AiProvider, ChatgptModel } from "../types/ai";
+import type { AiModelChoice, AiProvider, AppleAiStatus, ChatgptModel } from "../types/ai";
+import { useAppleAiStatus } from "./useAppleAi";
 import { useChatgptAccount } from "./useChatgptAccount";
 import { queryKeys } from "./keys";
 
@@ -17,6 +18,10 @@ export interface AiChoiceState {
   models: UseQueryResult<ChatgptModel[]>;
   /** The selected or preselected model; null if it's gone or none are listed. */
   chatgptModel: ChatgptModel | null;
+  /** Whether Apple Intelligence can answer, or why not; undefined while asking. */
+  appleStatus: AppleAiStatus | undefined;
+  /** Apple Intelligence's model can answer right now. */
+  appleReady: boolean;
   /** What can answer right now; null if the reader has something to do first. */
   choice: AiModelChoice | null;
 }
@@ -26,6 +31,10 @@ export function useAiChoice(): AiChoiceState {
   const account = useChatgptAccount().data?.account;
   const chatgptReady = !!account?.planEnabled;
   const hasKey = !!state.aiApiKey.trim();
+  const apple = useAppleAiStatus();
+  // A failed check reads as "unavailable", not as still checking forever.
+  const appleStatus: AppleAiStatus | undefined = apple.isError ? "unavailable" : apple.data;
+  const appleReady = appleStatus === "available";
   const models = useQuery({
     queryKey: queryKeys.chatgptModels(account?.sub ?? ""),
     queryFn: () => chatgpt.models(),
@@ -35,7 +44,13 @@ export function useAiChoice(): AiChoiceState {
     staleTime: Infinity,
     retry: false
   });
-  const provider = effectiveProvider(state.aiProvider, hasKey, chatgptReady, CHATGPT_SUPPORTED);
+  const provider = effectiveProvider(state.aiProvider, {
+    hasKey,
+    chatgptReady,
+    chatgptSupported: CHATGPT_SUPPORTED,
+    appleReady,
+    appleSupported: APPLE_AI_SUPPORTED
+  });
   const chatgptModel = pickChatgptModel(models.data ?? [], state.aiModels.chatgpt);
   return {
     provider,
@@ -43,6 +58,8 @@ export function useAiChoice(): AiChoiceState {
     chatgptReady,
     models,
     chatgptModel,
-    choice: resolveChoice(provider, hasKey, chatgptReady, chatgptModel)
+    appleStatus,
+    appleReady,
+    choice: resolveChoice(provider, hasKey, chatgptReady, chatgptModel, appleReady)
   };
 }

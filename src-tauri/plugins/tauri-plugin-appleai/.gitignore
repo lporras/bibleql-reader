@@ -1,0 +1,6 @@
+# Written by tauri-plugin's build script on iOS builds (a copy of the Tauri
+# Swift API that ios/Package.swift depends on), regenerated every build.
+.tauri
+# SwiftPM's own state when a package here is opened or built by hand.
+.build
+.swiftpm

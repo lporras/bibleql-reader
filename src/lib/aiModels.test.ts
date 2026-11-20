@@ -1,26 +1,51 @@
 import { describe, it, expect } from "vitest";
-import { ANTHROPIC_CHOICE, effectiveProvider, pickChatgptModel, resolveChoice } from "./aiModels";
+import { ANTHROPIC_CHOICE, APPLE_CHOICE, effectiveProvider, pickChatgptModel, resolveChoice, type ProviderReadiness } from "./aiModels";
 
 const A = { slug: "gpt-a", displayName: "GPT A" };
 const B = { slug: "gpt-b", displayName: "GPT B" };
 
+// A desktop where everything is possible but nothing is set up.
+const NONE: ProviderReadiness = {
+  hasKey: false,
+  chatgptReady: false,
+  chatgptSupported: true,
+  appleReady: false,
+  appleSupported: true
+};
+const ready = (patch: Partial<ProviderReadiness>): ProviderReadiness => ({ ...NONE, ...patch });
+
 describe("effectiveProvider", () => {
   it("keeps what was selected when it can answer", () => {
-    expect(effectiveProvider("anthropic", true, true, true)).toBe("anthropic");
-    expect(effectiveProvider("chatgpt", true, true, true)).toBe("chatgpt");
+    expect(effectiveProvider("anthropic", ready({ hasKey: true, chatgptReady: true }))).toBe("anthropic");
+    expect(effectiveProvider("chatgpt", ready({ hasKey: true, chatgptReady: true }))).toBe("chatgpt");
+    expect(effectiveProvider("apple", ready({ hasKey: true, appleReady: true }))).toBe("apple");
   });
 
   it("uses ChatGPT when Claude has no key", () => {
-    expect(effectiveProvider("anthropic", false, true, true)).toBe("chatgpt");
+    expect(effectiveProvider("anthropic", ready({ chatgptReady: true, appleReady: true }))).toBe("chatgpt");
+  });
+
+  it("uses Apple Intelligence when Claude has no key and ChatGPT can't answer", () => {
+    expect(effectiveProvider("anthropic", ready({ appleReady: true }))).toBe("apple");
+    expect(effectiveProvider("anthropic", ready({ appleReady: true, chatgptSupported: false }))).toBe("apple");
   });
 
   it("never falls back onto a billed key when ChatGPT signs out", () => {
-    expect(effectiveProvider("chatgpt", true, false, true)).toBe("chatgpt");
+    expect(effectiveProvider("chatgpt", ready({ hasKey: true }))).toBe("chatgpt");
   });
 
-  it("is always Claude where ChatGPT isn't supported", () => {
-    expect(effectiveProvider("chatgpt", true, true, false)).toBe("anthropic");
-    expect(effectiveProvider("chatgpt", false, false, false)).toBe("anthropic");
+  it("never falls back onto a billed key when the on-device model can't answer", () => {
+    expect(effectiveProvider("apple", ready({ hasKey: true }))).toBe("apple");
+  });
+
+  it("is Claude where ChatGPT isn't supported", () => {
+    expect(effectiveProvider("chatgpt", ready({ hasKey: true, chatgptReady: true, chatgptSupported: false }))).toBe("anthropic");
+    expect(effectiveProvider("chatgpt", ready({ chatgptSupported: false }))).toBe("anthropic");
+  });
+
+  it("is Claude where Apple Intelligence isn't supported", () => {
+    expect(effectiveProvider("apple", ready({ appleSupported: false }))).toBe("anthropic");
+    expect(effectiveProvider("anthropic", ready({ appleReady: true, appleSupported: false }))).toBe("anthropic");
   });
 });
 
@@ -52,5 +77,10 @@ describe("resolveChoice", () => {
   it("is nothing without a sign-in or a model, even with a key saved", () => {
     expect(resolveChoice("chatgpt", true, false, A)).toBeNull();
     expect(resolveChoice("chatgpt", true, true, null)).toBeNull();
+  });
+
+  it("is Apple Intelligence's one model once it can answer, and nothing before", () => {
+    expect(resolveChoice("apple", false, false, null, true)).toBe(APPLE_CHOICE);
+    expect(resolveChoice("apple", true, true, A, false)).toBeNull();
   });
 });

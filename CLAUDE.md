@@ -49,6 +49,7 @@ src/
                             + host.ts (IS_MAC) + offline.ts (offline translations, docs/offline-mode.md)
                             + install.ts (installation token, docs/installation-keys.md)
                             + chatgpt.ts (Sign in with ChatGPT, docs/chatgpt-sign-in.md)
+                            + appleai.ts (Apple Intelligence on-device model, docs/apple-intelligence.md)
   routes/                  route-level composition shells (thin — pull their own state/data)
   queries/                 TanStack Query hooks, one per BibleQL query, key factory in keys.ts
   state/                   AppStateContext (Context + useReducer) + persist.ts (localStorage),
@@ -67,6 +68,8 @@ src-tauri/
   src/chatgpt.rs           Sign in with ChatGPT + all OpenAI traffic; tokens never leave Rust
   testdata/                a throwaway RSA key, only for chatgpt.rs's ID token tests
   plugins/tauri-plugin-quicklook/  local plugin: Quick Look (Swift) for the study PDF on iOS
+  plugins/tauri-plugin-appleai/    local plugin: Apple Intelligence (Foundation Models) for the
+                            Assistant on iOS + macOS 26+; core/ shared Swift, ios/, macos/ (swift-rs)
   gen/apple/               the Xcode project (iPad-only; settings live in project.yml, see docs/ios.md)
   tauri.conf.json          window geometry, macOS title bar style, bundle config
   capabilities/default.json  which plugin commands the window may call, and with what scopes
@@ -101,11 +104,12 @@ Every component has a colocated `.module.scss`.
 - **All user-facing strings live in `data/strings.ts`** (`STR[locale]`, `Locale = "en" | "es"`).
   Adding a key to `StringsShape` without both `en` and `es` entries fails `yarn typecheck`.
 - Imports are relative. There is no path alias.
-- **Shell access goes through one of six places, never a plugin import at a call site**:
+- **Shell access goes through one of seven places, never a plugin import at a call site**:
   `platform/index.ts` (`getPlatform()`) for Image Creator capabilities, `platform/host.ts` for
   `IS_MAC`, `lib/externalLinks.ts` for outbound links, `platform/offline.ts` for the
   `offline_*` commands, `platform/install.ts` for the installation token commands,
-  `platform/chatgpt.ts` for the `chatgpt_*` commands (the last three use
+  `platform/chatgpt.ts` for the `chatgpt_*` commands, `platform/appleai.ts` for the
+  `plugin:appleai|*` commands (the last four use
   `platform/shell.ts`'s `hasShell`/`call`). `features/image-creator/**` in
   particular must stay platform-neutral — see docs/platform-abstraction.md. Most capabilities
   (file picker, clipboard) are plain web-platform APIs and need no shell call at all; only
@@ -119,6 +123,11 @@ Every component has a colocated `.module.scss`.
   ChatGPT is desktop only (`CHATGPT_SUPPORTED`), and which provider answers is decided in
   `lib/aiModels.ts`: never fall back onto a billed API key, never switch model silently. See
   docs/chatgpt-sign-in.md.
+- **Apple Intelligence runs on the device** (`plugins/tauri-plugin-appleai`, Foundation Models,
+  iOS/macOS 26+): no key, no network, one model and no catalogue. The framework is weak-linked
+  (`src-tauri/build.rs` for macOS, `gen/apple/project.yml` for iOS) and every use is behind
+  `#available`; `src-tauri/build.rs` also adds `-rpath /usr/lib/swift`, without which the macOS
+  app aborts at launch. See docs/apple-intelligence.md.
 - **Downloaded translations: chapters are always local; search and concordance are
   remote-first** (`remoteFirst()` — BibleQL when reachable, the local index offline or on
   failure; local concordance cursors carry a `local:` prefix so "Load more" stays on one

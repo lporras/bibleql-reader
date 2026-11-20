@@ -2,6 +2,8 @@ import { useEffect, type ChangeEvent, type JSX } from "react";
 import { useAppState } from "../../state/AppStateContext";
 import { STR } from "../../data/strings";
 import { useAiChoice } from "../../queries/useAiModels";
+import { APPLE_AI_SUPPORTED, CHATGPT_SUPPORTED } from "../../platform/host";
+import type { AiProvider } from "../../types/ai";
 import { ChatgptSection } from "../ChatgptSection";
 import styles from "./AiProviderBar.module.scss";
 
@@ -10,7 +12,7 @@ import styles from "./AiProviderBar.module.scss";
 export function AiProviderBar(): JSX.Element {
   const { state, actions } = useAppState();
   const t = STR[state.locale];
-  const { provider, hasKey, chatgptReady, models, chatgptModel } = useAiChoice();
+  const { provider, hasKey, chatgptReady, models, chatgptModel, appleStatus, appleReady } = useAiChoice();
 
   // Save the preselected model, so that if it later leaves the list the reader is
   // asked to choose rather than quietly moved to whatever is first by then.
@@ -21,13 +23,14 @@ export function AiProviderBar(): JSX.Element {
   }, [preselected, actions]);
 
   function handleProvider(event: ChangeEvent<HTMLSelectElement>): void {
-    const next = event.target.value as "anthropic" | "chatgpt";
+    const next = event.target.value as AiProvider;
     actions.setAiProvider(next);
     // Claude needs a key before it can be what answers.
     if (next === "anthropic" && !hasKey) actions.openKeyDialog();
   }
 
   const showModels = provider === "chatgpt" && chatgptReady;
+  const apple = provider === "apple";
 
   return (
     <div className={styles.bar}>
@@ -36,7 +39,8 @@ export function AiProviderBar(): JSX.Element {
           <span className={styles.label}>{t.aiProvider}</span>
           <select value={provider} onChange={handleProvider}>
             <option value="anthropic">{hasKey ? "Claude" : t.aiClaudeNeedsKey}</option>
-            <option value="chatgpt">ChatGPT</option>
+            {CHATGPT_SUPPORTED && <option value="chatgpt">ChatGPT</option>}
+            {APPLE_AI_SUPPORTED && <option value="apple">Apple Intelligence</option>}
           </select>
         </label>
         {showModels && models.data && models.data.length > 0 && (
@@ -56,6 +60,15 @@ export function AiProviderBar(): JSX.Element {
             </select>
           </label>
         )}
+        {/* Foundation Models offers apps one model: listed, so it's clear which answers. */}
+        {apple && appleReady && (
+          <label className={styles.picker}>
+            <span className={styles.label}>{t.aiModel}</span>
+            <select value="system" disabled>
+              <option value="system">{t.appleAiModel}</option>
+            </select>
+          </label>
+        )}
       </div>
 
       {provider === "chatgpt" && !chatgptReady && <ChatgptSection embedded />}
@@ -68,6 +81,10 @@ export function AiProviderBar(): JSX.Element {
       )}
 
       {showModels && <p className={styles.plan}>{t.chatgptUsingPlan}</p>}
+
+      {apple && !appleStatus && <p className={styles.status}>{t.appleAiStatus.checking}</p>}
+      {apple && appleStatus && !appleReady && <p className={styles.problem}>{t.appleAiStatus[appleStatus as Exclude<typeof appleStatus, "available">]}</p>}
+      {apple && appleReady && <p className={styles.plan}>{t.appleAiOnDevice}</p>}
     </div>
   );
 }

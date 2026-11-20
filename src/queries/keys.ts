@@ -9,5 +9,6 @@ export const queryKeys = {
   offlineInstalled: () => ["offline", "installed"] as const,
   offlineAvailability: () => ["offline", "availability"] as const,
   chatgptAccount: () => ["chatgpt", "account"] as const,
-  chatgptModels: (sub: string) => ["chatgpt", "models", sub] as const
+  chatgptModels: (sub: string) => ["chatgpt", "models", sub] as const,
+  appleAiStatus: (locale: string) => ["appleai", "status", locale] as const
 };

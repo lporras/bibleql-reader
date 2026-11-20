@@ -1,0 +1,20 @@
+[package]
+name = "tauri-plugin-appleai"
+version = "0.1.0"
+description = "Apple Intelligence's on-device model (Foundation Models) for the AI Assistant, on iOS/iPadOS and macOS 26+."
+edition = "2021"
+publish = false
+# Required by tauri-plugin's build script, which links the Swift package in ios/.
+links = "tauri-plugin-appleai"
+
+[dependencies]
+tauri = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[build-dependencies]
+tauri-plugin = { version = "2", features = ["build"] }
+
+# The build script runs on the host: only a Mac can build the macOS bridge.
+[target.'cfg(target_os = "macos")'.build-dependencies]
+swift-rs = { version = "1", features = ["build"] }
